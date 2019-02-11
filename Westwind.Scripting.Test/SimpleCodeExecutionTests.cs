@@ -238,6 +238,61 @@ public string Add(int num1, int num2)
             Console.WriteLine("Result: " + result);
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }
+
+        [TestMethod]
+        public void CompileClassTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                CompilerMode = ScriptCompilerModes.Roslyn
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            var code = $@"
+using System;
+
+namespace MyApp
+{{
+    public class Math
+    {{
+
+    public string Add(int num1, int num2)
+    {{
+        // string templates
+        var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
+        Console.WriteLine(result);
+
+        return result;
+    }}
+
+    public string Multiply(int num1, int num2)
+    {{
+        // string templates
+        var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
+        Console.WriteLine(result);
+
+        return result;
+    }}
+
+    }}
+}}
+";
+
+            dynamic math = script.CompileClass(code);
+
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error,script.ErrorMessage);
+            Assert.IsNotNull(math);
+
+            string addResult = math.Add(10, 20);
+            string multiResult = math.Multiply(3 , 7);
+
+
+            Assert.IsTrue(addResult.Contains(" = 30"));
+            Assert.IsTrue(multiResult.Contains(" = 21"));
+        }
     }
 
 

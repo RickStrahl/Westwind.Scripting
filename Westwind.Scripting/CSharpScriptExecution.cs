@@ -350,6 +350,40 @@ namespace Westwind.Scripting
                 "ExecuteCode", parameters);
         }
 
+
+        /// <summary>
+        /// This method compiles a class and hands back a
+        /// dynamic reference to that class that you can
+        /// call members on.
+        /// </summary>
+        /// <param name="code">Fully self-contained C# class</param>
+        /// <returns>Instance of that class or null</returns>
+        public dynamic CompileClass(string code)
+        {
+            int hash = code.GetHashCode();
+
+            GeneratedClassCode = code;
+
+            if (!CachedAssemblies.ContainsKey(hash))
+            {
+                if (!CompileAssembly(code))
+                    return null;
+
+                CachedAssemblies[code.GetHashCode()] = Assembly;
+            }
+            else
+            {
+                Assembly = CachedAssemblies[hash];                
+            }
+
+            // Figure out the class name
+            Type type = Assembly.ExportedTypes.First();
+            GeneratedClassName = type.Name;
+            GeneratedNamespace = type.Namespace;
+
+            return CreateInstance();            
+        }
+
         private string ParseCodeNumberedParameters(string code, object[] parameters)
         {
             if (parameters != null)
@@ -509,7 +543,6 @@ namespace Westwind.Scripting
 
             try
             {
-
                 ObjectInstance = Assembly.CreateInstance(GeneratedNamespace + "." + GeneratedClassName);
                 return ObjectInstance;
             }

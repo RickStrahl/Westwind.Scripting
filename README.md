@@ -37,8 +37,9 @@ var code = $@"
 var s = new {{ name = ""Rick""}}; // anonymous types
 Console.WriteLine(s?.name);       // null propagation
 
-int num1 = (int)parameters[0];
-int num2 = (int)parameters[1];
+// pick up and cast parameters
+int num1 = (int) @0;   // same as parameters[0];
+int num2 = (int) @1;   // same as parameters[1];
 
 // string templates
 var result = $""{{num1}} + {{num2}} = {{(num1 + num2)}}"";
@@ -57,6 +58,35 @@ Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 Assert.IsFalse(script.Error, script.ErrorMessage);
 Assert.IsTrue(result.Contains(" = 30"));
 ```
+
+Note that the `return` in your code snippet is optional - you can just run code without a result value. Any parameters you pass in can be accessed either via `parameters[0]`, `parameters[1]` etc. or using a simpler string representation of `@0`, `@1`.
+
+### Evaluating an expression
+If you want to evaluate a single expression, there's a shortcut `Evalute()` method that works pretty much the same:
+
+```cs
+var script = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true,
+};
+script.AddDefaultReferencesAndNamespaces();
+
+// Full syntax
+//object result = script.Evaluate("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
+
+// Numbered parameter syntax is easier
+object result = script.Evaluate("(decimal) @0 + (decimal) @1", 10M, 20M);
+
+Console.WriteLine($"Result: {result}");
+Console.WriteLine($"Error: {script.Error}");
+Console.WriteLine(script.ErrorMessage);
+Console.WriteLine(script.GeneratedClassCode);
+
+Assert.IsFalse(script.Error, script.ErrorMessage);
+Assert.IsTrue(result is decimal, script.ErrorMessage);
+```            
+
+This method is a shortcut wrapper and simply wraps your code into a single line `return {exp};` statement.
 
 ### Executing a Method
 Another way to execute code is to provide a full method body which is a little more explicit and makes it easier to reference parameters passed in. 
