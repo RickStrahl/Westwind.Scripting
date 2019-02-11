@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Scripting;
 
-namespace Westwind.ScriptExecution.Test
+namespace Westwind.Scripting.Test
 {
     [TestClass]
     public class SimpleCodeExecutionTests
@@ -209,13 +209,18 @@ return result;
         }
 
 
+        /// <summary>
+        /// Execute a method using the old Microsoft.CSharp CodeDomProvider
+        /// Faster, and doesn't require Roslyn bits, but doesn't
+        /// support latest C# features
+        /// </summary>
         [TestMethod]
         public void ClassicModeTest()
         {
             var script = new CSharpScriptExecution()
             {
                 SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn
+                CompilerMode = ScriptCompilerModes.Classic
             };
             script.AddDefaultReferencesAndNamespaces();
 
@@ -239,6 +244,10 @@ public string Add(int num1, int num2)
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }
 
+
+        /// <summary>
+        /// Compile a class and return instance as dynamic
+        /// </summary>
         [TestMethod]
         public void CompileClassTest()
         {
@@ -256,25 +265,23 @@ namespace MyApp
 {{
     public class Math
     {{
+        public string Add(int num1, int num2)
+        {{
+            // string templates
+            var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
+            Console.WriteLine(result);
 
-    public string Add(int num1, int num2)
-    {{
-        // string templates
-        var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
-        Console.WriteLine(result);
+            return result;
+        }}
 
-        return result;
-    }}
+        public string Multiply(int num1, int num2)
+        {{
+            // string templates
+            var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
+            Console.WriteLine(result);
 
-    public string Multiply(int num1, int num2)
-    {{
-        // string templates
-        var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
-        Console.WriteLine(result);
-
-        return result;
-    }}
-
+            return result;
+        }}
     }}
 }}
 ";
@@ -284,6 +291,7 @@ namespace MyApp
             Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error,script.ErrorMessage);
+
             Assert.IsNotNull(math);
 
             string addResult = math.Add(10, 20);

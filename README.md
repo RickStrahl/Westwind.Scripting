@@ -1,17 +1,37 @@
 # Westwind CSharp Scripting
 ### Dynamically compile and execute CSharp code at runtime
 
-This small `CSharpScripting` class provides an easy way to compile and execute C# on the fly at runtime using the .NET compiler services. This is ideal to provide support for addin's and application automation tasks that are user configurable.
+<small>for .NET 4.52 and later</small>
 
-The library supports both the latest Roslyn compiler and classic CSharp compilation.
+The small `CSharpScripting` class provides an easy way to compile and execute C# on the fly from source code at runtime using the .NET compiler services on full Framework .NET. You can use Roslyn compilation for the latest C# features, or classic C# 5 features.
+
+This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
+
+This library provides:
+
+**Execution Features** 
+
+* `ExecuteCode()` -  Execute an arbitrary block of code
+* `Evaluate()` - Evaluate an expression from a code string
+* `ExecuteMethod()` - Execute one or more methods from source
+* `CompileClass()` - Generate a class instance from C# code
+
+**Support features**
+
+* Assembly Caching so not every execution generates a new assembly
+* Ability to compile entire classes and execute them
+* Automatic Assembly Cleanup at shutdown
+* Use Roslyn or Classic C# compiler interchangably
+* Display errors and source and line numbers
+
 
 > #### Requires Roslyn Code Providers for your Project
-> If you want to use Roslyn compilation you have to make sure you add the `Microsoft.CodeDom.CompilerServices` NuGet Package to your project to provide the required compiler binaries for your application. This should be added to the application's start project.
+> If you want to use Roslyn compilation for the latest C# features you have to make sure you add the `Microsoft.CodeDom.CompilerServices` NuGet Package to your application's root project to provide the required compiler binaries for your application.
 >
-> Note that this adds a sizable chunk of files to your application's output folder in the `roslyn` folder. If you don't want this you can use the classic compiler, at the cost of not having access to C# 6+ features.
+> Note that this adds a sizable chunk of files to your application's output folder in the `\roslyn` folder. If you don't want this you can use the classic compiler, at the cost of not having access to C# 6+ features.
 
 ## Usage
-Using the `CSharpScriptExecution` class is very easy. It works by letting you provide either a simple code snippet that can optionally `return` a value, or a complete method signature with a method header and return statement. You can also provide multiple method that can be called explicitly using the `InvokeMethod()` operation.
+Using the `CSharpScriptExecution` class is very easy. It works with code passed as strings for either a Code block, expression, one or more methods or even as a full C# class that can be turned into an instance.
 
 You can add **Assembly References** and **Namespaces** via the `AddReferece()` and `AddNamespace()` methods.
 
@@ -59,7 +79,9 @@ Assert.IsFalse(script.Error, script.ErrorMessage);
 Assert.IsTrue(result.Contains(" = 30"));
 ```
 
-Note that the `return` in your code snippet is optional - you can just run code without a result value. Any parameters you pass in can be accessed either via `parameters[0]`, `parameters[1]` etc. or using a simpler string representation of `@0`, `@1`.
+Note that the `return` in your code snippet is optional - you can just run code without a result value. 
+
+> Any parameters you pass in can be accessed either via `parameters[0]`, `parameters[1]` etc. or using a simpler string representation of `@0`, `@1`.
 
 ### Evaluating an expression
 If you want to evaluate a single expression, there's a shortcut `Evalute()` method that works pretty much the same:
@@ -86,10 +108,10 @@ Assert.IsFalse(script.Error, script.ErrorMessage);
 Assert.IsTrue(result is decimal, script.ErrorMessage);
 ```            
 
-This method is a shortcut wrapper and simply wraps your code into a single line `return {exp};` statement.
+This method is a shortcut wrapper and simply wraps your code into a single line `return {exp};` statement. 
 
 ### Executing a Method
-Another way to execute code is to provide a full method body which is a little more explicit and makes it easier to reference parameters passed in. 
+`ExecuteCode()` and `Evaluate()` are shortcuts for the slightly lower level and more flexible `ExecuteMethod()` method which as the name implies allows you to specify a single or multiple methods. In fact you can provide an **entire class body** including properties, events and nested class definitions in the code passed in. This gives a lot of flexibility as you can properly type parameters and return types:
 
 ```csharp
 var script = new CSharpScriptExecution()
@@ -166,3 +188,75 @@ result = instance.GoodbyeWorld();
 Console.WriteLine($"Result: {result}");
 Assert.IsTrue(result.Contains("Goodbye Markus"));
 ```
+
+### Compiling and Executing a Class
+You can also compile an **entire class** and then get passed back a `dynamic` reference to that class so that you can explicitly use that object:
+
+
+```cs
+var script = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true,
+    CompilerMode = ScriptCompilerModes.Roslyn
+};
+script.AddDefaultReferencesAndNamespaces();
+
+var code = $@"
+using System;
+
+namespace MyApp
+{{
+    public class Math
+    {{
+        public string Add(int num1, int num2)
+        {{
+        // string templates
+        var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
+        Console.WriteLine(result);
+        
+        return result;
+        }}
+        
+        public string Multiply(int num1, int num2)
+        {{
+        // string templates
+        var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
+        Console.WriteLine(result);
+        
+        return result;
+        }}
+        
+    }}
+}}
+";
+
+dynamic math = script.CompileClass(code);
+
+Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+Assert.IsFalse(script.Error,script.ErrorMessage);
+Assert.IsNotNull(math);
+
+string addResult = math.Add(10, 20);
+string multiResult = math.Multiply(3 , 7);
+
+
+Assert.IsTrue(addResult.Contains(" = 30"));
+Assert.IsTrue(multiResult.Contains(" = 21"));
+```
+
+
+## Usage Notes
+
+
+
+## License
+This library is published under **MIT license** terms.
+
+**Copyright &copy; 2012-2019 Rick Strahl, West Wind Technologies**
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
