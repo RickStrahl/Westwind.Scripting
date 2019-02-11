@@ -3,6 +3,13 @@
 
 <small>for .NET 4.52 and later</small>
 
+Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
+
+```text
+Install-Package Westwind.Scripting
+```
+</small>(currently you need to use the `-IncludePreRelease` flag)</small>
+
 The small `CSharpScripting` class provides an easy way to compile and execute C# on the fly from source code at runtime using the .NET compiler services on full Framework .NET. You can use Roslyn compilation for the latest C# features, or classic C# 5 features.
 
 This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
@@ -245,9 +252,7 @@ Assert.IsTrue(addResult.Contains(" = 30"));
 Assert.IsTrue(multiResult.Contains(" = 21"));
 ```
 
-
 ## Usage Notes
-
 
 
 ## License
