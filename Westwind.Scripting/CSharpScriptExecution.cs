@@ -14,7 +14,7 @@ namespace Westwind.Scripting
     /// <summary>
     /// Class that can be used to execute code snippets or entire blocks of methods
     /// dynamically. Two methods are provided:
-    /// 
+    ///
     /// * ExecuteCode -  executes code and you can return a value
     /// * ExecuteMethod - lets you provide one or more method bodies to execute
     ///
@@ -29,7 +29,7 @@ namespace Westwind.Scripting
         /// the key.
         /// </summary>
         protected static ConcurrentDictionary<int, Assembly> CachedAssemblies = new ConcurrentDictionary<int, Assembly>();
-        
+
         /// <summary>
         /// List of additional namespaces to add to the script
         /// </summary>
@@ -39,7 +39,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// List of additional assembly references that are added to the
         /// compiler parameters in order to execute the script code.
-        /// </summary>        
+        /// </summary>
         public ReferenceList References { get; } = new ReferenceList();
 
 
@@ -177,7 +177,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// Internal Compiler Parameters
         /// </summary>
-        protected CompilerParameters Parameters => new CompilerParameters();
+        protected CompilerParameters Parameters { get; } = new CompilerParameters();
 
         /// <summary>
         /// Compiler Results from the Compilation Process with
@@ -193,7 +193,7 @@ namespace Westwind.Scripting
 
         }
 
-        #region Configuration Methods 
+        #region Configuration Methods
 
         /// <summary>
         /// Adds an assembly to be added to the compilation context.
@@ -265,9 +265,9 @@ namespace Westwind.Scripting
 
 
         /// <summary>
-        /// Executes a complete method by wrapping it into a class.         
+        /// Executes a complete method by wrapping it into a class.
         /// </summary>
-        /// <param name="code">One or more complete methods.</param>        
+        /// <param name="code">One or more complete methods.</param>
         /// <param name="methodName">Name of the method to call.</param>
         /// <param name="parameters">any number of variable parameters</param>
         /// <returns></returns>
@@ -309,7 +309,7 @@ namespace Westwind.Scripting
 
         // <summary>
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="code"></param>
         /// <param name="parameters"></param>
@@ -319,7 +319,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(code))
                 throw new ArgumentException("Can't evaluate empty code. Please pass code.");
 
-            code = ParseCodeNumberedParameters(code, parameters);            
+            code = ParseCodeNumberedParameters(code, parameters);
             return ExecuteCode("return " + code + ";", parameters);
         }
 
@@ -336,7 +336,7 @@ namespace Westwind.Scripting
         public object ExecuteCode(string code, params object[] parameters)
         {
             code = ParseCodeNumberedParameters(code, parameters);
-        
+
             return ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
                                  Environment.NewLine +
                                  "{" +
@@ -373,7 +373,7 @@ namespace Westwind.Scripting
             }
             else
             {
-                Assembly = CachedAssemblies[hash];                
+                Assembly = CachedAssemblies[hash];
             }
 
             // Figure out the class name
@@ -381,7 +381,7 @@ namespace Westwind.Scripting
             GeneratedClassName = type.Name;
             GeneratedNamespace = type.Namespace;
 
-            return CreateInstance();            
+            return CreateInstance();
         }
 
         private string ParseCodeNumberedParameters(string code, object[] parameters)
@@ -457,8 +457,6 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public bool CompileAssembly(string source)
         {
-            //this.oParameters.GenerateExecutable = false;
-
             if (OutputAssembly == null)
                 Parameters.GenerateInMemory = true;
             else
@@ -467,6 +465,11 @@ namespace Westwind.Scripting
                 Parameters.GenerateInMemory = false;
             }
 
+            foreach (var assembly in References)
+            {
+                Parameters.ReferencedAssemblies.Add(assembly);                
+            }
+            
             CompilerResults = Compiler.CompileAssemblyFromSource(Parameters, source);
 
             //if (CompilerMode == ScriptCompilerModes.Roslyn)
@@ -490,7 +493,7 @@ namespace Westwind.Scripting
 
             return true;
         }
-        
+
 
         #endregion
 
@@ -531,7 +534,7 @@ namespace Westwind.Scripting
         /// <returns>Instance of the class or null on error</returns>
         public object CreateInstance()
         {
- 
+
             LastException = null;
             Error = false;
             ErrorMessage = null;
