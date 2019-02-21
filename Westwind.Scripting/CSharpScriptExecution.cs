@@ -296,7 +296,7 @@ namespace Westwind.Scripting
 
             if (instance == null)
             {
-                int hash = code.GetHashCode();
+                int hash = GenerateHashCode(code);
 
                 var sb = GenerateClass(code);
 
@@ -305,7 +305,7 @@ namespace Westwind.Scripting
                     if (!CompileAssembly(sb.ToString()))
                         return null;
 
-                    CachedAssemblies[code.GetHashCode()] = Assembly;
+                    CachedAssemblies[hash] = Assembly;
                 }
                 else
                 {
@@ -597,7 +597,16 @@ namespace Westwind.Scripting
             return null;
         }
 
-
+        /// <summary>
+        /// Generates a hashcode for a block of code
+        /// in combination with the compiler mode.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        private int GenerateHashCode(string code)
+        {
+            return (code + CompilerMode).GetHashCode();
+        }
 
         #endregion
 
