@@ -23,12 +23,12 @@ This library provides:
 * `ExecuteMethod()` - Execute one or more methods from source
 * `CompileClass()` - Generate a class instance from C# code
 
-**Support features**
+**Supported features**
 
 * Assembly Caching so not every execution generates a new assembly
 * Ability to compile entire classes and execute them
 * Automatic Assembly Cleanup at shutdown
-* Use Roslyn or Classic C# compiler interchangably
+* Use Roslyn or Classic C# compiler interchangeably
 * Display errors and source and line numbers
 
 
