@@ -1,13 +1,9 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-//using Microsoft.CSharp;
-using Microsoft.CodeDom.Providers.DotNetCompilerPlatform;
 
 namespace Westwind.Scripting
 {
@@ -70,6 +66,12 @@ namespace Westwind.Scripting
         /// code for the full generated class
         /// </summary>
         public bool SaveGeneratedCode { get; set; }
+
+        /// <summary>
+        /// If true throws exceptions rather than failing silently
+        /// and returning error state. Default is false.
+        /// </summary>
+        public bool ThrowExceptions { get; set; }
 
 
         #region Error Handling Properties
@@ -220,6 +222,17 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
+        /// Adds a list of assemblies to the References
+        /// collection.
+        /// </summary>
+        /// <param name="assemblies"></param>
+        public void AddAssemblies(params string[] assemblies)
+        {
+            foreach (var assembly in assemblies)
+                AddAssembly(assembly);            
+        }
+
+        /// <summary>
         /// Adds a namespace to the referenced namespaces
         /// used at compile time.
         /// </summary>
@@ -247,6 +260,10 @@ namespace Westwind.Scripting
             }
         }
 
+        /// <summary>
+        /// Adds basic System assemblies and namespaces so basic
+        /// operations work.                
+        /// </summary>
         public void AddDefaultReferencesAndNamespaces()
         {
             AddAssembly("System.dll");
@@ -273,6 +290,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public object ExecuteMethod(string code,string methodName, params object[] parameters)
         {
+            ClearErrors();
+
             object instance = ObjectInstance;
 
             if (instance == null)
@@ -293,7 +312,7 @@ namespace Westwind.Scripting
                     Assembly = CachedAssemblies[hash];
 
                     // Figure out the class name
-                    Type type = Assembly.ExportedTypes.First();
+                    var type = Assembly.ExportedTypes.First();
                     GeneratedClassName = type.Name;
                     GeneratedNamespace = type.Namespace;
                 }
@@ -316,6 +335,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public object Evaluate(string code, params object[] parameters)
         {
+            ClearErrors();
+
             if (string.IsNullOrEmpty(code))
                 throw new ArgumentException("Can't evaluate empty code. Please pass code.");
 
@@ -335,6 +356,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public object ExecuteCode(string code, params object[] parameters)
         {
+            ClearErrors();
+
             code = ParseCodeNumberedParameters(code, parameters);
 
             return ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
@@ -426,6 +449,7 @@ namespace Westwind.Scripting
 
             if (SaveGeneratedCode)
                 GeneratedClassCode = sb.ToString();
+
             return sb;
         }
 
@@ -441,6 +465,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public object ExecuteCodeFromAssembly(string code, Assembly assembly, params object[] parameters)
         {
+            ClearErrors();
+
             Assembly = assembly;
 
             ObjectInstance = CreateInstance();
@@ -457,6 +483,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public bool CompileAssembly(string source)
         {
+            ClearErrors();
+
             if (OutputAssembly == null)
                 Parameters.GenerateInMemory = true;
             else
@@ -472,20 +500,16 @@ namespace Westwind.Scripting
             
             CompilerResults = Compiler.CompileAssemblyFromSource(Parameters, source);
 
-            //if (CompilerMode == ScriptCompilerModes.Roslyn)
-            //    CompilerResults = Compiler.CompileAssemblyFromSource(Parameters, source);
-            //else
-            //    CompilerResults = CompilerClassic.CompileAssemblyFromSource(Parameters, source);
-
             if (CompilerResults.Errors.HasErrors)
             {
-                Error = true;
-
                 // *** Create Error String
                 ErrorMessage = CompilerResults.Errors.Count + " Errors:";
                 for (int x = 0; x < CompilerResults.Errors.Count; x++)
-                    ErrorMessage = ErrorMessage + "\r\nLine: " + CompilerResults.Errors[x].Line.ToString() + " - " +
+                    ErrorMessage = ErrorMessage + "\r\nLine: " + CompilerResults.Errors[x].Line + " - " +
                                    CompilerResults.Errors[x].ErrorText;
+
+                SetErrors(new ApplicationException(ErrorMessage));
+                
                 return false;
             }
 
@@ -493,7 +517,25 @@ namespace Westwind.Scripting
 
             return true;
         }
+        #endregion
 
+        #region Errors
+        private void ClearErrors()
+        {
+            LastException = null;
+            Error = false;
+            ErrorMessage = null;
+        }
+
+        private void SetErrors(Exception ex)
+        {
+            Error = true;
+            LastException = ex.GetBaseException();
+            ErrorMessage = LastException.Message;
+
+            if (ThrowExceptions)
+                throw LastException;
+        }
 
         #endregion
 
@@ -509,6 +551,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public object InvokeMethod(object instance, string method, params object[] parameters)
         {
+            ClearErrors();
+
             // *** Try to run it
             try
             {
@@ -518,8 +562,7 @@ namespace Westwind.Scripting
             }
             catch (Exception ex)
             {
-                Error = true;
-                ErrorMessage = ex.GetBaseException().Message;
+                SetErrors(ex);
             }
 
             return null;
@@ -534,10 +577,7 @@ namespace Westwind.Scripting
         /// <returns>Instance of the class or null on error</returns>
         public object CreateInstance()
         {
-
-            LastException = null;
-            Error = false;
-            ErrorMessage = null;
+            ClearErrors();
 
             if (ObjectInstance != null)
                 return ObjectInstance;
@@ -551,15 +591,17 @@ namespace Westwind.Scripting
             }
             catch (Exception ex)
             {
-                Error = true;
-                LastException = ex.GetBaseException();
-                ErrorMessage = ex.Message;
+                SetErrors(ex);
             }
 
             return null;
         }
 
+
+
         #endregion
+
+       
     }
 
     public enum ScriptCompilerModes
