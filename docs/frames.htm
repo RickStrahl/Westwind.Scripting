@@ -1,0 +1,39 @@
+<html>
+<head>
+<title>Westwind.Scripting</TITLE>
+    <script type="text/javascript">
+        function SetPage() {
+            var query = window.location.search;
+            var page = query.search("page=");
+            var topic = query.search("topic=");
+            if (page > -1) {
+                page = query.substr(page + 5);
+                if (page.toLowerCase().indexOf(".htm") < 0)
+                    page = page + ".htm";
+                page = page + "?mode=1";                
+                    
+                window.frames[1].location.href = page;
+                window.frames[0].location.href = "tableofcontents.htm?page=" + page.replace(".htm", "");
+            }
+            else if (topic > -1) {            
+                page = query.substr(topic + 6);
+                // navigate from the child page
+                window.frames[0].location.href = "tableofcontents.htm?topic=" + decodeURIComponent(page);
+            }
+            else {
+                window.frames[1].location.href = "index.htm?mode=1";
+                window.frames[0].location.href = "tableofcontents.htm";
+            }
+        }
+    </script>
+</head>
+<frameset cols="35%,*" onload="SetPage();">
+  <frame name="wwhelp_left">
+  <frame name="wwhelp_right">
+  <noframes>
+  <body>
+  <p>This page uses frames, but your browser doesn't support them.<br>View <a href="tableofcontents.htm"> the non-frames version</a>.</p>
+  </body>
+  </noframes>
+</frameset>
+</html>

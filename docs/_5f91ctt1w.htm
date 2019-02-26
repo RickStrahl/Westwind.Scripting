@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<!-- saved from url=(0016)http://localhost -->
+<html>
+<head> 
+		<meta charset="utf-8" /> 
+	 	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	 	<title>Class CSharpScriptExecution - Westwind.Scripting</title>	 
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1" />
+		<!-- <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened,overrideConsole"></script> -->
+	<link rel="stylesheet" type="text/css" href="templates/scripts/bootstrap/dist/css/bootstrap.min.css" />	
+	<link rel="stylesheet" type="text/css" href="templates/scripts/fontawesome/css/font-awesome.min.css" />
+		<link rel="stylesheet" type="text/css" href="templates/wwhelp.css" />
+
+	 	<script src="templates/scripts/jquery/jquery.min.js"></script>	
+
+		<script src="templates/scripts/highlightjs/highlight.pack.js"></script>
+	<link href="templates/scripts/highlightjs/styles/vs2015.css" rel="stylesheet" />
+
+  	<script src="templates/scripts/ww.jquery.min.js"></script>
+
+
+	<script src="templates/scripts/wwhelp.js"></script>
+
+	<topictype value="CLASSHEADER" />
+	<script>		  
+	$(document).ready( function() {
+		helpBuilder.initializeLayout();
+		// expand all top level topics
+		setTimeout( helpBuilder.tocExpandTop, 5);
+	});
+	</script>
+</head>
+<body>
+
+	 <div class="flex-master">
+		  <div class="banner">
+
+				<div class="pull-right sidebar-toggle">
+					 <i class="fa fa-bars"
+						 title="Show or hide the topics list"></i>
+				</div>
+				<img src="images/logo.png" class="banner-logo" />
+
+				<div class="projectname">Westwind.Scripting</div>
+				<div class="byline">
+					 <img src="bmp/CLASSHEADER.png">&nbsp;Class CSharpScriptExecution
+				</div>
+		  </div>
+
+		  <div class="page-content">
+				<div id="toc" class="sidebar-left toc-content">					 
+					 <nav class="visually-hidden">
+						  <a href="tableofcontents.htm">Table of Contents</a>
+					 </nav>
+				</div>
+
+				<div class="splitter">					 
+				</div>
+
+				<nav class="topic-outline">
+					 <div class="topic-outline-header">On this page:</div>
+					 <div class="topic-outline-content"></div>
+				</nav>
+
+				<div class="main-content">
+
+					 <!-- Rendered Content -->
+					 <article class="content-pane">		  
+
+
+
+<header class="content-title">
+	 <img src="bmp/classheader.png">
+Class CSharpScriptExecution
+</header>
+
+<div id="TimeToRead"></div>
+
+<div class="content-body"><p id="pragma-line-0">Class that can be used to execute code snippets or entire blocks of methods dynamically. Two methods are provided:</p>
+<ul id="pragma-line-2">
+<li id="pragma-line-2">ExecuteCode -  executes code and you can return a value * ExecuteMethod - lets you provide one or more method bodies to execute</li>
+</ul>
+<p id="pragma-line-4">Assemblies used for execution are cached and are reused for a given block of code provided.</p>
+</div>
+
+<small><a href="http://msdn2.microsoft.com/en-us/library/System.Object.aspx" target="_5F91CUF08">System.Object</a><br>
+&nbsp;&nbsp;<b>Westwind.Scripting.CSharpScriptExecution</b><br>
+
+</small>
+<pre class="syntaxbox" id="syntax">public class CSharpScriptExecution : object
+</pre>
+
+
+<h3 id="classmembers">Class Members</h3><table class='detailtable' >
+<tr><th colspan="2">Member</th><th>Description</th></tr><tr>
+<td class="col-icon"><img src="bmp/classconstructor.png" /></td>
+<td class="col-name"><a href="_5f91ctt2c.htm" ><p id="pragma-line-0">Constructor</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt20.htm" ><p id="pragma-line-0">AddAssemblies</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Adds a list of assemblies to the References collection.</p><div class="syntaxoverloads"><p id="pragma-line-0">public void AddAssemblies(String[] assemblies)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt1y.htm" ><p id="pragma-line-0">AddAssembly</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Adds an assembly to be added to the compilation context.</p><div class="syntaxoverloads"><p id="pragma-line-0">public void AddAssembly(string assemblyDll)</p></div>
+<div class="syntaxoverloads"><p id="pragma-line-0">public void AddAssembly(Type type)</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt23.htm" ><p id="pragma-line-0">AddDefaultReferencesAndNamespaces</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Adds basic System assemblies and namespaces so basic operations work.</p><div class="syntaxoverloads"><p id="pragma-line-0">public void AddDefaultReferencesAndNamespaces()</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt21.htm" ><p id="pragma-line-0">AddNamespace</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Adds a namespace to the referenced namespaces used at compile time.</p><div class="syntaxoverloads"><p id="pragma-line-0">public void AddNamespace(string nameSpace)</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt22.htm" ><p id="pragma-line-0">AddNamespaces</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Adds a set of namespace to the referenced namespaces used at compile time.</p><div class="syntaxoverloads"><p id="pragma-line-0">public void AddNamespaces(String[] namespaces)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt29.htm" ><p id="pragma-line-0">CompileAssembly</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Compiles and runs the source code for a complete assembly.</p><div class="syntaxoverloads"><p id="pragma-line-0">public bool CompileAssembly(string source)</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt27.htm" ><p id="pragma-line-0">CompileClass</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">This method compiles a class and hands back a dynamic reference to that class that you can call members on.</p><div class="syntaxoverloads"><p id="pragma-line-0">public object CompileClass(string code)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt2b.htm" ><p id="pragma-line-0">CreateInstance</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Creates an instance of the object specified by the GeneratedNamespace and GeneratedClassName.</p>
+<p id="pragma-line-2">Sets the ObjectInstance member which is returned</p><div class="syntaxoverloads"><p id="pragma-line-0">public object CreateInstance()</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt25.htm" ><p id="pragma-line-0">Evaluate</p></a></td>
+<td class="col-detail"><div class="syntaxoverloads"><p id="pragma-line-0">public object Evaluate(string code,
+    Object[] parameters)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt26.htm" ><p id="pragma-line-0">ExecuteCode</p></a></td>
+<td class="col-detail"><div class="syntaxoverloads"><p id="pragma-line-0">public object ExecuteCode(string code,
+    Object[] parameters)</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt28.htm" ><p id="pragma-line-0">ExecuteCodeFromAssembly</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Executes a method from an assembly that was previously compiled</p><div class="syntaxoverloads"><p id="pragma-line-0">public object ExecuteCodeFromAssembly(string code,
+    Assembly assembly,
+    Object[] parameters)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt24.htm" ><p id="pragma-line-0">ExecuteMethod</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Executes a complete method by wrapping it into a class.</p><div class="syntaxoverloads"><p id="pragma-line-0">public object ExecuteMethod(string code,
+    string methodName,
+    Object[] parameters)</p></div>
+</td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classmethod.png" /></td>
+<td class="col-name"><a href="_5f91ctt2a.htm" ><p id="pragma-line-0">InvokeMethod</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Helper method to invoke a method on an object using Reflection</p><div class="syntaxoverloads"><p id="pragma-line-0">public object InvokeMethod(object instance,
+    string method,
+    Object[] parameters)</p></div>
+</td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2q.htm" ><p id="pragma-line-0">CompilerMode</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2r.htm" ><p id="pragma-line-0">CompilerResults</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Compiler Results from the Compilation Process with detailed error information if an error occurs.</p></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2n.htm" ><p id="pragma-line-0">Error</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Error flag that is set if an error occurred during the invoked method or script call</p></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2m.htm" ><p id="pragma-line-0">ErrorMessage</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Error message if an error occurred during the invoked method or script call</p></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2g.htm" ><p id="pragma-line-0">GeneratedClassCode</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Last generated code for this code snippet</p></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2h.htm" ><p id="pragma-line-0">GeneratedClassCodeWithLineNumbers</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2j.htm" ><p id="pragma-line-0">GeneratedClassName</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2i.htm" ><p id="pragma-line-0">GeneratedNamespace</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2o.htm" ><p id="pragma-line-0">LastException</p></a></td>
+<td class="col-detail"></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2d.htm" ><p id="pragma-line-0">Namespaces</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">List of additional namespaces to add to the script</p></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2p.htm" ><p id="pragma-line-0">ObjectInstance</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Internal reference to the generated type that is to be invoked</p></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2f.htm" ><p id="pragma-line-0">OutputAssembly</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Filename for the output assembly to generate. If empty the assembly is generated in memory (dynamic filename managed by the .NET runtime)</p></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2e.htm" ><p id="pragma-line-0">References</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">List of additional assembly references that are added to the compiler parameters in order to execute the script code.</p></td>
+</tr>
+<tr class="alternaterow">
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2k.htm" ><p id="pragma-line-0">SaveGeneratedCode</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">Determines whether GeneratedCode will be set with the source code for the full generated class</p></td>
+</tr>
+<tr>
+<td class="col-icon"><img src="bmp/classproperty.png" /></td>
+<td class="col-name"><a href="_5f91ctt2l.htm" ><p id="pragma-line-0">ThrowExceptions</p></a></td>
+<td class="col-detail"><p id="pragma-line-0">If true throws exceptions rather than failing silently and returning error state. Default is false.</p></td>
+</tr>
+</table><p>
+<h3 id="requirements">Requirements</h3>
+
+	<b>Namespace:</b> Westwind.Scripting<br>
+
+<b>Assembly:</b> westwind.scripting.dll
+<br>
+					 </article>
+
+
+					 <hr />
+					 <div class="pull-right">
+						  <a href="http://helpbuilder.west-wind.com" target="_blank"><img src="images/wwhelp.png" /></a>
+					 </div>
+
+					 <small>
+						  &copy; West Wind Technologies, 1996-2019 &bull;
+						  Updated: 02/25/19
+						  <br />
+						  <a href="mailto:support@yoursite.com?subject=Class CSharpScriptExecution (_5F91CTT1W)&body=Topic: Westwind.Scripting - http://yoursite.com/docs/_5F91CTT1W.htm">Comment or report problem with topic</a>
+					 </small>
+					 <br class="clearfix" />
+					 <br />
+					 <!-- End Rendered Content -->
+				</div>
+
+
+		  </div>		  
+	 </div>
+
+
+</body>
+</html>
