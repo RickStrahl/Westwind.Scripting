@@ -69,36 +69,33 @@
 
 
 
-<div class="content-body"><p id="pragma-line-0">Welcome to your new Help Builder Project. You're ready to start creating content for your documentation.</p>
-<h3 id="getting-started"><a id="pragma-line-2"></a>Getting Started</h3>
-<p id="pragma-line-3">There are a few basic operations you're likely to use repeatedly:</p>
-<ul id="pragma-line-5">
-<li id="pragma-line-5">Edit any topic by clicking <strong>Edit View</strong> in the toolbar</li>
-<li id="pragma-line-6">Add new topics in the tree by clicking <strong>New Topic</strong> (Ctrl-n) in the toolbar</li>
-<li id="pragma-line-7">Use the text editor to edit your content using <strong>Markdown</strong> formatting</li>
-<li id="pragma-line-8">You can toggle between <strong>Edit View</strong> and <strong>HTML Preview</strong> (Ctrl-Tab)</li>
-<li id="pragma-line-9">To edit content and see a preview click <strong>Web Browser Preview</strong> (Alt-v)</li>
-<li id="pragma-line-10">Use <strong>Insert Bookmark</strong> (Alt-o) to insert links to other topics</li>
-<li id="pragma-line-11">Use <strong>Insert Link</strong> (Alt-k) to insert external links</li>
-<li id="pragma-line-12">Use <strong>Insert Image</strong> to insert local or Web images into the page</li>
-<li id="pragma-line-13">Use <strong>Screen Capture</strong> to capture screen shots to images</li>
-<li id="pragma-line-14">Build HTML and/or Html Help Output by clicking <strong>Build Output</strong> in the toolbar</li>
-<li id="pragma-line-15">Upload your Documentation to a Web site via FTP</li>
-<li id="pragma-line-16">Build HTML Help, Word or PDF output</li>
+<div class="content-body"><h1 id="westwind-csharp-scripting"><a id="pragma-line-0"></a>Westwind CSharp Scripting</h1>
+<h3 id="dynamically-compile-and-execute-csharp-code-at-runtime"><a id="pragma-line-1"></a>Dynamically compile and execute CSharp code at runtime</h3>
+<p id="pragma-line-3"><small>for .NET 4.52 and later</small></p>
+<p id="pragma-line-6">Get it from <a href="https://www.nuget.org/packages/Westwind.Scripting/">Nuget</a>:</p>
+<pre><code id="pragma-line-8" class="language-text">Install-Package Westwind.Scripting
+</code></pre>
+<p id="pragma-line-11">The small <code>CSharpScripting</code> class provides an easy way to compile and execute C# on the fly from source code at runtime using the .NET compiler services on full Framework .NET. You can use Roslyn compilation for the latest C# features, or classic C# 5 features.</p>
+<p id="pragma-line-13">This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.</p>
+<p id="pragma-line-15">This library provides:</p>
+<ul id="pragma-line-17">
+<li id="pragma-line-17"><a href="_5f91ctt1w.htm" >Class Documentation</a></li>
 </ul>
-<h3 id="markdown"><a id="pragma-line-18"></a>Markdown</h3>
-<p id="pragma-line-19">The editor uses <strong>Markdown</strong> formatting for editing topics by default. Markdown is a simple text markup format that uses common typographic characters to indicate formatting that is translated to HTML. The format is very easy to learn and very efficient for typing and keeping your hands on the keyboard. If you need help, the toolbar provides helpers for creating marked up text for you. This document you are looking at is written with Markdown.</p>
-<p id="pragma-line-21">For more information on the Markdown edit format, please see the following guides:</p>
-<ul id="pragma-line-23">
-<li id="pragma-line-23"><strong><a href="https://helpbuilder.west-wind.com/docs/_4il175mgd.htm?mode=1">Markdown Editing Basics</a></strong></li>
-<li id="pragma-line-24"><strong><a href="https://help.github.com/articles/markdown-basics/">GitHub Markdown Basics</a></strong></li>
-<li id="pragma-line-25"><strong><a href="https://daringfireball.net/projects/markdown/syntax">Official Markdown Syntax Guide</a></strong></li>
+<p id="pragma-line-19"><strong>Execution Features</strong></p>
+<ul id="pragma-line-21">
+<li id="pragma-line-21"><code>ExecuteCode()</code> -  Execute an arbitrary block of code</li>
+<li id="pragma-line-22"><code>Evaluate()</code> - Evaluate an expression from a code string</li>
+<li id="pragma-line-23"><code>ExecuteMethod()</code> - Execute one or more methods from source</li>
+<li id="pragma-line-24"><code>CompileClass()</code> - Generate a class instance from C# code</li>
 </ul>
-<h3 id="get-busy"><a id="pragma-line-27"></a>Get Busy!</h3>
-<p id="pragma-line-28">Start by editing this index topic that is your project home page and replace it with your own content (you can't delete this topic). Slice and dice and update this topic and experiment a bit with Markdown if it's new to you. Use the toolbar to help with your formatting and get familiar with the Markdown syntax.</p>
-<p id="pragma-line-30">Then add new topics and optionally create a topic hierarchy. As you edit, Help Builder gets out of your way and lets you focus on what you do best: Building quality content.</p>
-<p id="pragma-line-32">Finally let Help Builder turn that content into professional output into HTML using Help Builder's built in HTML based templates. Customize the templates if you need to, or use them as is. Output generated can be an HTML Web site, an HTML Help File or a Word or PDF document.</p>
-<p id="pragma-line-34">Creating documentation and reference has never been this easy and fun. So, what are you waiting for? Get busy and get it done!</p>
+<p id="pragma-line-26"><strong>Supported features</strong></p>
+<ul id="pragma-line-28">
+<li id="pragma-line-28">Assembly Caching so not every execution generates a new assembly</li>
+<li id="pragma-line-29">Ability to compile entire classes and execute them</li>
+<li id="pragma-line-30">Automatic Assembly Cleanup at shutdown</li>
+<li id="pragma-line-31">Use Roslyn or Classic C# compiler interchangeably</li>
+<li id="pragma-line-32">Display errors and source and line numbers</li>
+</ul>
 </div>
 
 					 </article>
@@ -111,7 +108,7 @@
 
 					 <small>
 						  &copy; West Wind Technologies, 1996-2019 &bull;
-						  Updated: 02/25/19
+						  Updated: 02/25/2019
 						  <br />
 						  <a href="mailto:support@yoursite.com?subject=Westwind.Scripting (INDEX     )&body=Topic: Westwind.Scripting - http://yoursite.com/docs/INDEX     .htm">Comment or report problem with topic</a>
 					 </small>
