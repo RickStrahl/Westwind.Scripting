@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2013/01/nuspec.xsd">
     <metadata minClientVersion="2.25">
         <id>Westwind.Scripting</id>
-        <version>0.1.0</version>
+        <version>0.2.0</version>
         <title>West Wind Scripting</title>
         <authors>Rick Strahl,West Wind Technologies</authors>
         <licenseUrl>https://github.com/RickStrahl/Westwind.Scripting#license</licenseUrl>
@@ -10,11 +10,11 @@
         <iconUrl>http://www.west-wind.com/westwindToolkit/images/WestwindWebToolkit_128x128.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>
-        Small library that allows you to easily compile C# source code and execute it at runtime using either Roslyn or the classic C# compiler. You can execute code blocks, evaluate expressions, execute methods, and compile classes directly to live instances using either Roslyn or the classic C# compiler.
+        Small library that allows you to easily compile C# source code and execute it at runtime using either Roslyn or the classic C# compiler. You can execute code blocks, evaluate expressions, execute methods, and compile classes directly to live instances using either Roslyn or the classic C# compiler. Compiled code is cached for repeated execution.
         </description>
         <summary></summary>
         <releaseNotes></releaseNotes>
-        <copyright>Rick Strahl, West Wind Technologies 2019</copyright>
+        <copyright>Rick Strahl, West Wind Technologies 2019-2020</copyright>
         <language>en-US</language>
         <tags>c# runtime-compilation scripting roslyn compiler</tags>        
         <dependencies>        

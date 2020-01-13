@@ -1,7 +1,7 @@
-# Westwind CSharp Scripting
+﻿# Westwind CSharp Scripting
 ### Dynamically compile and execute CSharp code at runtime
 
-<small>for .NET 4.52 and later</small>
+<small>for Full Framework .NET 4.52 and later</small>
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -10,20 +10,20 @@ Install-Package Westwind.Scripting
 ```
 </small>(currently you need to use the `-IncludePreRelease` flag)</small>
 
-The small `CSharpScripting` class provides an easy way to compile and execute C# on the fly from source code at runtime using the .NET compiler services on full Framework .NET. You can use Roslyn compilation for the latest C# features, or classic C# 5 features.
+The small `CSharpScriptExecution` class provides an easy way to compile and execute C# code on the fly, using source code provided at runtime. You can use Roslyn compilation for the latest C# features, or classic C# 5 features for no-dependency installations.
 
-This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
+This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort and it provides basic assembly caching so repeated calls don't recompile code.
 
 This library provides:
 
-**Execution Features** 
+#### Execution Features
 
-* `ExecuteCode()` -  Execute an arbitrary block of code
+* `ExecuteCode()` -  Execute an arbitrary block of code. Pass parameters, return a value
 * `Evaluate()` - Evaluate an expression from a code string
 * `ExecuteMethod()` - Execute one or more methods from source
 * `CompileClass()` - Generate a class instance from C# code
 
-**Supported features**
+#### Supported features
 
 * Assembly Caching so not every execution generates a new assembly
 * Ability to compile entire classes and execute them

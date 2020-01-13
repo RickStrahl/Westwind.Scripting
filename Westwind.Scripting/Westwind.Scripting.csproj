@@ -46,6 +46,7 @@
     <Compile Include="NamespaceList.cs" />
     <Compile Include="CSharpScriptExecution.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RoslynLifetimeManager.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -11,13 +11,15 @@ namespace Westwind.Scripting
     /// Class that can be used to execute code snippets or entire blocks of methods
     /// dynamically. Two methods are provided:
     ///
-    /// * ExecuteCode -  executes code and you can return a value
+    /// * ExecuteCode -  executes code. Pass parameters and return a value
     /// * ExecuteMethod - lets you provide one or more method bodies to execute
+    /// * Evaluate - Evaluates an expression on the fly (uses ExecuteCode internally)
+    /// * CompileClass - compiles a class and returns the a class instance
     ///
     /// Assemblies used for execution are cached and are reused for a given block
     /// of code provided.
     /// </summary>
-    public class CSharpScriptExecution
+    public class CSharpScriptExecution : IDisposable
     {
         /// <summary>
         /// Internal list of assemblies that are cached for snippets of the same type.
@@ -153,28 +155,6 @@ namespace Westwind.Scripting
             }
         }
         private CodeDomProvider _compiler;
-
-
-        ///// <summary>
-        ///// Classic compiler model using CSharp compilation that
-        ///// can run without the Roslyn compiler distributed with
-        ///// your application.
-        /////
-        ///// Note: Doesn't support new C# 6+ syntax features
-        ///// </summary>
-        //protected CodeDomProvider CompilerClassic
-        //{
-        //    get
-        //    {
-        //        if (_compilerClassic == null)
-        //        {
-        //            _compilerClassic = new CSharpCodeProvider();
-        //        }
-        //        return _compilerClassic;
-        //    }
-        //}
-        //protected CodeDomProvider _compilerClassic;
-
 
         /// <summary>
         /// Internal Compiler Parameters
@@ -383,6 +363,26 @@ namespace Westwind.Scripting
         /// <returns>Instance of that class or null</returns>
         public dynamic CompileClass(string code)
         {
+            var type = CompileClassToType(code);
+            if ( type == null)
+                return null;
+
+            // Figure out the class name
+            GeneratedClassName = type.Name;
+            GeneratedNamespace = type.Namespace;
+
+            return CreateInstance();
+        }
+
+        /// <summary>
+        /// This method compiles a class and hands back a
+        /// dynamic reference to that class that you can
+        /// call members on.
+        /// </summary>
+        /// <param name="code">Fully self-contained C# class</param>
+        /// <returns>Instance of that class or null</returns>
+        public Type CompileClassToType(string code)
+        {
             int hash = code.GetHashCode();
 
             GeneratedClassCode = code;
@@ -400,11 +400,7 @@ namespace Westwind.Scripting
             }
 
             // Figure out the class name
-            Type type = Assembly.ExportedTypes.First();
-            GeneratedClassName = type.Name;
-            GeneratedNamespace = type.Namespace;
-
-            return CreateInstance();
+            return  Assembly.ExportedTypes.First();
         }
 
         private string ParseCodeNumberedParameters(string code, object[] parameters)
@@ -610,12 +606,36 @@ namespace Westwind.Scripting
 
         #endregion
 
-       
+
+        /// <summary>
+        ///  cleans up the compiler
+        /// </summary>
+        public void Dispose()
+        {
+            Compiler?.Dispose();
+        }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public enum ScriptCompilerModes
     {
+        /// <summary>
+        /// Uses the built-in C# 5.0 compiler. Using this compiler
+        /// requires no additional assemblies
+        /// </summary>
         Classic,
+
+        /// <summary>
+        /// Uses the Roslyn Compiler. When this flag is set make
+        /// sure that the host project includes this package:
+        /// 
+        /// Microsoft.CodeDom.Providers.DotNetCompilerPlatform
+        ///
+        /// This adds a the compiler binaries to your application
+        /// so be aware of the overhead.
+        /// </summary>
         Roslyn
     }
 }
