@@ -1,7 +1,11 @@
-﻿# Westwind CSharp Scripting
+﻿# Westwind Csharp Scripting
 ### Dynamically compile and execute CSharp code at runtime
 
-<small>for Full Framework .NET 4.52 and later</small>
+[![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
+[![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
+
+
+<small>for Full Framework .NET 4.72 and later - no .NET Core supprot currently</small>
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -254,11 +258,24 @@ Assert.IsTrue(multiResult.Contains(" = 21"));
 
 ## Usage Notes
 
+  
+## Change Log
+
+### **Version 0.3**  
+
+* **Updated to latest Microsoft CodeDom libraries**  
+Updated to the latest Microsoft CodeDom compilation libraries which strealine the compiler process for Roslyn compilation with latest language features.
+
+* **Remove support to pre .NET 4.72**  
+In order to keep the runtime dependencies down switched the library target to `net472` which is .NET Standard compliant and so pulls in a much smaller set of dependencies. This is potentially a breaking change for older .NET applications, which will have to stick with the `0.2.x` versions.
+
+* **Switch Projects to SDK Projects**  
+Switched from classic .NET projects to the new simpler .NET SDK project format for the library and test projects.
 
 ## License
 This library is published under **MIT license** terms.
 
-**Copyright &copy; 2012-2019 Rick Strahl, West Wind Technologies**
+**Copyright &copy; 2014-2021 Rick Strahl, West Wind Technologies**
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
