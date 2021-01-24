@@ -276,8 +276,11 @@ namespace MyApp
 
         public string Multiply(int num1, int num2)
         {{
-            // string templates
-            var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
+           // string templates
+            var result = $""{{num1}}  *  {{num2}} = {{ num1 * num2 }}"";
+            Console.WriteLine(result);
+
+            result = $""Take two: {{ result ?? ""No Result"" }}"";
             Console.WriteLine(result);
 
             return result;

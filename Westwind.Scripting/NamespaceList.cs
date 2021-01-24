@@ -33,7 +33,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// Assign the references to the Compiler Parameters
         /// </summary>
-        /// <param name="parameter"></param>
+        /// <param name="parameters">Parameter options</param>
         public void SetReferences(CompilerParameters parameters)
         {
             var refs = this.ToArray();

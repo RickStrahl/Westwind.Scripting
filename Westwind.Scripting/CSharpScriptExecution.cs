@@ -324,9 +324,10 @@ namespace Westwind.Scripting
             return ExecuteCode("return " + code + ";", parameters);
         }
 
-        ///  Executes a snippet of code. Pass in a variable number of parameters
-        ///  (accessible via the parameters[0..n] array) and return an object parameter.
-        ///  Code should include:  return (object) SomeValue as the last line or return null
+        /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an object parameter.
+        /// Code should include:  return (object) SomeValue as the last line or return null
         /// </summary>
         /// <param name="code">The code to execute</param>
         /// <param name="parameters">The parameters to pass the code
