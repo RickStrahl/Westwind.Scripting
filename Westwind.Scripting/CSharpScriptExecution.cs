@@ -175,89 +175,6 @@ namespace Westwind.Scripting
 
         }
 
-        #region Configuration Methods
-
-        /// <summary>
-        /// Adds an assembly to be added to the compilation context.
-        /// </summary>
-        /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
-        public void AddAssembly(string assemblyDll)
-        {
-            if (string.IsNullOrEmpty(assemblyDll))
-            {
-                References.Clear();
-                return;
-            }
-
-            References.Add(assemblyDll);
-        }
-
-        /// <summary>
-        /// Adds an assembly reference from an existing type
-        /// </summary>
-        /// <param name="type">any .NET type that can be referenced in the current application</param>
-        public void AddAssembly(Type type)
-        {
-            AddAssembly(type.Assembly.Location);
-        }
-
-        /// <summary>
-        /// Adds a list of assemblies to the References
-        /// collection.
-        /// </summary>
-        /// <param name="assemblies"></param>
-        public void AddAssemblies(params string[] assemblies)
-        {
-            foreach (var assembly in assemblies)
-                AddAssembly(assembly);            
-        }
-
-        /// <summary>
-        /// Adds a namespace to the referenced namespaces
-        /// used at compile time.
-        /// </summary>
-        /// <param name="nameSpace"></param>
-        public void AddNamespace(string nameSpace)
-        {
-            if (string.IsNullOrEmpty(nameSpace))
-            {
-                Namespaces.Clear();
-                return;
-            }
-            Namespaces.Add(nameSpace);
-        }
-
-        /// <summary>
-        /// Adds a set of namespace to the referenced namespaces
-        /// used at compile time.
-        /// </summary>
-        public void AddNamespaces(params string[] namespaces)
-        {
-            foreach (var ns in namespaces)
-            {
-                if (!string.IsNullOrEmpty(ns))
-                    AddNamespace(ns);
-            }
-        }
-
-        /// <summary>
-        /// Adds basic System assemblies and namespaces so basic
-        /// operations work.                
-        /// </summary>
-        public void AddDefaultReferencesAndNamespaces()
-        {
-            AddAssembly("System.dll");
-            AddAssembly("System.Core.dll");
-            AddAssembly("Microsoft.CSharp.dll");
-
-            AddNamespace("System");
-            AddNamespace("System.Text");
-            AddNamespace("System.Reflection");
-            AddNamespace("System.IO");
-        }
-
-        #endregion
-
         #region Execution Methods
 
 
@@ -354,6 +271,29 @@ namespace Westwind.Scripting
                 "ExecuteCode", parameters);
         }
 
+        /// <summary>
+        /// Executes a method from an assembly that was previously compiled
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="assembly"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public object ExecuteCodeFromAssembly(string code, Assembly assembly, params object[] parameters)
+        {
+            ClearErrors();
+
+            Assembly = assembly;
+
+            ObjectInstance = CreateInstance();
+            if (ObjectInstance == null)
+                return null;
+
+            return ExecuteMethod(code, "ExecuteMethod", parameters);
+        }
+
+        #endregion
+
+        #region Compilation and Code Generation
 
         /// <summary>
         /// This method compiles a class and hands back a
@@ -404,75 +344,6 @@ namespace Westwind.Scripting
             return  Assembly.ExportedTypes.First();
         }
 
-        private string ParseCodeNumberedParameters(string code, object[] parameters)
-        {
-            if (parameters != null)
-            {
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    code = code.Replace("@" + i, "parameters[" + i + "]");
-                }
-            }
-            return code;
-        }
-        #endregion
-
-        #region Generation
-
-        private StringBuilder GenerateClass(string code)
-        {
-            StringBuilder sb = new StringBuilder();
-
-            //*** Program lead in and class header
-            sb.AppendLine(Namespaces.ToString());
-
-
-            // *** Namespace headers and class definition
-            sb.Append("namespace " + GeneratedNamespace + " {" +
-                      Environment.NewLine +
-                      Environment.NewLine +
-                      $"public class {GeneratedClassName}" +
-                      Environment.NewLine + "{ " +
-                      Environment.NewLine + Environment.NewLine);
-
-            //*** The actual code to run in the form of a full method definition.
-            sb.AppendLine();
-            sb.AppendLine(code);
-            sb.AppendLine();
-
-            sb.AppendLine("} " +
-                          Environment.NewLine +
-                          "}"); // Class and namespace closed
-
-            if (SaveGeneratedCode)
-                GeneratedClassCode = sb.ToString();
-
-            return sb;
-        }
-
-
-
-
-        /// <summary>
-        /// Executes a method from an assembly that was previously compiled
-        /// </summary>
-        /// <param name="code"></param>
-        /// <param name="assembly"></param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
-        public object ExecuteCodeFromAssembly(string code, Assembly assembly, params object[] parameters)
-        {
-            ClearErrors();
-
-            Assembly = assembly;
-
-            ObjectInstance = CreateInstance();
-            if (ObjectInstance == null)
-                return null;
-
-            return ExecuteMethod(code, "ExecuteMethod", parameters);
-        }
-
         /// <summary>
         /// Compiles and runs the source code for a complete assembly.
         /// </summary>
@@ -514,7 +385,135 @@ namespace Westwind.Scripting
 
             return true;
         }
+
+        private StringBuilder GenerateClass(string code)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            //*** Program lead in and class header
+            sb.AppendLine(Namespaces.ToString());
+
+
+            // *** Namespace headers and class definition
+            sb.Append("namespace " + GeneratedNamespace + " {" +
+                      Environment.NewLine +
+                      Environment.NewLine +
+                      $"public class {GeneratedClassName}" +
+                      Environment.NewLine + "{ " +
+                      Environment.NewLine + Environment.NewLine);
+
+            //*** The actual code to run in the form of a full method definition.
+            sb.AppendLine();
+            sb.AppendLine(code);
+            sb.AppendLine();
+
+            sb.AppendLine("} " +
+                          Environment.NewLine +
+                          "}"); // Class and namespace closed
+
+            if (SaveGeneratedCode)
+                GeneratedClassCode = sb.ToString();
+
+            return sb;
+        }
+
+        private string ParseCodeNumberedParameters(string code, object[] parameters)
+        {
+            if (parameters != null)
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    code = code.Replace("@" + i, "parameters[" + i + "]");
+                }
+            }
+            return code;
+        }
+
         #endregion
+
+        #region Configuration Methods
+
+        /// <summary>
+        /// Adds an assembly to be added to the compilation context.
+        /// </summary>
+        /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
+        public void AddAssembly(string assemblyDll)
+        {
+            if (string.IsNullOrEmpty(assemblyDll))
+            {
+                References.Clear();
+                return;
+            }
+
+            References.Add(assemblyDll);
+        }
+
+        /// <summary>
+        /// Adds an assembly reference from an existing type
+        /// </summary>
+        /// <param name="type">any .NET type that can be referenced in the current application</param>
+        public void AddAssembly(Type type)
+        {
+            AddAssembly(type.Assembly.Location);
+        }
+
+        /// <summary>
+        /// Adds a list of assemblies to the References
+        /// collection.
+        /// </summary>
+        /// <param name="assemblies"></param>
+        public void AddAssemblies(params string[] assemblies)
+        {
+            foreach (var assembly in assemblies)
+                AddAssembly(assembly);            
+        }
+
+        /// <summary>
+        /// Adds a namespace to the referenced namespaces
+        /// used at compile time.
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        public void AddNamespace(string nameSpace)
+        {
+            if (string.IsNullOrEmpty(nameSpace))
+            {
+                Namespaces.Clear();
+                return;
+            }
+            Namespaces.Add(nameSpace);
+        }
+
+        /// <summary>
+        /// Adds a set of namespace to the referenced namespaces
+        /// used at compile time.
+        /// </summary>
+        public void AddNamespaces(params string[] namespaces)
+        {
+            foreach (var ns in namespaces)
+            {
+                if (!string.IsNullOrEmpty(ns))
+                    AddNamespace(ns);
+            }
+        }
+
+        /// <summary>
+        /// Adds basic System assemblies and namespaces so basic
+        /// operations work.                
+        /// </summary>
+        public void AddDefaultReferencesAndNamespaces()
+        {
+            AddAssembly("System.dll");
+            AddAssembly("System.Core.dll");
+            AddAssembly("Microsoft.CSharp.dll");
+
+            AddNamespace("System");
+            AddNamespace("System.Text");
+            AddNamespace("System.Reflection");
+            AddNamespace("System.IO");
+        }
+
+        #endregion
+
 
         #region Errors
         private void ClearErrors()
