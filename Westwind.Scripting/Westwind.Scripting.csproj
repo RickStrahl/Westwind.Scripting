@@ -22,9 +22,9 @@
     <PackageTags>csharp scripting script roslyn compilation execution evaluate code westwind</PackageTags>
 
     <PackageIcon>icon.png</PackageIcon>
+    <PackageLicense>LICENSE.md</PackageLicense>
     <PackageProjectUrl>https://github.com/RickStrahl/Westwind.Scripting</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/RickStrahl/Westwind.Scripting#license</PackageLicenseUrl>
-
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
@@ -38,4 +38,10 @@
     <PackageReference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform" Version="3.6.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="" />
+    <None Include="LICENSE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
 </Project>
