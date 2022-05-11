@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Scripting;
 
@@ -59,7 +61,7 @@ return result;
 
             script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true,                
+                SaveGeneratedCode = true,
                 GeneratedClassName = "MyTest"
             };
             script.AddDefaultReferencesAndNamespaces();
@@ -158,7 +160,60 @@ public string HelloWorld(string name)
 
         }
 
+        [TestMethod]
+        public async Task ExecuteAsyncMethodTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                CompilerMode = ScriptCompilerModes.Roslyn
+            };
+            script.AddDefaultReferencesAndNamespaces();
 
+            string code = $@"
+public async Task<string> GetJsonFromAlbumViewer(int id)
+{{
+     var wc = new WebClient();
+    var uri = new Uri(""https://albumviewer.west-wind.com/api/album/"" + id);
+
+    string json = ""123"";
+    try{{
+        json =  await wc.DownloadStringTaskAsync(uri);
+    }}
+    catch(Exception ex) {{
+        Console.WriteLine(""ERROR in method: "" + ex.Message);
+    }}
+
+    return json;
+}}";
+            string result = null;
+            try
+            {
+                result = await script.ExecuteMethodAsync<string>(code, "GetJsonFromAlbumViewer", 37);
+
+                // var taskResult = script.ExecuteMethod(code, "GetJsonFromAlbumViewer", 37) as Task<string>;
+                // Console.WriteLine("Task: " + taskResult ?? "null");
+                //
+                // object objResult = await taskResult;
+                //result = objResult as string;
+
+                Console.WriteLine("done");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+            Console.WriteLine("done");
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine($"Error Message: " + script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+            Assert.IsNotNull(result,"Not a JSON response");
+        }
 
         [TestMethod]
         public void ExecuteMoreThanOneMethodTest()

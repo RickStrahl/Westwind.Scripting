@@ -94,6 +94,109 @@
             detailed error information if an error occurs.
             </summary>
         </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethod(System.String,System.String,System.Object[])">
+            <summary>
+            Executes a complete method by wrapping it into a class.
+            </summary>
+            <param name="code">One or more complete methods.</param>
+            <param name="methodName">Name of the method to call.</param>
+            <param name="parameters">any number of variable parameters</param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethodAsync(System.String,System.String,System.Object[])">
+            <summary>
+            A method that has a public async Task&lt;object&gt;(parameters) { }  signature
+            </summary>
+            <param name="code"></param>
+            <param name="methodName"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.Evaluate(System.String,System.Object[])">
+            <summary>
+            Evaluates a single value or expression that returns a value.
+            </summary>
+            <param name="code"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.EvaluateAsync(System.String,System.Object[])">
+            <summary>
+            Evaluates a single value or expression that returns a value.
+            </summary>
+            <param name="code"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCode(System.String,System.Object[])">
+            <summary>
+            Executes a snippet of code. Pass in a variable number of parameters
+            (accessible via the parameters[0..n] array) and return an object parameter.
+            Code should include:  return (object) SomeValue as the last line or return null
+            </summary>
+            <param name="code">The code to execute</param>
+            <param name="parameters">The parameters to pass the code
+            You can reference parameters as @0, @1, @2 in code to map
+            to the parameter array items (ie. @1 instead of parameters[1])
+            </param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeAsync(System.String,System.Object[])">
+            <summary>
+            Executes a snippet of code. Pass in a variable number of parameters
+            (accessible via the parameters[0..n] array) and return an object parameter.
+            Code should include:  return (object) SomeValue as the last line or return null
+            </summary>
+            <param name="code">The code to execute</param>
+            <param name="parameters">The parameters to pass the code
+            You can reference parameters as @0, @1, @2 in code to map
+            to the parameter array items (ie. @1 instead of parameters[1])
+            </param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssembly(System.String,System.Reflection.Assembly,System.Object[])">
+            <summary>
+            Executes a method from an assembly that was previously compiled
+            </summary>
+            <param name="code"></param>
+            <param name="assembly"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssemblyAsync(System.String,System.Reflection.Assembly,System.Object[])">
+            <summary>
+            Executes a method from an assembly that was previously compiled
+            </summary>
+            <param name="code"></param>
+            <param name="assembly"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileClass(System.String)">
+            <summary>
+            This method compiles a class and hands back a
+            dynamic reference to that class that you can
+            call members on.
+            </summary>
+            <param name="code">Fully self-contained C# class</param>
+            <returns>Instance of that class or null</returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileClassToType(System.String)">
+            <summary>
+            This method compiles a class and hands back a
+            dynamic reference to that class that you can
+            call members on.
+            </summary>
+            <param name="code">Fully self-contained C# class</param>
+            <returns>Instance of that class or null</returns>
+        </member>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileAssembly(System.String)">
+            <summary>
+            Compiles and runs the source code for a complete assembly.
+            </summary>
+            <param name="source"></param>
+            <returns></returns>
+        </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.AddAssembly(System.String)">
             <summary>
             Adds an assembly to be added to the compilation context.
@@ -129,72 +232,8 @@
         <member name="M:Westwind.Scripting.CSharpScriptExecution.AddDefaultReferencesAndNamespaces">
             <summary>
             Adds basic System assemblies and namespaces so basic
-            operations work.                
+            operations work.
             </summary>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethod(System.String,System.String,System.Object[])">
-            <summary>
-            Executes a complete method by wrapping it into a class.
-            </summary>
-            <param name="code">One or more complete methods.</param>
-            <param name="methodName">Name of the method to call.</param>
-            <param name="parameters">any number of variable parameters</param>
-            <returns></returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.Evaluate(System.String,System.Object[])">
-             <summary>
-            
-             </summary>
-             <param name="code"></param>
-             <param name="parameters"></param>
-             <returns></returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCode(System.String,System.Object[])">
-            <summary>
-            Executes a snippet of code. Pass in a variable number of parameters
-            (accessible via the parameters[0..n] array) and return an object parameter.
-            Code should include:  return (object) SomeValue as the last line or return null
-            </summary>
-            <param name="code">The code to execute</param>
-            <param name="parameters">The parameters to pass the code
-            You can reference parameters as @0, @1, @2 in code to map
-            to the parameter array items (ie. @1 instead of parameters[1])
-            </param>
-            <returns></returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileClass(System.String)">
-            <summary>
-            This method compiles a class and hands back a
-            dynamic reference to that class that you can
-            call members on.
-            </summary>
-            <param name="code">Fully self-contained C# class</param>
-            <returns>Instance of that class or null</returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileClassToType(System.String)">
-            <summary>
-            This method compiles a class and hands back a
-            dynamic reference to that class that you can
-            call members on.
-            </summary>
-            <param name="code">Fully self-contained C# class</param>
-            <returns>Instance of that class or null</returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssembly(System.String,System.Reflection.Assembly,System.Object[])">
-            <summary>
-            Executes a method from an assembly that was previously compiled
-            </summary>
-            <param name="code"></param>
-            <param name="assembly"></param>
-            <param name="parameters"></param>
-            <returns></returns>
-        </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileAssembly(System.String)">
-            <summary>
-            Compiles and runs the source code for a complete assembly.
-            </summary>
-            <param name="source"></param>
-            <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.InvokeMethod(System.Object,System.String,System.Object[])">
             <summary>
@@ -228,9 +267,9 @@
             </summary>
         </member>
         <member name="T:Westwind.Scripting.ScriptCompilerModes">
-            <summary>
+             <summary>
             
-            </summary>
+             </summary>
         </member>
         <member name="F:Westwind.Scripting.ScriptCompilerModes.Classic">
             <summary>
@@ -242,7 +281,7 @@
              <summary>
              Uses the Roslyn Compiler. When this flag is set make
              sure that the host project includes this package:
-             
+            
              Microsoft.CodeDom.Providers.DotNetCompilerPlatform
             
              This adds a the compiler binaries to your application

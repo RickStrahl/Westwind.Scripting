@@ -1,9 +1,11 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Westwind.Scripting
 {
@@ -179,7 +181,21 @@ namespace Westwind.Scripting
 
 
         /// <summary>
-        /// Executes a complete method by wrapping it into a class.
+        /// Executes a complete method by wrapping it into a class, compiling
+        /// and instantiating the class and calling the method.
+        ///
+        /// Class should include full class header (instance type, return value and parameters)
+        ///
+        /// Example:
+        /// "public string HelloWorld(string name) { return name; }"
+        ///
+        /// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        ///
+        /// Async Method Note: Keep in mind that
+        /// the method is not cast to that result - it's cast to object so you
+        /// have to unwrap it:
+        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
         /// </summary>
         /// <param name="code">One or more complete methods.</param>
         /// <param name="methodName">Name of the method to call.</param>
@@ -219,13 +235,41 @@ namespace Westwind.Scripting
                     return null;
             }
 
-            return InvokeMethod(ObjectInstance, methodName, parameters);
+            var result = InvokeMethod(ObjectInstance, methodName, parameters);
+            return result;
         }
 
-
-        // <summary>
         /// <summary>
+        /// Executes a complete async method by wrapping it into a class, compiling
+        /// and instantiating the class and calling the method and unwrapping the
+        /// task result.
         ///
+        /// Class should include full class header (instance type, return value and parameters)
+        ///
+        /// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        ///
+        /// Async Method Note: Keep in mind that
+        /// the method is not cast to that result - it's cast to object so you
+        /// have to unwrap it:
+        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+        /// </summary>
+        /// <param name="code">One or more complete methods.</param>
+        /// <param name="methodName">Name of the method to call.</param>
+        /// <param name="parameters">any number of variable parameters</param>
+        /// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
+        /// <returns>result value of the method</returns>
+        public Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
+        {
+            object result = ExecuteMethod(code, methodName, parameters);
+            if (result == null)
+                return Task.FromResult(default(TResult));
+
+            return  (Task<TResult>) result;
+        }
+
+        /// <summary>
+        /// Evaluates a single value or expression that returns a value.
         /// </summary>
         /// <param name="code"></param>
         /// <param name="parameters"></param>
@@ -239,6 +283,23 @@ namespace Westwind.Scripting
 
             code = ParseCodeNumberedParameters(code, parameters);
             return ExecuteCode("return " + code + ";", parameters);
+        }
+
+        /// <summary>
+        /// Evaluates a single value or expression that returns a value.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public Task<object> EvaluateAsync(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            if (string.IsNullOrEmpty(code))
+                throw new ArgumentException("Can't evaluate empty code. Please pass code.");
+
+            code = ParseCodeNumberedParameters(code, parameters);
+            return ExecuteCodeAsync("return " + code + ";", parameters);
         }
 
         /// <summary>
@@ -272,6 +333,37 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an object parameter.
+        /// Code should include:  return (object) SomeValue as the last line or return null
+        /// </summary>
+        /// <param name="code">The code to execute</param>
+        /// <param name="parameters">The parameters to pass the code
+        /// You can reference parameters as @0, @1, @2 in code to map
+        /// to the parameter array items (ie. @1 instead of parameters[1])
+        /// </param>
+        /// <returns></returns>
+        public Task<object> ExecuteCodeAsync(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            code = ParseCodeNumberedParameters(code, parameters);
+
+            return ExecuteMethod("public async Task<object> ExecuteCode(params object[] parameters)" +
+                                 Environment.NewLine +
+                                 "{" +
+                                 code +
+                                 Environment.NewLine +
+                                 // force a return value - compiler will optimize this out
+                                 // if the code provides a return
+                                 "return null;" +
+                                 Environment.NewLine +
+                                 "}",
+                "ExecuteCode", parameters) as Task<object>;
+        }
+
+
+        /// <summary>
         /// Executes a method from an assembly that was previously compiled
         /// </summary>
         /// <param name="code"></param>
@@ -289,6 +381,28 @@ namespace Westwind.Scripting
                 return null;
 
             return ExecuteMethod(code, "ExecuteMethod", parameters);
+        }
+
+        /// <summary>
+        /// Executes a method from an assembly that was previously compiled.
+        ///
+        /// Looks in cached assemblies
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="assembly"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public Task<TResult> ExecuteCodeFromAssemblyAsync<TResult>(string code, Assembly assembly, params object[] parameters)
+        {
+            ClearErrors();
+
+            Assembly = assembly;
+
+            ObjectInstance = CreateInstance();
+            if (ObjectInstance == null)
+                return null;
+
+            return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
         #endregion
@@ -363,9 +477,9 @@ namespace Westwind.Scripting
 
             foreach (var assembly in References)
             {
-                Parameters.ReferencedAssemblies.Add(assembly);                
+                Parameters.ReferencedAssemblies.Add(assembly);
             }
-            
+
             CompilerResults = Compiler.CompileAssemblyFromSource(Parameters, source);
 
             if (CompilerResults.Errors.HasErrors)
@@ -377,7 +491,7 @@ namespace Westwind.Scripting
                                    CompilerResults.Errors[x].ErrorText;
 
                 SetErrors(new ApplicationException(ErrorMessage));
-                
+
                 return false;
             }
 
@@ -465,7 +579,7 @@ namespace Westwind.Scripting
         public void AddAssemblies(params string[] assemblies)
         {
             foreach (var assembly in assemblies)
-                AddAssembly(assembly);            
+                AddAssembly(assembly);
         }
 
         /// <summary>
@@ -498,7 +612,7 @@ namespace Westwind.Scripting
 
         /// <summary>
         /// Adds basic System assemblies and namespaces so basic
-        /// operations work.                
+        /// operations work.
         /// </summary>
         public void AddDefaultReferencesAndNamespaces()
         {
@@ -510,6 +624,8 @@ namespace Westwind.Scripting
             AddNamespace("System.Text");
             AddNamespace("System.Reflection");
             AddNamespace("System.IO");
+            AddNamespace("System.Net");
+            AddNamespace("System.Threading.Tasks");
         }
 
         #endregion
@@ -617,7 +733,7 @@ namespace Westwind.Scripting
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public enum ScriptCompilerModes
     {
@@ -630,7 +746,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// Uses the Roslyn Compiler. When this flag is set make
         /// sure that the host project includes this package:
-        /// 
+        ///
         /// Microsoft.CodeDom.Providers.DotNetCompilerPlatform
         ///
         /// This adds a the compiler binaries to your application

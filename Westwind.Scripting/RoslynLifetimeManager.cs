@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Westwind.Scripting
 {
-    
+
 
     /// <summary>
     /// This helper can help start up Roslyn before first call so that there's no
@@ -18,8 +18,8 @@ namespace Westwind.Scripting
     /// shut Roslyn down and kill the VBCSCompiler that otherwise stays loaded
     /// even after shutting down your application.
     /// </summary>
-public class RoslynLifetimeManager
-{
+    public class RoslynLifetimeManager
+    {
         /// <summary>
         /// Run a script execution asynchronously in the background to warm up Roslyn.
         /// Call this during application startup or anytime before you run the first
@@ -30,7 +30,10 @@ public class RoslynLifetimeManager
             // warm up Roslyn in the background
             Task.Run(() =>
             {
-                var script = new CSharpScriptExecution() {CompilerMode = ScriptCompilerModes.Roslyn};
+                var script = new CSharpScriptExecution()
+                {
+                    CompilerMode = ScriptCompilerModes.Roslyn
+                };
                 {
                     script.ExecuteCode("int x = 1; return x;", null);
                 }
@@ -51,7 +54,7 @@ public class RoslynLifetimeManager
             {
                 // only shut down 'our' VBCSCompiler
                 var fn = GetMainModuleFileName(process);
-                if (fn.ToLower().Contains(appStartupPath.ToLower()))
+                if (fn.Equals(appStartupPath, StringComparison.OrdinalIgnoreCase))
                 {
                     try
                     {
@@ -76,11 +79,11 @@ public class RoslynLifetimeManager
         public static string GetMainModuleFileName(Process process)
         {
             var fileNameBuilder = new StringBuilder(1024);
-            uint bufferLength = (uint)fileNameBuilder.Capacity + 1;
+            uint bufferLength = (uint) fileNameBuilder.Capacity + 1;
             return QueryFullProcessImageName(process.Handle, 0, fileNameBuilder, ref bufferLength)
                 ? fileNameBuilder.ToString()
                 : null;
         }
 
-}
+    }
 }
