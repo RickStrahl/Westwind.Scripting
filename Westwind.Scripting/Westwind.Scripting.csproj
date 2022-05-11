@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>0.3</Version>
+    <Version>0.4</Version>
     <TargetFramework>net472</TargetFramework>
     <Title>Westwind.Scripting</Title>
 
@@ -13,11 +13,11 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>    
+    <IncludeSymbols>true</IncludeSymbols>   
     <PackageOutputPath>./nupkg</PackageOutputPath>    
+    
 
-    <PackageCopyright>Copyright © West Wind Technologies 2014-2021</PackageCopyright>
+    <PackageCopyright>Copyright © West Wind Technologies 2014-2022</PackageCopyright>
     <PackageIconUrl>http://www.west-wind.com/westwindToolkit/images/WestwindWebToolkit_128x128.png</PackageIconUrl>
     <PackageTags>csharp scripting script roslyn compilation execution evaluate code westwind</PackageTags>
 
@@ -26,6 +26,7 @@
     <PackageProjectUrl>https://github.com/RickStrahl/Westwind.Scripting</PackageProjectUrl>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
+
 
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>

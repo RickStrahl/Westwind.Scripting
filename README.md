@@ -1,4 +1,4 @@
-﻿# Westwind Csharp Scripting
+# Westwind Csharp Scripting
 ### Dynamically compile and execute CSharp code at runtime
 
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
@@ -23,9 +23,16 @@ This library provides:
 #### Execution Features
 
 * `ExecuteCode()` -  Execute an arbitrary block of code. Pass parameters, return a value
-* `Evaluate()` - Evaluate an expression from a code string
-* `ExecuteMethod()` - Execute one or more methods from source
+* `Evaluate()` - Evaluate a single expression from a code string and returns a value
+* `ExecuteMethod()` - Provide a complete method signature and call from code
 * `CompileClass()` - Generate a class instance from C# code
+
+There are also async versions of the Execute and Evaluate methods:
+
+* `ExecuteCodeAsync()`
+* `EvaluateAsync()`
+* `ExecuteMethod<TResult>()`
+
 
 #### Supported features
 
