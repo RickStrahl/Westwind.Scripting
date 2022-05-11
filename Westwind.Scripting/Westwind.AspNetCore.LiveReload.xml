@@ -95,22 +95,49 @@
             </summary>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethod(System.String,System.String,System.Object[])">
-            <summary>
-            Executes a complete method by wrapping it into a class.
-            </summary>
-            <param name="code">One or more complete methods.</param>
-            <param name="methodName">Name of the method to call.</param>
-            <param name="parameters">any number of variable parameters</param>
-            <returns></returns>
+             <summary>
+             Executes a complete method by wrapping it into a class, compiling
+             and instantiating the class and calling the method.
+            
+             Class should include full class header (instance type, return value and parameters)
+            
+             Example:
+             "public string HelloWorld(string name) { return name; }"
+            
+             "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+            
+             Async Method Note: Keep in mind that
+             the method is not cast to that result - it's cast to object so you
+             have to unwrap it:
+             var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+             var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+             </summary>
+             <param name="code">One or more complete methods.</param>
+             <param name="methodName">Name of the method to call.</param>
+             <param name="parameters">any number of variable parameters</param>
+             <returns></returns>
         </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethodAsync(System.String,System.String,System.Object[])">
-            <summary>
-            A method that has a public async Task&lt;object&gt;(parameters) { }  signature
-            </summary>
-            <param name="code"></param>
-            <param name="methodName"></param>
-            <param name="parameters"></param>
-            <returns></returns>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteMethodAsync``1(System.String,System.String,System.Object[])">
+             <summary>
+             Executes a complete async method by wrapping it into a class, compiling
+             and instantiating the class and calling the method and unwrapping the
+             task result.
+            
+             Class should include full class header (instance type, return value and parameters)
+            
+             "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+            
+             Async Method Note: Keep in mind that
+             the method is not cast to that result - it's cast to object so you
+             have to unwrap it:
+             var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+             var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+             </summary>
+             <param name="code">One or more complete methods.</param>
+             <param name="methodName">Name of the method to call.</param>
+             <param name="parameters">any number of variable parameters</param>
+             <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
+             <returns>result value of the method</returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.Evaluate(System.String,System.Object[])">
             <summary>
@@ -121,12 +148,15 @@
             <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.EvaluateAsync(System.String,System.Object[])">
-            <summary>
-            Evaluates a single value or expression that returns a value.
-            </summary>
-            <param name="code"></param>
-            <param name="parameters"></param>
-            <returns></returns>
+             <summary>
+             Evaluates an awaitable expression that returns a value
+            
+             Example:
+             script.EvaluateAsync("await ActiveEditor.GetSelection()",model);
+             </summary>
+             <param name="code"></param>
+             <param name="parameters"></param>
+             <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCode(System.String,System.Object[])">
             <summary>
@@ -142,17 +172,19 @@
             <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeAsync(System.String,System.Object[])">
-            <summary>
-            Executes a snippet of code. Pass in a variable number of parameters
-            (accessible via the parameters[0..n] array) and return an object parameter.
-            Code should include:  return (object) SomeValue as the last line or return null
-            </summary>
-            <param name="code">The code to execute</param>
-            <param name="parameters">The parameters to pass the code
-            You can reference parameters as @0, @1, @2 in code to map
-            to the parameter array items (ie. @1 instead of parameters[1])
-            </param>
-            <returns></returns>
+             <summary>
+             Executes a snippet of code. Pass in a variable number of parameters
+             (accessible via the parameters[0..n] array) and return an `object` value.
+            
+             Code should always return a result:
+             include:  `return (object) SomeValue` or `return null`
+             </summary>
+             <param name="code">The code to execute</param>
+             <param name="parameters">The parameters to pass the code
+             You can reference parameters as @0, @1, @2 in code to map
+             to the parameter array items (ie. @1 instead of parameters[1])
+             </param>
+             <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssembly(System.String,System.Reflection.Assembly,System.Object[])">
             <summary>
@@ -163,14 +195,16 @@
             <param name="parameters"></param>
             <returns></returns>
         </member>
-        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssemblyAsync(System.String,System.Reflection.Assembly,System.Object[])">
-            <summary>
-            Executes a method from an assembly that was previously compiled
-            </summary>
-            <param name="code"></param>
-            <param name="assembly"></param>
-            <param name="parameters"></param>
-            <returns></returns>
+        <member name="M:Westwind.Scripting.CSharpScriptExecution.ExecuteCodeFromAssemblyAsync``1(System.String,System.Reflection.Assembly,System.Object[])">
+             <summary>
+             Executes a method from an assembly that was previously compiled.
+            
+             Looks in cached assemblies
+             </summary>
+             <param name="code"></param>
+             <param name="assembly"></param>
+             <param name="parameters"></param>
+             <returns></returns>
         </member>
         <member name="M:Westwind.Scripting.CSharpScriptExecution.CompileClass(System.String)">
             <summary>

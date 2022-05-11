@@ -102,6 +102,33 @@ return result;
         }
 
 
+
+        [TestMethod]
+        public async Task EvaluateAsyncTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            // Full syntax
+            //object result = script.Evaluate("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
+
+            // Numbered parameter syntax is easier
+            object result = await script.EvaluateAsync($"await Task.Run(async ()=> {{ await Task.Delay(1); return (decimal) @0 + (decimal) @1; }})", 10M, 20M);
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+            Assert.IsTrue(result is decimal, script.ErrorMessage);
+        }
+
+
+
         [TestMethod]
         public void ExecuteCodeSnippetWithoutResult()
         {
@@ -113,6 +140,27 @@ return result;
 
             string result =
                 script.ExecuteCode("Console.WriteLine($\"Time is: {DateTime.Now}\");", null) as string;
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
+
+
+        [TestMethod]
+        public async Task ExecuteCodeSnippetWithoutResultAsync()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            string result =
+                await script.ExecuteCodeAsync("await Task.Run(async ()=> {{ await Task.Delay(1); Console.WriteLine($\"Time is: {DateTime.Now}\"); }});", null) as string;
 
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");

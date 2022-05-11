@@ -262,7 +262,7 @@ namespace Westwind.Scripting
         public Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
         {
             object result = ExecuteMethod(code, methodName, parameters);
-            if (result == null)
+            if (result == null || !(result is Task<TResult>))
                 return Task.FromResult(default(TResult));
 
             return  (Task<TResult>) result;
@@ -286,7 +286,10 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
-        /// Evaluates a single value or expression that returns a value.
+        /// Evaluates an awaitable expression that returns a value
+        ///
+        /// Example:
+        /// script.EvaluateAsync("await ActiveEditor.GetSelection()",model);
         /// </summary>
         /// <param name="code"></param>
         /// <param name="parameters"></param>
@@ -334,8 +337,10 @@ namespace Westwind.Scripting
 
         /// <summary>
         /// Executes a snippet of code. Pass in a variable number of parameters
-        /// (accessible via the parameters[0..n] array) and return an object parameter.
-        /// Code should include:  return (object) SomeValue as the last line or return null
+        /// (accessible via the parameters[0..n] array) and return an `object` value.
+        ///
+        /// Code should always return a result:
+        /// include:  `return (object) SomeValue` or `return null`
         /// </summary>
         /// <param name="code">The code to execute</param>
         /// <param name="parameters">The parameters to pass the code
@@ -349,7 +354,7 @@ namespace Westwind.Scripting
 
             code = ParseCodeNumberedParameters(code, parameters);
 
-            return ExecuteMethod("public async Task<object> ExecuteCode(params object[] parameters)" +
+            var objTask = ExecuteMethod("public async Task<object> ExecuteCode(params object[] parameters)" +
                                  Environment.NewLine +
                                  "{" +
                                  code +
@@ -359,7 +364,12 @@ namespace Westwind.Scripting
                                  "return null;" +
                                  Environment.NewLine +
                                  "}",
-                "ExecuteCode", parameters) as Task<object>;
+                "ExecuteCode", parameters);
+
+            if (objTask == null || !(objTask is Task<object>))
+                return Task.FromResult<object>(null);
+
+            return (Task<object>) objTask;
         }
 
 
