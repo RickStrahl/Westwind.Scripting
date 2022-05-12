@@ -33,6 +33,19 @@ There are also async versions of the Execute and Evaluate methods:
 * `EvaluateAsync()`
 * `ExecuteMethod<TResult>()`
 
+#### Small Script Parser
+There's also a small script parser that allows you run C# scripts as templates that expand into a string using *Handlebars* like syntax with full C# code.
+
+The Parser support C# syntax in script templates:
+
+* Expressions
+* Code Blocks with embedded script
+
+Syntax used is:
+
+* `{{ expression }}`
+* `{{% openBlock }}`    `{{% endblock }}`
+
 
 #### Supported features
 
@@ -262,6 +275,175 @@ string multiResult = math.Multiply(3 , 7);
 Assert.IsTrue(addResult.Contains(" = 30"));
 Assert.IsTrue(multiResult.Contains(" = 21"));
 ```
+
+## Template Script Execution
+This library also includes a `ScriptParser` class that is a very low impact string based template engine that can embed C# expressions and codeblocks using `{{ }}` *Handlebar* style syntax. The idea is to have an easy way to turn templates into executable code that can transform template text with code into a string result.
+
+An example usage is for the [Markdown Monster Editor](https://markdownmonster.west-wind.com/) which uses this library to provide text snippet expansion into Markdown (or other) documents. 
+
+### Syntax Examples
+A simple usage scenario might be to expand a DateTime stamp into a document as a snippet via a hotkey or explicitly
+
+```markdown
+---
+- created on {{ DateTime.Now.ToString("MMM dd, yyyy") }}
+```
+
+You can also use this to expand logic. For example, this is for a custom HTML expansion in a Markdown document by wrapping an existing selection into the template markup:
+
+```markdown
+<div class="warning-box">
+{{ await Model.ActiveEditor.GetSelection() }}
+</div>
+```
+
+You can also use code blocks:
+
+```markdown
+**Open Editor Documents**
+
+{{% foreach(var doc in Model.OpenDocuments) { }}
+* {{ doc.Filename }}
+{{% } }}
+
+```
+
+### Template Script Usage
+There are several ways you can use this functionality:
+
+* Parsing Templates to Code (as string)
+* Parsing and Manually Executing Templates 
+* Parsing and Automatically Executing Templates
+
+#### Template to Code Parsing
+You
+
+```csharp
+string script = @"
+	Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
+	
+	{{% for(int x=1; x<3; x++) { }}
+	   Hello World
+	{{% } }}
+	
+	DONE!
+";
+
+Console.WriteLine(script + "\n\n");
+
+// THIS: Parses the template above to executable code
+var code = ScriptParser.ParseScriptToCode(script);
+
+Assert.IsNotNull(code, "Code should not be null or empty");
+Console.WriteLine(code);
+```
+
+The code generated for the above looks like this:
+
+```cs
+var writer = new StringWriter();
+
+writer.Write("\r\n\tHello World. Date is: ");
+writer.Write(  DateTime.Now.ToString("d")  );
+writer.Write("!\r\n\t\r\n\t");
+ for(int x=1; x<3; x++) { 
+writer.Write("\r\n\t   Hello World\r\n\t");
+ } 
+writer.Write("\r\n\t\r\n\tDONE!\r\n");
+
+return writer.ToString();
+```
+
+### Execute the Code Manually
+The sections above have already shown you how you can execute code so, you can use either `ExecuteMethod()` or `ExecuteCode()` to execute this code. In addition there is also a `ScriptParser.ExecuteScript()` method that automates the following process.
+
+Manual execution can be beneficial if you're building a template that always uses the same input model. If that's the case you can explicit provide the type to the method and use `ExecuteMethod()` by explicitly defining the method signature.
+
+This is the approach used in Markdown Monster for example, because the model passed in is always the same type.
+
+```cs
+// use an explicit class model
+var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
+
+string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+
+Console.WriteLine(script );
+
+// Get the C# code
+var code = ScriptParser.ParseScriptToCode(script);
+
+Assert.IsNotNull(code, "Code should not be null or empty");
+
+Console.WriteLine(code);
+
+// Customize the Execution engine to add our type and namespace
+// so the compiler can use the reference directly!
+var exec = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true,
+};
+exec.AddDefaultReferencesAndNamespaces();
+exec.AddAssembly(typeof(ScriptParserTests));
+exec.AddNamespace("Westwind.Scripting.Test");
+
+// Create a method with a strongly typed signature to execute:
+var method = @"public string HelloWorldScript(TestModel Model) { " +
+             code + "}";
+
+// Execute - we have to be explicit about which method to call and the model 
+//           a concrete type
+var result = exec.ExecuteMethod(method, "HelloWorldScript", model);
+
+Assert.IsNotNull(result, exec.ErrorMessage);
+Console.WriteLine(result);
+```
+
+### Execute the Code Generically
+If the model is not fixed and the value passed is of a various types, you can use the generic version that using `dynamic` model typing to access the model in the template. This code is actually simpler as you can use the `ScriptParser.ExecuteScript()` method directly without explictly converting the code first.
+
+```cs
+var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+{{% await Task.Delay(100); }}
+
+And we're done with this!
+";
+
+Console.WriteLine(script);
+
+// Pass in script engine
+// so we can retrieve potential error information
+var exec = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true,
+};
+exec.AddDefaultReferencesAndNamespaces();
+
+// This is not needed here because we use `dynamic`
+//exec.AddAssembly(typeof(ScriptParserTests));
+//exec.AddNamespace("Westwind.Scripting.Test");
+
+string result = await ScriptParser.ExecuteScriptAsync(script, model,exec);
+
+Assert.IsNotNull(result, exec.ErrorMessage);
+Console.WriteLine(result);
+```
+
 
 ## Usage Notes
 
