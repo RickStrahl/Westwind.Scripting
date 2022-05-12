@@ -43,7 +43,8 @@ namespace Westwind.Scripting
         /// <param name="endDelim">code and expression end delimiter</param>
         /// <param name="codeIndicator">code block indicator that combines the start delim plus this character (ie. default of `%` combines to `{{%`)</param>
         /// <returns></returns>
-        public static string ParseScriptToCode(string scriptText, string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+        public static string ParseScriptToCode(string scriptText, string startDelim = "{{", string endDelim = "}}",
+            string codeIndicator = "%")
         {
             var atStart = scriptText.IndexOf(startDelim);
             if (atStart == -1)
@@ -79,7 +80,7 @@ var writer = new StringWriter();
                     {
                         // output the code
                         code.WriteLine(
-                            $"writer.Write({Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(literal.ToString(), true)});");
+                            $"writer.Write({EncodeStringLiteral(literal.ToString(), true)});");
                         literal.Clear();
                     }
 
@@ -87,7 +88,7 @@ var writer = new StringWriter();
                     {
                         // this should just be raw code - write out as is
                         expression = expression.Substring(1);
-                        code.WriteLine(expression);    // as is
+                        code.WriteLine(expression); // as is
                         // process Command (new line
                     }
                     else
@@ -103,10 +104,11 @@ var writer = new StringWriter();
                     if (atStart < 0)
                     {
                         // write out remaining literal text
-                        code.WriteLine($"writer.Write({Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(scriptText, true)});");
+                        code.WriteLine(
+                            $"writer.Write({EncodeStringLiteral(scriptText, true)});");
                     }
                 }
-                
+
                 code.WriteLine("return writer.ToString();");
 
                 return code.ToString();
@@ -132,7 +134,9 @@ var writer = new StringWriter();
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public static async Task<string> ExecuteScriptAsync(string script, object model, CSharpScriptExecution scriptEngine = null, string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+        public static async Task<string> ExecuteScriptAsync(string script, object model,
+            CSharpScriptExecution scriptEngine = null, string startDelim = "{{", string endDelim = "}}",
+            string codeIndicator = "%")
         {
             var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
             if (code == null)
@@ -147,7 +151,7 @@ var writer = new StringWriter();
                 scriptEngine.AddDefaultReferencesAndNamespaces();
             }
 
-            string result = await scriptEngine.ExecuteCodeAsync(code, model) as string; 
+            string result = await scriptEngine.ExecuteCodeAsync(code, model) as string;
 
             return result;
         }
@@ -169,7 +173,8 @@ var writer = new StringWriter();
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public static string ExecuteScript(string script, object model, CSharpScriptExecution scriptEngine = null, string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+        public static string ExecuteScript(string script, object model, CSharpScriptExecution scriptEngine = null,
+            string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
         {
             var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
             if (code == null)
@@ -188,5 +193,72 @@ var writer = new StringWriter();
 
             return result;
         }
+
+
+
+        /// <summary>
+        /// Encodes a string to be represented as a c style string literal. The format
+        /// is essentially a JSON string that is returned in double quotes.
+        /// 
+        /// The string returned includes outer quotes by default: 
+        /// "Hello \"Rick\"!\r\nRock on"
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
+        private static string EncodeStringLiteral(string plainString, bool addQuotes = true)
+        {
+            if (plainString == null)
+                return "null";
+
+            StringBuilder sb = new StringBuilder();
+            if (addQuotes)
+                sb.Append("\"");
+
+            foreach (char c in plainString)
+            {
+                switch (c)
+                {
+                    case '\"':
+                        sb.Append("\\\"");
+                        break;
+                    case '\\':
+                        sb.Append("\\\\");
+                        break;
+                    case '\b':
+                        sb.Append("\\b");
+                        break;
+                    case '\f':
+                        sb.Append("\\f");
+                        break;
+                    case '\n':
+                        sb.Append("\\n");
+                        break;
+                    case '\r':
+                        sb.Append("\\r");
+                        break;
+                    case '\t':
+                        sb.Append("\\t");
+                        break;
+                    default:
+                        int i = (int) c;
+                        if (i < 32)
+                        {
+                            sb.AppendFormat("\\u{0:X04}", i);
+                        }
+                        else
+                        {
+                            sb.Append(c);
+                        }
+
+                        break;
+                }
+            }
+
+            if (addQuotes)
+                sb.Append("\"");
+
+            return sb.ToString();
+        }
     }
 }
+
