@@ -450,6 +450,14 @@ Console.WriteLine(result);
   
 ## Change Log
 
+### **Version 4.5** 
+
+* **Add Support for Async Execution**  
+You can now use various `xxxAsync()` overloads to execute methods as `Task` based operations that can be `await`ed and can use `await` inside of scripts.
+
+* **Add ScriptParser for C# Template Scripting**  
+Added a very lightweight scripting engine that uses *Handlebars* style syntax for processing C# expressions and code blocks. Look at the `ScriptParser` class.
+
 ### **Version 0.3**  
 
 * **Updated to latest Microsoft CodeDom libraries**  
