@@ -696,8 +696,6 @@ namespace Westwind.Scripting
                 }
                 catch (Exception ex)
                 {
-                    // can blow up with some internally generated proxy assemblies
-                    Console.WriteLine(ex.Message + " " + assembly.ToString());
                 }
             }
         }
@@ -793,7 +791,7 @@ namespace Westwind.Scripting
             return (code).GetHashCode();
         }
 
-#endregion
+        #endregion
 
 
         ///// <summary>
@@ -804,5 +802,4 @@ namespace Westwind.Scripting
         //    Compiler?.Dispose();
         //}
     }
-
 }

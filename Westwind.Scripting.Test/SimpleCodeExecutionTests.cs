@@ -414,14 +414,28 @@ namespace MyApp
             {
                 SaveGeneratedCode = true
             };
+
+            // load runtime assemblies and common namespaces
             script.AddDefaultReferencesAndNamespaces();
 
+            // Add External Assembly (current folder)
             script.AddAssembly("Westwind.Utilities.dll");
-            script.AddNamespace("Westwind.Utilities");
+
+            // Add this assembly (ScriptTest type defined below used in script
+            script.AddAssembly(typeof(SimpleCodeExecutionTests));
+
+            // Alternately: Load all loaded assemblies
+            //script.AddLoadedAssemblies();
             
+            script.AddNamespace("Westwind.Utilities");
+
+            // Add this Namespace for class reference below
+            script.AddNamespace("Westwind.Scripting.Test");
+
 
             string code = @"
-string text = parameters[0] as string;
+// ing text = parameters[0] as string;
+string text = ScriptTest.Message;
 var newWorld = StringUtils.ReplaceString(text,""Hello"",""Goodbye cruel"", true);
 return newWorld;
 ";
@@ -435,6 +449,11 @@ return newWorld;
         }
     }
 
+
+    public static class ScriptTest
+    {
+        public static string Message { get; set; } = "Hello wonderful World!!!";
+    }
 
 
 }
