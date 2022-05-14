@@ -3,6 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Scripting;
+using Westwind.Utilities;
 
 namespace Westwind.Scripting.Test
 {
@@ -341,6 +342,7 @@ public string Add(int num1, int num2)
             string result = script.ExecuteMethod(code, "Add", 10, 5) as string;
 
             Console.WriteLine("Result: " + result);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }
 
@@ -402,6 +404,34 @@ namespace MyApp
 
             Assert.IsTrue(addResult.Contains(" = 30"));
             Assert.IsTrue(multiResult.Contains(" = 21"));
+        }
+
+
+        [TestMethod]
+        public void ExternalAssemblyTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            script.AddAssembly("Westwind.Utilities.dll");
+            script.AddNamespace("Westwind.Utilities");
+            
+
+            string code = @"
+string text = parameters[0] as string;
+var newWorld = StringUtils.ReplaceString(text,""Hello"",""Goodbye cruel"", true);
+return newWorld;
+";
+
+            string result = script.ExecuteCode(code, "Hello World!") as string;
+
+            Console.WriteLine(result + "\n");
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result,script.ErrorMessage);
+
         }
     }
 

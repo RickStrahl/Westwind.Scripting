@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 
 namespace Westwind.Scripting
 {
@@ -27,7 +28,7 @@ namespace Westwind.Scripting
     /// <summary>
     /// HashSet of References
     /// </summary>
-    public class ReferenceList : HashSet<string>
+    public class ReferenceList : HashSet<PortableExecutableReference>
     {
 
     }

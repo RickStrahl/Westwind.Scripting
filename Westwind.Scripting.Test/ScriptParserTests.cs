@@ -110,7 +110,10 @@ And we're done with this!
 
             var result = exec.ExecuteMethod(method, "HelloWorldScript", model);
 
+
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, exec.ErrorMessage);
+           
             
 
             Console.WriteLine(result);
