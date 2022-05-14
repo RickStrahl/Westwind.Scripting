@@ -511,7 +511,86 @@ namespace Westwind.Scripting
 
 #region Configuration Methods
 
-        /// <summary>
+/// <summary>
+/// Adds basic System assemblies and namespaces so basic
+/// operations work.
+/// </summary>
+/// <param name="dontAddLoadedAssemblies">
+/// In .NET Core it's recommended you add all host assemblies to ensure
+/// that any referenced assemblies are also accessible in your
+/// script code. Important as in Core there are many small libraries
+/// that comprise the core BCL/FCL.
+///
+/// For .NET Full this is not as important as most BCL/FCL features
+/// are automatically pulled by the System and System.Core default
+/// inclusions.
+///
+/// By default host assemblies are loaded.
+/// </param>
+public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = false)
+{
+    AddAssembly(typeof(ReferenceList));
+    AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+
+    var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
+
+    //var files = Directory.GetFiles(runtimePath, "*.dll");
+    //foreach (var file in files)
+    //{
+    //    AddAssembly(file);
+    //}
+
+
+    if (!dontLoadLoadedAssemblies)
+        AddLoadedAssemblies();
+            
+//#if NETFULL
+//            AddAssemblies(ReferenceAssemblies.Net472);
+//#endif
+//#if NETSTANDARD20
+//            AddAssemblies(ReferenceAssemblies.NetStandard20);
+//#endif
+//#if NET60
+//            AddAssemblies(ReferenceAssemblies.Net60);
+//#endif
+
+    AddNamespace("System");
+    AddNamespace("System.Text");
+    AddNamespace("System.Reflection");
+    AddNamespace("System.IO");
+    AddNamespace("System.Net");
+    AddNamespace("System.Text.RegularExpressions");
+    AddNamespace("System.Threading.Tasks");
+}
+
+/// <summary>
+/// Explicitly adds all referenced assemblies of the currently executing
+/// process.
+///
+/// Useful in .NET Core to ensure that all those little tiny system assemblies
+/// that comprise NetCoreApp.App etc. dependencies get pulled in.
+///
+/// For full framework this is less important as the base runtime pulls
+/// in all the system and system.core types.
+/// </summary>
+public void AddLoadedAssemblies()
+{
+    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+    foreach (var assembly in assemblies)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(assembly.Location)) continue;
+            AddAssembly(assembly.Location);
+        }
+        catch (Exception ex)
+        {
+        }
+    }
+}
+
+/// <summary>
         /// Adds an assembly from disk. Provide a full path if possible
         /// or a path that can resolve as part of the application folder
         /// or the runtime folder.
@@ -534,7 +613,7 @@ namespace Westwind.Scripting
             {
                 var reference = MetadataReference.CreateFromFile(file);
                 References.Add(reference);
-            }
+             }
             catch
             {
                 return false;
@@ -631,75 +710,7 @@ namespace Westwind.Scripting
             }
         }
 
-        /// <summary>
-        /// Adds basic System assemblies and namespaces so basic
-        /// operations work.
-        /// </summary>
-        /// <param name="dontAddLoadedAssemblies">
-        /// In .NET Core it's recommended you add all host assemblies to ensure
-        /// that any referenced assemblies are also accessible in your
-        /// script code. Important as in Core there are many small libraries
-        /// that comprise the core BCL/FCL.
-        ///
-        /// For .NET Full this is not as important as most BCL/FCL features
-        /// are automatically pulled by the System and System.Core default
-        /// inclusions.
-        ///
-        /// By default host assemblies are loaded.
-        /// </param>
-        public void AddDefaultReferencesAndNamespaces()
-        {
-            AddAssembly(typeof(ReferenceList));
-            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
-            
-
-#if NETFULL
-            AddAssemblies(ReferenceAssemblies.Net472);
-#endif
-#if NETSTANDARD20
-            AddAssemblies(ReferenceAssemblies.NetStandard20);
-#endif
-#if NET60
-            AddAssemblies(ReferenceAssemblies.Net60);
-#endif
-
-            AddNamespace("System");
-            AddNamespace("System.Text");
-            AddNamespace("System.Reflection");
-            AddNamespace("System.IO");
-            AddNamespace("System.Net");
-            AddNamespace("System.Text.RegularExpressions");
-            AddNamespace("System.Threading.Tasks");
-        }
-
-
-        /// <summary>
-        /// Explicitly adds all referenced assemblies of the currently executing
-        /// process.
-        ///
-        /// Useful in .NET Core to ensure that all those little tiny system assemblies
-        /// that comprise NetCoreApp.App etc. dependencies get pulled in.
-        ///
-        /// For full framework this is less important as the base runtime pulls
-        /// in all the system and system.core types.
-        /// </summary>
-        public void AddLoadedAssemblies()
-        {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            foreach (var assembly in assemblies)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(assembly.Location)) continue;
-                    AddAssembly(assembly.Location);
-                }
-                catch (Exception ex)
-                {
-                }
-            }
-        }
-#endregion
+        #endregion
 
 
 #region Errors
