@@ -205,7 +205,7 @@ var writer = new StringWriter();
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
-        private static string EncodeStringLiteral(string plainString, bool addQuotes = true)
+        public static string EncodeStringLiteral(string plainString, bool addQuotes = true)
         {
             if (plainString == null)
                 return "null";

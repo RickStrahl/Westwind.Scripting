@@ -30,15 +30,5 @@ namespace Westwind.Scripting
     public class ReferenceList : HashSet<string>
     {
 
-        /// <summary>
-        /// Assign the references to the Compiler Parameters
-        /// </summary>
-        /// <param name="parameters">Parameter options</param>
-        public void SetReferences(CompilerParameters parameters)
-        {
-            var refs = this.ToArray();
-            if (refs.Length > 0)
-                parameters.ReferencedAssemblies.AddRange(refs);
-        }
     }
 }

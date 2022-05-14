@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if false
+using System;
 using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -78,7 +79,7 @@ namespace Westwind.Scripting
         public bool ThrowExceptions { get; set; }
 
 
-        #region Error Handling Properties
+#region Error Handling Properties
 
         /// <summary>
         /// Error message if an error occurred during the invoked
@@ -95,10 +96,10 @@ namespace Westwind.Scripting
 
         public Exception LastException { get; set; }
 
-        #endregion
+#endregion
 
 
-        #region Internal Settings
+#region Internal Settings
 
 
         /// <summary>
@@ -112,9 +113,9 @@ namespace Westwind.Scripting
         /// </summary>
         public object ObjectInstance { get; set; }
 
-        #endregion
+#endregion
 
-        #region Compiler Settings
+#region Compiler Settings
 
         public ScriptCompilerModes CompilerMode { get; set; } = ScriptCompilerModes.Roslyn;
 
@@ -146,7 +147,9 @@ namespace Westwind.Scripting
                 if (_compiler == null)
                 {
 
+
                     if (CompilerMode == ScriptCompilerModes.Roslyn)
+                        
                         _compiler = new Microsoft.CodeDom.Providers.DotNetCompilerPlatform.CSharpCodeProvider();
                     else
                         _compiler = new Microsoft.CSharp.CSharpCodeProvider();
@@ -170,14 +173,14 @@ namespace Westwind.Scripting
         public CompilerResults CompilerResults { get; set; }
 
 
-        #endregion
+#endregion
 
         public CSharpScriptExecution()
         {
 
         }
 
-        #region Execution Methods
+#region Execution Methods
 
 
         /// <summary>
@@ -415,9 +418,9 @@ namespace Westwind.Scripting
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
-        #endregion
+#endregion
 
-        #region Compilation and Code Generation
+#region Compilation and Code Generation
 
         /// <summary>
         /// This method compiles a class and hands back a
@@ -553,9 +556,9 @@ namespace Westwind.Scripting
             return code;
         }
 
-        #endregion
+#endregion
 
-        #region Configuration Methods
+#region Configuration Methods
 
         /// <summary>
         /// Adds an assembly to be added to the compilation context.
@@ -638,10 +641,10 @@ namespace Westwind.Scripting
             AddNamespace("System.Threading.Tasks");
         }
 
-        #endregion
+#endregion
 
 
-        #region Errors
+#region Errors
         private void ClearErrors()
         {
             LastException = null;
@@ -659,9 +662,9 @@ namespace Westwind.Scripting
                 throw LastException;
         }
 
-        #endregion
+#endregion
 
-        #region Reflection Helpers
+#region Reflection Helpers
 
 
         /// <summary>
@@ -730,7 +733,7 @@ namespace Westwind.Scripting
             return (code + CompilerMode).GetHashCode();
         }
 
-        #endregion
+#endregion
 
 
         /// <summary>
@@ -765,3 +768,4 @@ namespace Westwind.Scripting
         Roslyn
     }
 }
+#endif

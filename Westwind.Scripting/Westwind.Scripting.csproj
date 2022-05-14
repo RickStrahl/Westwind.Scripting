@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>0.4.6.2</Version>
-    <TargetFramework>net472</TargetFramework>
+    <Version>0.5</Version>
+    <TargetFrameworks>net462;net60</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
     <Copyright>West Wind Technologies</Copyright>
@@ -36,13 +36,16 @@ For Full .NET Framework (NETFX) only.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform" Version="3.6.0" />
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
     <None Include="LICENSE.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
 

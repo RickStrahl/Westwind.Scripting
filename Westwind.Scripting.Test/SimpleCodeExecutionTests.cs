@@ -15,7 +15,6 @@ namespace Westwind.Scripting.Test
             var script = new CSharpScriptExecution()
             {
                 SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn,
                 GeneratedNamespace = "ScriptExecutionTesting",
                 GeneratedClassName = "MyTest"
             };
@@ -176,8 +175,7 @@ return result;
         {
             var script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn
+                SaveGeneratedCode = true
             };
             script.AddDefaultReferencesAndNamespaces();
 
@@ -213,8 +211,7 @@ public string HelloWorld(string name)
         {
             var script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn
+                SaveGeneratedCode = true
             };
             script.AddDefaultReferencesAndNamespaces();
 
@@ -256,7 +253,7 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
 
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
-            Console.WriteLine($"Error Message: " + script.ErrorMessage);
+            Console.WriteLine($"Error Message: {script.ErrorMessage}");
             Console.WriteLine(script.GeneratedClassCode);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
@@ -268,8 +265,7 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
         {
             var script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn
+                SaveGeneratedCode = true
             };
             script.AddDefaultReferencesAndNamespaces();
 
@@ -322,10 +318,11 @@ return result;
         {
             var script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Classic
+                SaveGeneratedCode = true
             };
             script.AddDefaultReferencesAndNamespaces();
+
+            Console.WriteLine(script.References.Count);
 
             //script.AddAssembly("Westwind.Utilities.dll");
             //script.AddNamespace("Westwind.Utilities");
@@ -357,7 +354,6 @@ public string Add(int num1, int num2)
             var script = new CSharpScriptExecution()
             {
                 SaveGeneratedCode = true,
-                CompilerMode = ScriptCompilerModes.Roslyn
             };
             script.AddDefaultReferencesAndNamespaces();
 

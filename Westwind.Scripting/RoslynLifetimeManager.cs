@@ -30,10 +30,7 @@ namespace Westwind.Scripting
             // warm up Roslyn in the background
             Task.Run(() =>
             {
-                var script = new CSharpScriptExecution()
-                {
-                    CompilerMode = ScriptCompilerModes.Roslyn
-                };
+                var script = new CSharpScriptExecution();
                 {
                     script.ExecuteCode("int x = 1; return x;", null);
                 }

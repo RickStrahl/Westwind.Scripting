@@ -3,7 +3,7 @@
     <ProjectGuid>{617ACA07-B233-471D-9F9B-A616807E5435}</ProjectGuid>
     <RootNamespace>Westwind.ScriptExecution.Test</RootNamespace>
     <AssemblyName>Westwind.ScriptExecution.Test</AssemblyName>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFrameworks>net472;net6.0</TargetFrameworks>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
@@ -24,7 +24,6 @@
   </PropertyGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform" Version="3.6.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
@@ -33,5 +32,8 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Westwind.Scripting\Westwind.Scripting.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 </Project>

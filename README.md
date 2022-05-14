@@ -54,6 +54,7 @@ Syntax used is:
 * Automatic Assembly Cleanup at shutdown
 * Use Roslyn or Classic C# compiler interchangeably
 * Display errors and source and line numbers
+* Roslyn Warmup and Shutdown 
 
 
 > #### Requires Roslyn Code Providers for your Project
@@ -66,7 +67,8 @@ Using the `CSharpScriptExecution` class is very easy. It works with code passed 
 
 You can add **Assembly References** and **Namespaces** via the `AddReferece()` and `AddNamespace()` methods.
 
-Script Execution is gated rather than throwing directly to provide 
+> #### @icon-info-circle Error Handling
+> Script Execution errors are internally handled rather than throwing directly to provide clean error management that is trappable and can potentially provided to a UI. Source code with failure lines is also optionally available to help find errors in the generated code output.
 
 ### Executing a Code Snippet
 A code snippet can be **any block of .NET code** that can be executed. You can pass any number of parameters to the snippets which are accessible via a `parameters` object array. You can optionally `return` a value by providing a `return` statement.
@@ -474,7 +476,7 @@ This library is published under **MIT license** terms.
 
 **Copyright &copy; 2014-2021 Rick Strahl, West Wind Technologies**
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
