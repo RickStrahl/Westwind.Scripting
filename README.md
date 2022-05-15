@@ -4,8 +4,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
-
-<small>for Full Framework .NET 4.72 and later - no .NET Core supprot currently</small>
+> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements!
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -14,11 +13,25 @@ Install-Package Westwind.Scripting
 ```
 </small>(currently you need to use the `-IncludePreRelease` flag)</small>
 
-The small `CSharpScriptExecution` class provides an easy way to compile and execute C# code on the fly, using source code provided at runtime. You can use Roslyn compilation for the latest C# features, or classic C# 5 features for no-dependency installations.
+The small `CSharpScriptExecution` class provides an easy way to compile and execute C# code on the fly, using source code provided at runtime. This library uses Roslyn to provide compilation services for string based code - and script templates.
 
 This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort and it provides basic assembly caching so repeated calls don't recompile code.
 
-This library provides:
+#### Features
+* Easy compiled C# code execution for:
+	* Code blocks 
+	* Full methods (method header/result value)
+	* Full classes (compile and load)
+	* Expressions  (evaluate expressions)
+* Assembly Caching so not every execution generates a new assembly
+* Ability to compile entire classes and execute them
+* Automatic Assembly Cleanup at shutdown
+* Use Roslyn or Classic C# compiler interchangeably
+* Display errors and source and line numbers
+* Roslyn Warmup and Shutdown 
+* Small Scripting Engine using Handlebar like C# syntax
+
+This library provides the follwing 'compile and run features':
 
 #### Execution Features
 
@@ -45,16 +58,6 @@ Syntax used is:
 
 * `{{ expression }}`
 * `{{% openBlock }}`    `{{% endblock }}`
-
-
-#### Supported features
-
-* Assembly Caching so not every execution generates a new assembly
-* Ability to compile entire classes and execute them
-* Automatic Assembly Cleanup at shutdown
-* Use Roslyn or Classic C# compiler interchangeably
-* Display errors and source and line numbers
-* Roslyn Warmup and Shutdown 
 
 
 > #### Requires Roslyn Code Providers for your Project
