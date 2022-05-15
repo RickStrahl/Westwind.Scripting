@@ -78,6 +78,52 @@ return result;
 
         }
 
+
+        [TestMethod]
+        public async Task ExecuteCodeAsyncWithResult()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                GeneratedNamespace = "ScriptExecutionTesting",
+                GeneratedClassName = "MyTest"
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            //script.AddAssembly("Westwind.Utilities.dll");
+            //script.AddNamespace("Westwind.Utilities");
+
+            var code = $@"
+// Check some C# 6+ lang features
+var s = new {{ name = ""Rick""}}; // anonymous types
+Console.WriteLine(s?.name);       // null propagation
+
+int num1 = (int)parameters[0];
+int num2 = (int)parameters[1];
+
+// Some Async code
+await Task.Delay(10);
+
+// string templates
+var result = $""{{num1}} + {{num2}} = {{(num1 + num2)}}"";
+Console.WriteLine(result);
+
+return result;
+";
+
+            string result = await script.ExecuteCodeAsync<string>(code, 10, 20) as string;
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+            Assert.IsTrue(result.Contains(" = 30"));
+
+
+        }
+
         [TestMethod]
         public void EvaluateTest()
         {
@@ -173,6 +219,40 @@ return result;
 
 
         [TestMethod]
+        public async Task ExecuteCodeWithTypedModelAsync()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            script.AddDefaultReferencesAndNamespaces();
+            script.AddAssembly(typeof(ScriptTest));
+            script.AddNamespace("Westwind.Scripting.Test");
+
+            var model = new ScriptTest() { Message = "Hello World " };
+
+
+            var code = @"
+await Task.Delay(10); // test async
+
+string result =  Model.Message +  "" "" + DateTime.Now.ToString();
+return result;
+";
+
+
+            string execResult = await script.ExecuteCodeAsync<string, ScriptTest>(code, model);
+
+            Console.WriteLine($"Result: {execResult}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
+
+
+
+        [TestMethod]
         public void ExecuteMethodTest()
         {
             var script = new CSharpScriptExecution()
@@ -221,6 +301,7 @@ public string HelloWorld(string name)
 #if NET6_0
             // Add .NET60 Runtime Assemblies - Nuget: Basic.References.Net60
             //script.AddAssemblies(Basic.Reference.Assemblies.Net60.All);  // need this because base lib doesn't load WebClient for example
+            script.AddAssembly("System.Net.WebClient.dll");
 #endif
 
             string code = $@"
@@ -433,7 +514,9 @@ namespace MyApp
 
             string code = @"
 // ing text = parameters[0] as string;
-string text = ScriptTest.Message;
+
+var scriptTest = new ScriptTest();
+string text = scriptTest.Message;
 var newWorld = StringUtils.ReplaceString(text,""Hello"",""Goodbye cruel"", true);
 return newWorld;
 ";
@@ -489,9 +572,9 @@ public class TestItem {
     }
 
 
-    public static class ScriptTest
+    public class ScriptTest
     {
-        public static string Message { get; set; } = "Hello wonderful World!!!";
+        public string Message { get; set; } = "Hello wonderful World!!!";
     }
 
 

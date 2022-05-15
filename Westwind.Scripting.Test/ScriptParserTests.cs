@@ -207,7 +207,7 @@ And we're done with this!
             //exec.AddAssembly(typeof(ScriptParserTests));
             //exec.AddNamespace("Westwind.Scripting.Test");
 
-            string result = await ScriptParser.ExecuteScriptAsync(script, model,exec);
+            string result = await ScriptParser.ExecuteScriptAsync(script, model, exec);
 
             Assert.IsNotNull(result, exec.ErrorMessage);
 

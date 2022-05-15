@@ -128,14 +128,19 @@ var writer = new StringWriter();
         /// along with the error message and the generated code.
         /// </summary>
         /// <param name="script">The template to execute that contains C# script</param>
-        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Model is exposed as `dynamic`
+        /// which allows passing any value without requiring type dependencies at compile time.
+        /// 
+        /// Pass null if you don't need to access values.</param>
         /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
         /// <param name="startDelim">Optional start delimiter for script tags</param>
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public static async Task<string> ExecuteScriptAsync(string script, object model,
-            CSharpScriptExecution scriptEngine = null, string startDelim = "{{", string endDelim = "}}",
+        public static async Task<string> ExecuteScriptAsync(string script,
+            object model = null,
+            CSharpScriptExecution scriptEngine = null,
+            string startDelim = "{{", string endDelim = "}}",
             string codeIndicator = "%")
         {
             var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);

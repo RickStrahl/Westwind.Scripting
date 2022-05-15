@@ -1,12 +1,15 @@
-﻿#if false
-using System;
+﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+
 
 namespace Westwind.Scripting
 {
@@ -22,14 +25,15 @@ namespace Westwind.Scripting
     /// Assemblies used for execution are cached and are reused for a given block
     /// of code provided.
     /// </summary>
-    public class CSharpScriptExecution : IDisposable
+    public class CSharpScriptExecution
     {
         /// <summary>
         /// Internal list of assemblies that are cached for snippets of the same type.
         /// List holds a list of cached assemblies with a hash code for the code executed as
         /// the key.
         /// </summary>
-        protected static ConcurrentDictionary<int, Assembly> CachedAssemblies = new ConcurrentDictionary<int, Assembly>();
+        protected static ConcurrentDictionary<int, Assembly> CachedAssemblies =
+            new ConcurrentDictionary<int, Assembly>();
 
         /// <summary>
         /// List of additional namespaces to add to the script
@@ -79,7 +83,7 @@ namespace Westwind.Scripting
         public bool ThrowExceptions { get; set; }
 
 
-#region Error Handling Properties
+        #region Error Handling Properties
 
         /// <summary>
         /// Error message if an error occurred during the invoked
@@ -96,10 +100,10 @@ namespace Westwind.Scripting
 
         public Exception LastException { get; set; }
 
-#endregion
+        #endregion
 
 
-#region Internal Settings
+        #region Internal Settings
 
 
         /// <summary>
@@ -113,74 +117,16 @@ namespace Westwind.Scripting
         /// </summary>
         public object ObjectInstance { get; set; }
 
-#endregion
-
-#region Compiler Settings
-
-        public ScriptCompilerModes CompilerMode { get; set; } = ScriptCompilerModes.Roslyn;
-
-        //protected ICodeCompiler Compiler
-        //{
-        //    get
-        //    {
-        //        if (_compiler == null)
-        //        {
-        //            //_compiler = new CSharpCodeProvider();
-        //            //if (CompilerMode == ScriptCompilerModes.Roslyn)
-        //            //    _compiler = new CSharpCodeProvider();
-        //            //    _compiler = CSharpCodeProvider.CreateProvider("CSharp") as CSharpCodeProvider;
-        //            //else
-        //            //    _compiler = new Microsoft.CSharp.CSharpCodeProvider();
-
-        //            _compiler = new CSharpCodeProvider().CreateCompiler(); // CodeDomProvider.CreateProvider("CSharp");
-        //        }
-        //        return _compiler;
-        //    }
-        //}
-        //private ICodeCompiler _compiler;
+        #endregion
 
 
-        protected CodeDomProvider Compiler
-        {
-            get
-            {
-                if (_compiler == null)
-                {
-
-
-                    if (CompilerMode == ScriptCompilerModes.Roslyn)
-                        
-                        _compiler = new Microsoft.CodeDom.Providers.DotNetCompilerPlatform.CSharpCodeProvider();
-                    else
-                        _compiler = new Microsoft.CSharp.CSharpCodeProvider();
-
-                    //_compiler = new CSharpCodeProvider().CreateCompiler(); // CodeDomProvider.CreateProvider("CSharp");
-                }
-                return _compiler;
-            }
-        }
-        private CodeDomProvider _compiler;
-
-        /// <summary>
-        /// Internal Compiler Parameters
-        /// </summary>
-        protected CompilerParameters Parameters { get; } = new CompilerParameters();
-
-        /// <summary>
-        /// Compiler Results from the Compilation Process with
-        /// detailed error information if an error occurs.
-        /// </summary>
-        public CompilerResults CompilerResults { get; set; }
-
-
-#endregion
 
         public CSharpScriptExecution()
         {
 
         }
 
-#region Execution Methods
+        #region Execution Methods
 
 
         /// <summary>
@@ -204,7 +150,7 @@ namespace Westwind.Scripting
         /// <param name="methodName">Name of the method to call.</param>
         /// <param name="parameters">any number of variable parameters</param>
         /// <returns></returns>
-        public object ExecuteMethod(string code,string methodName, params object[] parameters)
+        public object ExecuteMethod(string code, string methodName, params object[] parameters)
         {
             ClearErrors();
 
@@ -243,6 +189,37 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
+        /// Executes a complete method by wrapping it into a class, compiling
+        /// and instantiating the class and calling the method.
+        ///
+        /// Class should include full class header (instance type, return value and parameters)
+        ///
+        /// Example:
+        /// "public string HelloWorld(string name) { return name; }"
+        ///
+        /// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        ///
+        /// Async Method Note: Keep in mind that
+        /// the method is not cast to that result - it's cast to object so you
+        /// have to unwrap it:
+        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+        /// </summary>
+        /// <param name="code">One or more complete methods.</param>
+        /// <param name="methodName">Name of the method to call.</param>
+        /// <param name="parameters">any number of variable parameters</param>
+        /// <returns></returns>
+        public TResult ExecuteMethod<TResult>(string code, string methodName, params object[] parameters)
+        {
+            var result = ExecuteMethod(code, methodName,  parameters);
+
+            if (result is TResult)
+                return (TResult)result;
+
+            return default;
+        }
+
+        /// <summary>
         /// Executes a complete async method by wrapping it into a class, compiling
         /// and instantiating the class and calling the method and unwrapping the
         /// task result.
@@ -262,13 +239,18 @@ namespace Westwind.Scripting
         /// <param name="parameters">any number of variable parameters</param>
         /// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
         /// <returns>result value of the method</returns>
-        public Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
+        public async Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
         {
-            object result = ExecuteMethod(code, methodName, parameters);
-            if (result == null || !(result is Task<TResult>))
-                return Task.FromResult(default(TResult));
+            // this result will be a task of object (async method called)
+            var taskResult = ExecuteMethod(code, methodName, parameters) as Task<TResult>;
 
-            return  (Task<TResult>) result;
+            
+            if (taskResult == null)
+                return default;
+
+            var result = await taskResult;
+
+            return (TResult) result;
         }
 
         /// <summary>
@@ -284,8 +266,25 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(code))
                 throw new ArgumentException("Can't evaluate empty code. Please pass code.");
 
-            code = ParseCodeNumberedParameters(code, parameters);
+            code = ParseCodeWithParametersArray(code, parameters);
             return ExecuteCode("return " + code + ";", parameters);
+        }
+
+        /// <summary>
+        /// Evaluates a single value or expression that returns a value.
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public TResult Evaluate<TResult>(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            if (string.IsNullOrEmpty(code))
+                throw new ArgumentException("Can't evaluate empty code. Please pass code.");
+
+            code = ParseCodeWithParametersArray(code, parameters);
+            return ExecuteCode<TResult>("return " + code + ";", parameters);
         }
 
         /// <summary>
@@ -294,8 +293,8 @@ namespace Westwind.Scripting
         /// Example:
         /// script.EvaluateAsync("await ActiveEditor.GetSelection()",model);
         /// </summary>
-        /// <param name="code"></param>
-        /// <param name="parameters"></param>
+        /// <param name="code">Code to execute</param>
+        /// <param name="parameters">Optional parameters to pass. Access as `object parameters[]` in expression</param>
         /// <returns></returns>
         public Task<object> EvaluateAsync(string code, params object[] parameters)
         {
@@ -304,9 +303,31 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(code))
                 throw new ArgumentException("Can't evaluate empty code. Please pass code.");
 
-            code = ParseCodeNumberedParameters(code, parameters);
+            code = ParseCodeWithParametersArray(code, parameters);
             return ExecuteCodeAsync("return " + code + ";", parameters);
         }
+
+
+        /// <summary>
+        /// Evaluates an awaitable expression that returns a value
+        ///
+        /// Example:
+        /// script.EvaluateAsync<string></string>("await ActiveEditor.GetSelection()",model);
+        /// </summary>
+        /// <param name="code">code to execute</param>
+        /// <param name="parameters">Optional parameters to pass. Access as `object parameters[]` in expression</param>
+        /// <returns></returns>
+        public Task<TResult> EvaluateAsync<TResult>(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            if (string.IsNullOrEmpty(code))
+                throw new ArgumentException("Can't evaluate empty code. Please pass code.");
+
+            code = ParseCodeWithParametersArray(code, parameters);
+            return ExecuteCodeAsync<TResult>("return " + code + ";", parameters);
+        }
+
 
         /// <summary>
         /// Executes a snippet of code. Pass in a variable number of parameters
@@ -323,7 +344,7 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            code = ParseCodeNumberedParameters(code, parameters);
+            code = ParseCodeWithParametersArray(code, parameters);
 
             return ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
                                  Environment.NewLine +
@@ -337,6 +358,39 @@ namespace Westwind.Scripting
                                  "}",
                 "ExecuteCode", parameters);
         }
+
+        /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an object parameter.
+        /// Code should include:  return (object) SomeValue as the last line or return null
+        /// </summary>
+        /// <param name="code">The code to execute</param>
+        /// <param name="parameters">The parameters to pass the code
+        /// You can reference parameters as @0, @1, @2 in code to map
+        /// to the parameter array items (ie. @1 instead of parameters[1])
+        /// </param>
+        /// <returns>Result cast to a type you specify</returns>
+        public TResult ExecuteCode<TResult>(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            code = ParseCodeWithParametersArray(code, parameters);
+
+            var result = ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
+                                 Environment.NewLine +
+                                 "{" +
+                                 code +
+                                 Environment.NewLine +
+                                 // force a return value - compiler will optimize this out
+                                 // if the code provides a return
+                                 "return null;" +
+                                 Environment.NewLine +
+                                 "}",
+                "ExecuteCode", parameters);
+
+            return (TResult)result;
+        }
+
 
         /// <summary>
         /// Executes a snippet of code. Pass in a variable number of parameters
@@ -355,18 +409,18 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            code = ParseCodeNumberedParameters(code, parameters);
+            code = ParseCodeWithParametersArray(code, parameters);
 
             var objTask = ExecuteMethod("public async Task<object> ExecuteCode(params object[] parameters)" +
-                                 Environment.NewLine +
-                                 "{" +
-                                 code +
-                                 Environment.NewLine +
-                                 // force a return value - compiler will optimize this out
-                                 // if the code provides a return
-                                 "return null;" +
-                                 Environment.NewLine +
-                                 "}",
+                                        Environment.NewLine +
+                                        "{" +
+                                        code +
+                                        Environment.NewLine +
+                                        // force a return value - compiler will optimize this out
+                                        // if the code provides a return
+                                        "return null;" +
+                                        Environment.NewLine +
+                                        "}",
                 "ExecuteCode", parameters);
 
             if (objTask == null || !(objTask is Task<object>))
@@ -375,6 +429,77 @@ namespace Westwind.Scripting
             return (Task<object>) objTask;
         }
 
+
+        /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an `object` value.
+        ///
+        /// Code should always return a result:
+        /// include:  `return (object) SomeValue` or `return null`
+        /// </summary>
+        /// <param name="code">The code to execute</param>
+        /// <param name="parameters">The parameters to pass the code
+        /// You can reference parameters as @0, @1, @2 in code to map
+        /// to the parameter array items (ie. @1 instead of parameters[1])
+        /// </param>
+        /// <returns></returns>
+        public Task<TResult> ExecuteCodeAsync<TResult>(string code, params object[] parameters)
+        {
+            ClearErrors();
+
+            code = ParseCodeWithParametersArray(code, parameters);
+
+            var typeName = typeof(TResult).FullName;
+
+            var objTask = ExecuteMethod($"public async Task<{typeName}> ExecuteCode(params object[] parameters)" +
+                                        Environment.NewLine +
+                                        "{" +
+                                        code +
+                                        Environment.NewLine +
+                                        // force a return value - compiler will optimize this out
+                                        // if the code provides a return
+                                        "return null;" +
+                                        Environment.NewLine +
+                                        "}",
+                "ExecuteCode", parameters);
+
+            if (objTask == null || !(objTask is Task<TResult>))
+                return Task.FromResult<TResult>(default);
+
+            return (Task<TResult>) objTask;
+        }
+
+        /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an `object` value.
+        ///
+        /// Code should always return a result:
+        /// include:  `return (object) SomeValue` or `return null`
+        /// </summary>
+        /// <param name="code">The code to execute</param>
+        /// <param name="model">an optional model to pass to the code which is
+        /// then accessible as a `Model` property in the code.
+        /// </param>
+        /// <returns></returns>
+        public Task<TResult> ExecuteCodeAsync<TResult,TModelType >(string code, TModelType model)
+        {
+            ClearErrors();
+
+            var typeName = typeof(TModelType).FullName;
+
+            var res = ExecuteMethodAsync<TResult>($"public async Task<object> ExecuteCode({typeName} Model)" +
+                                        Environment.NewLine +
+                                        "{" +
+                                        code +
+                                        Environment.NewLine +
+                                        // force a return value - compiler will optimize this out
+                                        // if the code provides a return
+                                        "return null;" +
+                                        Environment.NewLine +
+                                        "}",
+                "ExecuteCode", model);
+            return res;
+        }
 
         /// <summary>
         /// Executes a method from an assembly that was previously compiled
@@ -405,7 +530,8 @@ namespace Westwind.Scripting
         /// <param name="assembly"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public Task<TResult> ExecuteCodeFromAssemblyAsync<TResult>(string code, Assembly assembly, params object[] parameters)
+        public Task<TResult> ExecuteCodeFromAssemblyAsync<TResult>(string code, Assembly assembly,
+            params object[] parameters)
         {
             ClearErrors();
 
@@ -418,9 +544,53 @@ namespace Westwind.Scripting
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
-#endregion
+        #endregion
 
-#region Compilation and Code Generation
+        #region Compilation and Code Generation
+
+        /// <summary>
+        /// Compiles and runs the source code for a complete assembly.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        public bool CompileAssembly(string source)
+        {
+            ClearErrors();
+
+            var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
+
+            var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
+                .WithOptions(
+                    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithReferences(References)
+                .AddSyntaxTrees(tree);
+
+            if (SaveGeneratedCode)
+                GeneratedClassCode = tree.ToString();
+
+            using (var codeStream = new MemoryStream())
+            {
+                var compilationResult = compilation.Emit(codeStream);
+
+                // Compilation Error handling
+                if (!compilationResult.Success)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (var diag in compilationResult.Diagnostics)
+                    {
+                        sb.AppendLine(diag.ToString());
+                    }
+
+                    ErrorMessage = sb.ToString();
+                    SetErrors(new ApplicationException(ErrorMessage));
+                    return false;
+                }
+
+                Assembly = Assembly.Load(codeStream.ToArray());
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// This method compiles a class and hands back a
@@ -432,7 +602,7 @@ namespace Westwind.Scripting
         public dynamic CompileClass(string code)
         {
             var type = CompileClassToType(code);
-            if ( type == null)
+            if (type == null)
                 return null;
 
             // Figure out the class name
@@ -468,49 +638,7 @@ namespace Westwind.Scripting
             }
 
             // Figure out the class name
-            return  Assembly.ExportedTypes.First();
-        }
-
-        /// <summary>
-        /// Compiles and runs the source code for a complete assembly.
-        /// </summary>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        public bool CompileAssembly(string source)
-        {
-            ClearErrors();
-
-            if (OutputAssembly == null)
-                Parameters.GenerateInMemory = true;
-            else
-            {
-                Parameters.OutputAssembly = OutputAssembly;
-                Parameters.GenerateInMemory = false;
-            }
-
-            foreach (var assembly in References)
-            {
-                Parameters.ReferencedAssemblies.Add(assembly);
-            }
-
-            CompilerResults = Compiler.CompileAssemblyFromSource(Parameters, source);
-
-            if (CompilerResults.Errors.HasErrors)
-            {
-                // *** Create Error String
-                ErrorMessage = CompilerResults.Errors.Count + " Errors:";
-                for (int x = 0; x < CompilerResults.Errors.Count; x++)
-                    ErrorMessage = ErrorMessage + "\r\nLine: " + CompilerResults.Errors[x].Line + " - " +
-                                   CompilerResults.Errors[x].ErrorText;
-
-                SetErrors(new ApplicationException(ErrorMessage));
-
-                return false;
-            }
-
-            Assembly = CompilerResults.CompiledAssembly;
-
-            return true;
+            return Assembly.ExportedTypes.First();
         }
 
         private StringBuilder GenerateClass(string code)
@@ -544,7 +672,7 @@ namespace Westwind.Scripting
             return sb;
         }
 
-        private string ParseCodeNumberedParameters(string code, object[] parameters)
+        private string ParseCodeWithParametersArray(string code, object[] parameters)
         {
             if (parameters != null)
             {
@@ -553,6 +681,7 @@ namespace Westwind.Scripting
                     code = code.Replace("@" + i, "parameters[" + i + "]");
                 }
             }
+
             return code;
         }
 
@@ -560,30 +689,136 @@ namespace Westwind.Scripting
 
 #region Configuration Methods
 
+/// <summary>
+/// Adds basic System assemblies and namespaces so basic
+/// operations work.
+/// </summary>
+/// <param name="dontAddLoadedAssemblies">
+/// In .NET Core it's recommended you add all host assemblies to ensure
+/// that any referenced assemblies are also accessible in your
+/// script code. Important as in Core there are many small libraries
+/// that comprise the core BCL/FCL.
+///
+/// For .NET Full this is not as important as most BCL/FCL features
+/// are automatically pulled by the System and System.Core default
+/// inclusions.
+///
+/// By default host assemblies are loaded.
+/// </param>
+public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = false)
+{
+    AddAssembly(typeof(ReferenceList));
+    AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+
+    var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
+
+    //var files = Directory.GetFiles(runtimePath, "*.dll");
+    //foreach (var file in files)
+    //{
+    //    AddAssembly(file);
+    //}
+
+
+    if (!dontLoadLoadedAssemblies)
+        AddLoadedAssemblies();
+
+
+    AddNamespaces("System",
+        "System.Text",
+        "System.Reflection",
+        "System.IO",
+        "System.Net",
+        "System.Collections",
+        "System.Collections.Generic",
+        "System.Collections.Concurrent",
+        "System.Text.RegularExpressions",
+        "System.Threading.Tasks",
+        "System.Linq");
+
+    }
+
         /// <summary>
-        /// Adds an assembly to be added to the compilation context.
+        /// Explicitly adds all referenced assemblies of the currently executing
+        /// process.
+        ///
+        /// Useful in .NET Core to ensure that all those little tiny system assemblies
+        /// that comprise NetCoreApp.App etc. dependencies get pulled in.
+        ///
+        /// For full framework this is less important as the base runtime pulls
+        /// in all the system and system.core types.
+        /// </summary>
+        public void AddLoadedAssemblies()
+{
+    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+    foreach (var assembly in assemblies)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(assembly.Location)) continue;
+            AddAssembly(assembly.Location);
+        }
+        catch 
+        {
+        }
+    }
+}
+
+/// <summary>
+        /// Adds an assembly from disk. Provide a full path if possible
+        /// or a path that can resolve as part of the application folder
+        /// or the runtime folder.
         /// </summary>
         /// <param name="assemblyDll">assembly DLL name. Path is required if not in startup or .NET assembly folder</param>
-        public void AddAssembly(string assemblyDll)
+        public bool AddAssembly(string assemblyDll)
         {
-            if (string.IsNullOrEmpty(assemblyDll))
+            if (string.IsNullOrEmpty(assemblyDll)) return false;
+
+            var file = Path.GetFullPath(assemblyDll);
+            
+            if (!File.Exists(file))
             {
-                References.Clear();
-                return;
+                // check framework or dedicated runtime app folder
+                var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
+                file = Path.Combine(path, assemblyDll);
+                if (!File.Exists(file))
+                    return false;
             }
 
-            References.Add(assemblyDll);
+            try
+            {
+                var reference = MetadataReference.CreateFromFile(file);
+                References.Add(reference);
+             }
+            catch
+            {
+                return false;
+            }
+
+            return true;
         }
+
 
         /// <summary>
-        /// Adds an assembly reference from an existing type
+        /// Add several reference assemblies in batch.
+        ///
+        /// Useful for use with  Basic.ReferenceAssemblies from Nuget
+        /// to load framework dependencies in Core
+        ///
+        /// Example:
+        /// ReferenceAssemblies.Net60
+        /// ReferenceAssemblies.NetStandard20 
         /// </summary>
-        /// <param name="type">any .NET type that can be referenced in the current application</param>
-        public void AddAssembly(Type type)
+        /// <param name="references">MetaDataReference or PortableExecutiveReference</param>
+        public void AddAssemblies(IEnumerable<PortableExecutableReference> references)
         {
-            AddAssembly(type.Assembly.Location);
+            foreach(var reference in references)
+            {
+                References.Add(reference);
+            }
         }
 
+        
         /// <summary>
         /// Adds a list of assemblies to the References
         /// collection.
@@ -591,9 +826,37 @@ namespace Westwind.Scripting
         /// <param name="assemblies"></param>
         public void AddAssemblies(params string[] assemblies)
         {
-            foreach (var assembly in assemblies)
-                AddAssembly(assembly);
+            foreach (var file in assemblies)
+                AddAssembly(file);
         }
+
+
+        public bool AddAssembly(PortableExecutableReference reference)
+        {
+            References.Add(reference);
+            return true;
+        }
+
+        /// <summary>
+            /// Adds an assembly reference from an existing type
+            /// </summary>
+            /// <param name="type">any .NET type that can be referenced in the current application</param>
+            public bool AddAssembly(Type type)
+        {
+            try
+            {
+                var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
+                References.Add(systemReference);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+  
+
 
         /// <summary>
         /// Adds a namespace to the referenced namespaces
@@ -623,25 +886,7 @@ namespace Westwind.Scripting
             }
         }
 
-        /// <summary>
-        /// Adds basic System assemblies and namespaces so basic
-        /// operations work.
-        /// </summary>
-        public void AddDefaultReferencesAndNamespaces()
-        {
-            AddAssembly("System.dll");
-            AddAssembly("System.Core.dll");
-            AddAssembly("Microsoft.CSharp.dll");
-
-            AddNamespace("System");
-            AddNamespace("System.Text");
-            AddNamespace("System.Reflection");
-            AddNamespace("System.IO");
-            AddNamespace("System.Net");
-            AddNamespace("System.Threading.Tasks");
-        }
-
-#endregion
+        #endregion
 
 
 #region Errors
@@ -730,42 +975,18 @@ namespace Westwind.Scripting
         /// <returns></returns>
         private int GenerateHashCode(string code)
         {
-            return (code + CompilerMode).GetHashCode();
+            return (code).GetHashCode();
         }
 
-#endregion
+        #endregion
 
 
-        /// <summary>
-        ///  cleans up the compiler
-        /// </summary>
-        public void Dispose()
-        {
-            Compiler?.Dispose();
-        }
-    }
-
-    /// <summary>
-    ///
-    /// </summary>
-    public enum ScriptCompilerModes
-    {
-        /// <summary>
-        /// Uses the built-in C# 5.0 compiler. Using this compiler
-        /// requires no additional assemblies
-        /// </summary>
-        Classic,
-
-        /// <summary>
-        /// Uses the Roslyn Compiler. When this flag is set make
-        /// sure that the host project includes this package:
-        ///
-        /// Microsoft.CodeDom.Providers.DotNetCompilerPlatform
-        ///
-        /// This adds a the compiler binaries to your application
-        /// so be aware of the overhead.
-        /// </summary>
-        Roslyn
+        ///// <summary>
+        /////  cleans up the compiler
+        ///// </summary>
+        //public void Dispose()
+        //{
+        //    Compiler?.Dispose();
+        //}
     }
 }
-#endif

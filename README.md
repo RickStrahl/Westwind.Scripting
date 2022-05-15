@@ -13,25 +13,26 @@ Install-Package Westwind.Scripting
 ```
 </small>(currently you need to use the `-IncludePreRelease` flag)</small>
 
-The small `CSharpScriptExecution` class provides an easy way to compile and execute C# code on the fly, using source code provided at runtime. This library uses Roslyn to provide compilation services for string based code - and script templates.
+The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
 
-This class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort and it provides basic assembly caching so repeated calls don't recompile code.
+This execution class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
 
 #### Features
-* Easy compiled C# code execution for:
+* Easy C# code compilation and execution for:
 	* Code blocks 
 	* Full methods (method header/result value)
 	* Full classes (compile and load)
 	* Expressions  (evaluate expressions)
-* Assembly Caching so not every execution generates a new assembly
-* Ability to compile entire classes and execute them
+* Caching of already compiled code
+* Ability to compile entire classes and load, execute them
 * Automatic Assembly Cleanup at shutdown
-* Use Roslyn or Classic C# compiler interchangeably
-* Display errors and source and line numbers
+* Error Handling
+	* Intercept compilation and execution errors
+	* Detailed compiler error messages
+	* Access to compiled output w/ line numbers
 * Roslyn Warmup and Shutdown 
-* Small Scripting Engine using Handlebar like C# syntax
+* Template Scripting Engine using Handlebars-like with C# syntax
 
-This library provides the follwing 'compile and run features':
 
 #### Execution Features
 
@@ -49,7 +50,7 @@ There are also async versions of the Execute and Evaluate methods:
 #### Small Script Parser
 There's also a small script parser that allows you run C# scripts as templates that expand into a string using *Handlebars* like syntax with full C# code.
 
-The Parser support C# syntax in script templates:
+The Parser supports C# syntax in script templates:
 
 * Expressions
 * Code Blocks with embedded script
@@ -59,6 +60,21 @@ Syntax used is:
 * `{{ expression }}`
 * `{{% openBlock }}`    `{{% endblock }}`
 
+
+**Example Template**
+
+```text
+Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
+
+{{% for(int x=1; x<3; x++) { }}
+{{ x }}. Hello World 
+{{% } }}
+
+You can also pass in a single model parameter and access it here:
+
+Company: {{ Model.Company }}
+Expires: {{ Model.Expiration.ToString(""d"") }}
+```
 
 > #### Requires Roslyn Code Providers for your Project
 > If you want to use Roslyn compilation for the latest C# features you have to make sure you add the `Microsoft.CodeDom.CompilerServices` NuGet Package to your application's root project to provide the required compiler binaries for your application.
