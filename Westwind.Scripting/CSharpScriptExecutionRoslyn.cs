@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Basic.Reference.Assemblies;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -543,37 +542,33 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 
     if (!dontLoadLoadedAssemblies)
         AddLoadedAssemblies();
-            
-//#if NETFULL
-//            AddAssemblies(ReferenceAssemblies.Net472);
-//#endif
-//#if NETSTANDARD20
-//            AddAssemblies(ReferenceAssemblies.NetStandard20);
-//#endif
-//#if NET60
-//            AddAssemblies(ReferenceAssemblies.Net60);
-//#endif
 
-    AddNamespace("System");
-    AddNamespace("System.Text");
-    AddNamespace("System.Reflection");
-    AddNamespace("System.IO");
-    AddNamespace("System.Net");
-    AddNamespace("System.Text.RegularExpressions");
-    AddNamespace("System.Threading.Tasks");
-}
 
-/// <summary>
-/// Explicitly adds all referenced assemblies of the currently executing
-/// process.
-///
-/// Useful in .NET Core to ensure that all those little tiny system assemblies
-/// that comprise NetCoreApp.App etc. dependencies get pulled in.
-///
-/// For full framework this is less important as the base runtime pulls
-/// in all the system and system.core types.
-/// </summary>
-public void AddLoadedAssemblies()
+    AddNamespaces("System",
+        "System.Text",
+        "System.Reflection",
+        "System.IO",
+        "System.Net",
+        "System.Collections",
+        "System.Collections.Generic",
+        "System.Collections.Concurrent",
+        "System.Text.RegularExpressions",
+        "System.Threading.Tasks",
+        "System.Linq");
+
+    }
+
+        /// <summary>
+        /// Explicitly adds all referenced assemblies of the currently executing
+        /// process.
+        ///
+        /// Useful in .NET Core to ensure that all those little tiny system assemblies
+        /// that comprise NetCoreApp.App etc. dependencies get pulled in.
+        ///
+        /// For full framework this is less important as the base runtime pulls
+        /// in all the system and system.core types.
+        /// </summary>
+        public void AddLoadedAssemblies()
 {
     var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
@@ -624,7 +619,7 @@ public void AddLoadedAssemblies()
 
 
         /// <summary>
-        /// Add several assemblies in batch.
+        /// Add several reference assemblies in batch.
         ///
         /// Useful for use with  Basic.ReferenceAssemblies from Nuget
         /// to load framework dependencies in Core

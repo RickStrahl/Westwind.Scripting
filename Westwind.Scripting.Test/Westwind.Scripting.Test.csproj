@@ -3,7 +3,7 @@
     <ProjectGuid>{617ACA07-B233-471D-9F9B-A616807E5435}</ProjectGuid>
     <RootNamespace>Westwind.ScriptExecution.Test</RootNamespace>
     <AssemblyName>Westwind.ScriptExecution.Test</AssemblyName>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net60</TargetFrameworks>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
@@ -11,7 +11,7 @@
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyTitle>Westwind.ScriptExecution.Test</AssemblyTitle>
     <Product>Westwind.ScriptExecution.Test</Product>
-    <Copyright>Copyright ©  2019</Copyright>
+    <Copyright>Copyright © 2019</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,11 +30,9 @@
     <PackageReference Include="MSTest.TestAdapter" Version="2.2.10" />
     <PackageReference Include="MSTest.TestFramework" Version="2.2.10" />
     <PackageReference Include="Westwind.Utilities" Version="3.1.9" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net60" Version="1.2.4" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Westwind.Scripting\Westwind.Scripting.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 </Project>

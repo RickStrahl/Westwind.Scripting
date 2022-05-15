@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
+using Basic.Reference.Assemblies;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Scripting;
 using Westwind.Utilities;
@@ -214,7 +215,13 @@ public string HelloWorld(string name)
             {
                 SaveGeneratedCode = true
             };
-            script.AddDefaultReferencesAndNamespaces();
+
+            // lets not load assembly refs from host app in 6.0 but load explicitly below
+            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
+#if NET6_0
+            // Add .NET60 Runtime Assemblies - Nuget: Basic.References.Net60
+            //script.AddAssemblies(Basic.Reference.Assemblies.Net60.All);  // need this because base lib doesn't load WebClient for example
+#endif
 
             string code = $@"
 public async Task<string> GetJsonFromAlbumViewer(int id)
@@ -236,22 +243,13 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
             try
             {
                 result = await script.ExecuteMethodAsync<string>(code, "GetJsonFromAlbumViewer", 37);
-
-                // var taskResult = script.ExecuteMethod(code, "GetJsonFromAlbumViewer", 37) as Task<string>;
-                // Console.WriteLine("Task: " + taskResult ?? "null");
-                //
-                // object objResult = await taskResult;
-                //result = objResult as string;
-
-                Console.WriteLine("done");
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 return;
             }
-            Console.WriteLine("done");
-
+            
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
             Console.WriteLine($"Error Message: {script.ErrorMessage}");
@@ -416,8 +414,8 @@ namespace MyApp
             };
 
             // load runtime assemblies and common namespaces
-            script.AddDefaultReferencesAndNamespaces();
-
+            script.AddDefaultReferencesAndNamespaces(false);
+            
             // Add External Assembly (current folder)
             script.AddAssembly("Westwind.Utilities.dll");
 
@@ -445,6 +443,47 @@ return newWorld;
             Console.WriteLine(result + "\n");
             Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result,script.ErrorMessage);
+
+        }
+
+        [TestMethod]
+        public void ExecuteMethodWithLinqAndExtraClassTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true
+            };
+
+            // load runtime assemblies and common namespaces
+            script.AddDefaultReferencesAndNamespaces();
+
+            
+
+            string code = @"public string LinqTest(string search)
+{
+    var list = new List<TestItem>()
+    {
+        new TestItem { Name=""Rick"" },
+        new TestItem { Name=""Brian"" },
+        new TestItem { Name=""James"" }
+    };
+
+    var match = list.FirstOrDefault( (ti) =>  ti.Name == search );
+    return match.Name;
+}
+
+// Embedded Class 
+public class TestItem {
+   public string Name {get; set; }
+}
+
+";
+
+            string result = script.ExecuteMethod(code, "LinqTest","Brian") as string;
+
+            Console.WriteLine(result + "\n");
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, script.ErrorMessage);
 
         }
     }
