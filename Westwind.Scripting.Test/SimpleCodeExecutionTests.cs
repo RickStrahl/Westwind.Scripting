@@ -140,7 +140,6 @@ return result;
             Console.WriteLine(script.GeneratedClassCode);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
-            Assert.IsTrue(result is decimal, script.ErrorMessage);
         }
 
 
@@ -167,7 +166,6 @@ return result;
             Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
-            Assert.IsTrue(result is decimal, script.ErrorMessage);
         }
 
 
