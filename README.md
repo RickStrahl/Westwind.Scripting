@@ -31,12 +31,8 @@ This execution class makes is very easy to integrate simple scripting or text me
 	* Intercept compilation and execution errors
 	* Detailed compiler error messages
 	* Access to compiled output w/ line numbers
-* Roslyn Warmup and Shutdown 
+* Roslyn Warmup 
 * Template Scripting Engine using Handlebars-like with C# syntax
-
-
-> #### Important: Large Runtime Dependencies on Roslyn Libraries
-> Please be aware that this library has a dependency on `Microsoft.CodeAnalysis` which contains the Roslyn compiler components used by this component. This dependency incurs a 10+mb runtime dependency and a host of support files that are added to your project output.
 
 ### Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
@@ -67,6 +63,9 @@ The Expansion syntax used is:
 
 * `{{ expression }}`
 * `{{% openBlock }}` other text or expressions   `{{% endblock }}`
+
+> #### Important: Large Runtime Dependencies on Roslyn Libraries
+> Please be aware that this library has a dependency on `Microsoft.CodeAnalysis` which contains the Roslyn compiler components used by this component. This dependency incurs a 10+mb runtime dependency and a host of support files that are added to your project output.
 
 ## Quick Start Examples
 To get you going quickly here are a few simple examples that demonstrate functionality. I recommend you read the more detailed instructions below but these examples give you a quick idea on how this library works.
