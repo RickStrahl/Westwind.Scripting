@@ -12,7 +12,7 @@ Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 ```text
 Install-Package Westwind.Scripting
 ```
-</small>(currently you need to use the `-IncludePreRelease` flag for v1.0 that supports .NET Core and .NET Standard)</small>
+<small>(currently you need to use the `-IncludePreRelease` flag for v1.0 that supports .NET Core and .NET Standard)</small>
  
 The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
 
@@ -36,6 +36,7 @@ This execution class makes is very easy to integrate simple scripting or text me
 
 
 ### Runtime Compilation and Execution
+Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
 
 * `ExecuteCode()` -  Execute an arbitrary block of code. Pass parameters, return a value
 * `Evaluate()` - Evaluate a single expression from a code string and returns a value
@@ -47,39 +48,125 @@ There are also async versions of the Execute and Evaluate methods:
 * `ExecuteMethodAsync()`
 * `ExecuteCodeAsync()`
 * `EvaluateAsync()`
-* `ExecuteMethod<TResult>()`
+
+All method also have additional generic return type overloads.
 
 ### Script Parser
-There's also a small script parser that allows you run C# scripts as templates that expand into a string using *Handlebars* like syntax with full C# code.
+Script Templating using a Handlebars like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
 
-The Parser supports C# syntax in script templates:
+Methods:
 
-* Expressions
-* Code Blocks with embedded script
+* `ParseScriptToCode()`
+* `ExecuteScript()`     
+* `ExecuteScriptAsync()`
 
-Syntax used is:
+The Expansion syntax used is:
 
 * `{{ expression }}`
-* `{{% openBlock }}`    `{{% endblock }}`
+* `{{% openBlock }}` other text or expressions   `{{% endblock }}`
 
+## Quick Start Examples
+To get you going quickly here are a few simple examples that demonstrate functionality. I recommend you read the more detailed instructions below but these examples give you a quick idea on how this library works.
 
-**Example Template**
+### Execute a generic piece of C# code with Parameters
 
-```text
-Simple expression evaluation:
+```cs
+var script = new CSharpScriptExecution() { SaveGeneratedCode = true };
+script.AddDefaultReferencesAndNamespaces();
 
-Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
+var code = $@"
+// pick up and cast parameters
+int num1 = (int) @0;   // same as parameters[0];
+int num2 = (int) @1;   // same as parameters[1];
 
-Structured Code Blocks using C# statements:
+var result = $""{{num1}} + {{num2}} = {{(num1 + num2)}}"";
 
-{{% for(int x=1; x<3; x++)  { }}
-{{ x }}. Hello World 
+Console.WriteLine(result);  // just for kicks in a test
+
+return result;
+";
+
+// should return a string: (`"10 + 20 = 30"`)
+string result = script.ExecuteCode<string>(code,10,20);
+
+if (script.Error) 
+{
+	Console.WriteLine($"Error: {script.ErrorMessage}");
+	Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+	return
+}	
+```
+
+### Execute Code with a strongly typed Model
+
+```csharp
+var script = new CSharpScriptExecution() {  SaveGeneratedCode = true };
+script.AddDefaultReferencesAndNamespaces();
+
+// have to add references so compiler can resolve
+script.AddAssembly(typeof(ScriptTest));
+script.AddNamespace("Westwind.Scripting.Test");
+
+var model = new ScriptTest() { Message = "Hello World " };
+
+var code = @"
+await Task.Delay(10); // test async
+
+string result =  Model.Message +  "" "" + DateTime.Now.ToString();
+return result;
+";
+
+string execResult = await script.ExecuteCodeAsync<string, ScriptTest>(code, model);
+```
+
+**Evaluate a single expression**
+
+```csharp
+var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
+script.AddDefaultReferencesAndNamespaces();
+
+// Numbered parameter syntax is easier
+var result = script.Evaluate<decimal>("(decimal) @0 + (decimal) @1", 10M, 20M);
+	
+// Full syntax
+//var result = script.Evaluate<decimal>("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
+```
+
+### Parse and Execute a Script Template
+
+```csharp
+var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
 {{% } }}
 
-You can also pass in a single 'model' parameter and access it as `Model` in the script:
+And we're done with this!
+";
 
-Company: {{ Model.Company }}
-Expires: {{ Model.Expiration.ToString(""d"") }}
+// Optional - if you want access to config, code and error info
+var exec = new CSharpScriptExecution() { SaveGeneratedCode = true }
+exec.AddDefaultReferencesAndNamespaces();
+
+exec.AddAssembly(typeof(ScriptParserTests));
+exec.AddNamespace("Westwind.Scripting.Test");
+
+string result = ScriptParser.ExecuteScript(script, model, exec);
+```
+
+which produces:
+
+```txt
+Hello World. Date is: 5/6/2022!
+
+1. Hello World rick
+
+2. Hello World rick
+
+And we're done with this!
 ```
 
 ## Usage
@@ -339,6 +426,63 @@ public async Task<string> HelloWorldAsync(string name)
 
 string result = await script.ExecuteMethodAsync<string>(code, "HelloWorldAsync", "Rick");
 ```
+
+#### CompileClass()
+You can also generate an entire class, load it and then execute methods on it using the `CompileClass()` method. This method passes in a complete C# class as a string and returns back an instance of the class as a `dynamic` object. 
+
+```csharp
+var script = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true,
+};
+script.AddDefaultReferencesAndNamespaces();
+
+var code = $@"
+using System;
+
+namespace MyApp
+{{
+	public class Math
+	{{
+		public string Add(int num1, int num2)
+		{{
+			// string templates
+			var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
+			Console.WriteLine(result);
+		
+			return result;
+		}}
+		
+		public string Multiply(int num1, int num2)
+		{{
+			// string templates
+			var result = $""{{num1}}  *  {{num2}} = {{ num1 * num2 }}"";
+			Console.WriteLine(result);
+			
+			result = $""Take two: {{ result ?? ""No Result"" }}"";
+			Console.WriteLine(result);
+			
+			return result;
+		}}
+	}}
+}}";
+
+dynamic math = script.CompileClass(code);
+
+Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+Assert.IsFalse(script.Error,script.ErrorMessage);
+Assert.IsNotNull(math);
+
+string addResult = math.Add(10, 20);
+string multiResult = math.Multiply(3 , 7);
+
+Assert.IsTrue(addResult.Contains(" = 30"));
+Assert.IsTrue(multiResult.Contains(" = 21"));
+
+// if you need access to the assembly or save it you can
+var assembly = script.Assembly; 
+```
+
 
 ### Evaluating an expression: EvaluateMethod()
 If you want to evaluate a single expression, there's a shortcut `Evalute()` method that works pretty much the same:
