@@ -82,11 +82,6 @@ Company: {{ Model.Company }}
 Expires: {{ Model.Expiration.ToString(""d"") }}
 ```
 
-> #### Requires Roslyn Code Providers for your Project
-> If you want to use Roslyn compilation for the latest C# features you have to make sure you add the `Microsoft.CodeDom.CompilerServices` NuGet Package to your application's root project to provide the required compiler binaries for your application.
->
-> Note that this adds a sizable chunk of files to your application's output folder in the `\roslyn` folder. If you don't want this you can use the classic compiler, at the cost of not having access to C# 6+ features.
-
 ## Usage
 Using the `CSharpScriptExecution` class is very easy. It works with code passed as strings for either a Code block, expression, one or more methods or even as a full C# class that can be turned into an instance.
 
@@ -147,7 +142,7 @@ If `true` captures the generated class code for the compilation that is used to 
 You can optionally specify a filename to which the assembly is compiled. If this value is not set the assembly is generated into memory which is the default.
 
 * **GeneratedClassName**  
-By default this class generates a random class name for generically generated code. You can override the class name so you can load any generated types explicitly.
+By default the class generated from any of the code methods generates a random class name. You can override the class name so you can load any generated types explicitly. Generally it doesn't matter what the class name is as the dynamic methods find the single class generated in the assembly.
 
 * **ThrowExceptions**  
 If `true` compiler errors will throw exceptions rather than silently failing after setting error properties. The default is false and the recommended approach is to explicitly check for errors after compilation.
