@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Net;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Basic.Reference.Assemblies;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -60,11 +62,7 @@ return result;
             Assert.IsFalse(script.Error, script.ErrorMessage);
             Assert.IsTrue(result.Contains(" = 25"));
 
-            script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-                GeneratedClassName = "MyTest"
-            };
+            script = new CSharpScriptExecution() {SaveGeneratedCode = true, GeneratedClassName = "MyTest"};
             script.AddDefaultReferencesAndNamespaces();
 
             result = script.ExecuteCode(code, 4, 10) as string;
@@ -127,17 +125,14 @@ return result;
         [TestMethod]
         public void EvaluateTest()
         {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             script.AddDefaultReferencesAndNamespaces();
 
             // Full syntax
             //object result = script.Evaluate("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
 
             // Numbered parameter syntax is easier
-            object result = script.Evaluate("(decimal) @0 + (decimal) @1", 10M, 20M);
+            var result = script.Evaluate<decimal>("(decimal) @0 + (decimal) @1", 10M, 20M);
 
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
@@ -153,22 +148,23 @@ return result;
         [TestMethod]
         public async Task EvaluateAsyncTest()
         {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             script.AddDefaultReferencesAndNamespaces();
 
             // Full syntax
             //object result = script.Evaluate("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
 
             // Numbered parameter syntax is easier
-            object result = await script.EvaluateAsync($"await Task.Run(async ()=> {{ await Task.Delay(1); return (decimal) @0 + (decimal) @1; }})", 10M, 20M);
+            var result = await script.EvaluateAsync<decimal>(
+                $@"await Task.Run( async ()=> {{
+    await Task.Delay(1);
+    return (decimal) @0 + (decimal) @1;
+}})", 10M, 20M);
 
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
             Console.WriteLine(script.ErrorMessage);
-            Console.WriteLine(script.GeneratedClassCode);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
             Assert.IsTrue(result is decimal, script.ErrorMessage);
@@ -179,10 +175,7 @@ return result;
         [TestMethod]
         public void ExecuteCodeSnippetWithoutResult()
         {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             script.AddDefaultReferencesAndNamespaces();
 
             string result =
@@ -198,23 +191,33 @@ return result;
 
 
         [TestMethod]
-        public async Task ExecuteCodeSnippetWithoutResultAsync()
+        public async Task ExecuteCodeSnippetWithTypedResultAsync()
         {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             script.AddDefaultReferencesAndNamespaces();
 
-            string result =
-                await script.ExecuteCodeAsync("await Task.Run(async ()=> {{ await Task.Delay(1); Console.WriteLine($\"Time is: {DateTime.Now}\"); }});", null) as string;
+            string code = @"
+await Task.Run(async () => {
+    {
+        Console.WriteLine($""Time before: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+        await Task.Delay(20);
+        Console.WriteLine($""Time after: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+    }
+});
+
+return $""Done at {DateTime.Now.ToString(""HH:mm:ss:fff"")}"";
+";
+
+
+            string result = await script.ExecuteCodeAsync<string>(code, null);
 
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
             Console.WriteLine(script.ErrorMessage);
-            Console.WriteLine(script.GeneratedClassCode);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
+            Assert.IsTrue(result.StartsWith("Done at"));
         }
 
 
@@ -245,7 +248,7 @@ return result;
             Console.WriteLine($"Result: {execResult}");
             Console.WriteLine($"Error: {script.Error}");
             Console.WriteLine(script.ErrorMessage);
-            Console.WriteLine(script.GeneratedClassCode);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }

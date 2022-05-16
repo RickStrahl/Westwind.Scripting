@@ -68,7 +68,7 @@ The Expansion syntax used is:
 ## Quick Start Examples
 To get you going quickly here are a few simple examples that demonstrate functionality. I recommend you read the more detailed instructions below but these examples give you a quick idea on how this library works.
 
-### Execute a generic piece of C# code with Parameters
+### Execute generic C# code with Parameters and Result Value
 
 ```cs
 var script = new CSharpScriptExecution() { SaveGeneratedCode = true };
@@ -110,6 +110,7 @@ script.AddNamespace("Westwind.Scripting.Test");
 var model = new ScriptTest() { Message = "Hello World " };
 
 var code = @"
+// To Demonstrate Async support
 await Task.Delay(10); // test async
 
 string result =  Model.Message +  "" "" + DateTime.Now.ToString();
@@ -119,7 +120,9 @@ return result;
 string execResult = await script.ExecuteCodeAsync<string, ScriptTest>(code, model);
 ```
 
-**Evaluate a single expression**
+> Note that you can forego the strongly typed model by using the non-generic `ExecuteCodeAsync()` or `ExecuteCode()` methods which use `dynamic` instead of the strong type. This allows the compiler to resolve `Model` without explicitly having to add the reference.
+
+### Evaluate a single expression
 
 ```csharp
 var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};

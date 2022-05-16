@@ -177,6 +177,55 @@ And we're done with this!
         /// </summary>
         /// <returns></returns>
         [TestMethod]
+        public void ScriptParserExecuteWithModelTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+            var exec = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            exec.AddDefaultReferencesAndNamespaces();
+            
+
+            //exec.AddAssembly(typeof(ScriptParserTests));
+            //exec.AddNamespace("Westwind.Scripting.Test");
+
+            string result = ScriptParser.ExecuteScript(script, model, exec);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, exec.ErrorMessage);
+
+
+            
+        }
+        /// <summary>
+        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
+        /// generically execute a method that can receive a single input parameter.
+        /// The parameter is dynamic cast since it can be anything.
+        ///
+        /// If your parameter is always the same and fixed, you may want to consider
+        /// using the previous example and provide fixed typing to the executed method.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
         public async Task ScriptParserExecuteAsyncWithModelTest()
         {
             var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
@@ -188,7 +237,7 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 {{ x }}. Hello World {{Model.Name}}
 {{% } }}
 
-{{% await Task.Delay(100); }}
+{{% await Task.Delay(10); }}
 
 And we're done with this!
 ";
@@ -209,9 +258,11 @@ And we're done with this!
 
             string result = await ScriptParser.ExecuteScriptAsync(script, model, exec);
 
-            Assert.IsNotNull(result, exec.ErrorMessage);
-
             Console.WriteLine(result);
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, exec.ErrorMessage ) ;
+            
         }
 
     }

@@ -325,7 +325,11 @@ namespace Westwind.Scripting
                 throw new ArgumentException("Can't evaluate empty code. Please pass code.");
 
             code = ParseCodeWithParametersArray(code, parameters);
-            return ExecuteCodeAsync<TResult>("return " + code + ";", parameters);
+
+            var result = ExecuteCodeAsync<TResult>("return " + code + ";", parameters);
+            if (result == null)
+                return default;
+            return result;
         }
 
 
@@ -383,7 +387,7 @@ namespace Westwind.Scripting
                                  Environment.NewLine +
                                  // force a return value - compiler will optimize this out
                                  // if the code provides a return
-                                 "return null;" +
+                                 "return default;" +
                                  Environment.NewLine +
                                  "}",
                 "ExecuteCode", parameters);
@@ -418,7 +422,7 @@ namespace Westwind.Scripting
                                         Environment.NewLine +
                                         // force a return value - compiler will optimize this out
                                         // if the code provides a return
-                                        "return null;" +
+                                        "return default;" +
                                         Environment.NewLine +
                                         "}",
                 "ExecuteCode", parameters);
@@ -458,7 +462,7 @@ namespace Westwind.Scripting
                                         Environment.NewLine +
                                         // force a return value - compiler will optimize this out
                                         // if the code provides a return
-                                        "return null;" +
+                                        "return default;" +
                                         Environment.NewLine +
                                         "}",
                 "ExecuteCode", parameters);
@@ -709,8 +713,14 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 {
     AddAssembly(typeof(ReferenceList));
     AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+#if NETCORE
+      AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
+#endif
+#if NET462
+            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
+#endif
 
-    var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
+            var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
 
     //var files = Directory.GetFiles(runtimePath, "*.dll");
     //foreach (var file in files)
@@ -886,7 +896,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             }
         }
 
-        #endregion
+#endregion
 
 
 #region Errors
@@ -978,7 +988,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             return (code).GetHashCode();
         }
 
-        #endregion
+#endregion
 
 
         ///// <summary>
