@@ -35,6 +35,9 @@ This execution class makes is very easy to integrate simple scripting or text me
 * Template Scripting Engine using Handlebars-like with C# syntax
 
 
+> #### Important: Large Runtime Dependencies on Roslyn Libraries
+> Please be aware that this library has a dependency on `Microsoft.CodeAnalysis` which contains the Roslyn compiler components used by this component. This dependency incurs a 10+mb runtime dependency and a host of support files that are added to your project output.
+
 ### Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
 
@@ -183,6 +186,9 @@ There are methods for:
 * In-memory class compilation and loading
 
 For all these tasks there are a number of common operations that involve setting up the compilation environment which involves adding dependencies: Assemblies and Namespaces that are required to compile the code.
+
+> #### Important: Large Roslyn Dependencies
+> If you choose to use this library, please realize that you will pull in a very large dependency on the `Microsoft.CodeAnalysis` Roslyn libraries which account for  10+mb of runtime files that have to be distributed with your application.
 
 ### Setting up for Compilation: CSharpScriptExecution
 Compiling code is easy - setting up for compilation and ensuring that all your dependencies are available is a little more complicated and also depends on whether you're using full .NET Framework or .NET Core or .NET Standard.
