@@ -1,5 +1,6 @@
 # Westwind Csharp Scripting
-### Dynamically compile and execute CSharp code at runtime
+
+**Dynamically compile and execute CSharp code at runtime**
 
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
@@ -11,13 +12,13 @@ Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 ```text
 Install-Package Westwind.Scripting
 ```
-</small>(currently you need to use the `-IncludePreRelease` flag)</small>
-
+</small>(currently you need to use the `-IncludePreRelease` flag for v1.0 that supports .NET Core and .NET Standard)</small>
+ 
 The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
 
 This execution class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
 
-#### Features
+## Features
 * Easy C# code compilation and execution for:
 	* Code blocks 
 	* Full methods (method header/result value)
@@ -34,7 +35,7 @@ This execution class makes is very easy to integrate simple scripting or text me
 * Template Scripting Engine using Handlebars-like with C# syntax
 
 
-#### Execution Features
+### Runtime Compilation and Execution
 
 * `ExecuteCode()` -  Execute an arbitrary block of code. Pass parameters, return a value
 * `Evaluate()` - Evaluate a single expression from a code string and returns a value
@@ -43,11 +44,12 @@ This execution class makes is very easy to integrate simple scripting or text me
 
 There are also async versions of the Execute and Evaluate methods:
 
+* `ExecuteMethodAsync()`
 * `ExecuteCodeAsync()`
 * `EvaluateAsync()`
 * `ExecuteMethod<TResult>()`
 
-#### Small Script Parser
+### Script Parser
 There's also a small script parser that allows you run C# scripts as templates that expand into a string using *Handlebars* like syntax with full C# code.
 
 The Parser supports C# syntax in script templates:
@@ -64,13 +66,17 @@ Syntax used is:
 **Example Template**
 
 ```text
+Simple expression evaluation:
+
 Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
-{{% for(int x=1; x<3; x++) { }}
+Structured Code Blocks using C# statements:
+
+{{% for(int x=1; x<3; x++)  { }}
 {{ x }}. Hello World 
 {{% } }}
 
-You can also pass in a single model parameter and access it here:
+You can also pass in a single 'model' parameter and access it as `Model` in the script:
 
 Company: {{ Model.Company }}
 Expires: {{ Model.Expiration.ToString(""d"") }}
@@ -84,42 +90,123 @@ Expires: {{ Model.Expiration.ToString(""d"") }}
 ## Usage
 Using the `CSharpScriptExecution` class is very easy. It works with code passed as strings for either a Code block, expression, one or more methods or even as a full C# class that can be turned into an instance.
 
-You can add **Assembly References** and **Namespaces** via the `AddReferece()` and `AddNamespace()` methods.
+There are methods for:
 
-> #### @icon-info-circle Error Handling
-> Script Execution errors are internally handled rather than throwing directly to provide clean error management that is trappable and can potentially provided to a UI. Source code with failure lines is also optionally available to help find errors in the generated code output.
+* Generic code execution
+* Complete method execution
+* Expression Evaluation
+* In-memory class compilation and loading
 
-### Executing a Code Snippet
-A code snippet can be **any block of .NET code** that can be executed. You can pass any number of parameters to the snippets which are accessible via a `parameters` object array. You can optionally `return` a value by providing a `return` statement.
+For all these tasks there are a number of common operations that involve setting up the compilation environment which involves adding dependencies: Assemblies and Namespaces that are required to compile the code.
 
+### Setting up for Compilation: CSharpScriptExecution
+Compiling code is easy - setting up for compilation and ensuring that all your dependencies are available is a little more complicated and also depends on whether you're using full .NET Framework or .NET Core or .NET Standard.
+
+In order to compile code the compiler requires that all dependencies are referenced both for assemblies that need to be compiled against as well as any namespaces that you plan to access in your code and don't want to explicitly mention.
+
+#### Adding Assemblies and Namespaces
+There are a number of methods that help with this:
+
+* AddDefaultReferencesAndNamespaces()
+* AddAssembly()
+* AddAssemblies()
+* AddNamespace()
+* AddNamespaces()
+
+Initial setup for code execution then looks like this:
+
+```cs
+var script = new CSharpScriptExecution()
+{
+    SaveGeneratedCode = true  // errors and trouble shooting
+};
+
+// Add default references - by default host app assemblies are loaded
+// so script inherits host application refs
+// You can reduce load time by loading only explicit assemblies you need
+script.AddDefaultReferencesAndNamespaces(loadLoadedAssemblies: false);
+
+// Add any additional dependencies
+script.AddAssembly(typeof(MyApplication));       // by type
+script.AddAssembly("Westwind.Utilitiies.dll");   // by assembly file
+
+// Add additional namespaces you might use in your code snippets
+script.AddNamespace("MyApplication");
+script.AddNamespace("MyApplication.Utilities");
+script.AddNamespace("Westwind.Utilities");
+script.AddNamespace("Westwind.Utilities.Data");
+```
+
+### Configuration
+The `CSharpScriptExecution` is very simple and there are only a few configuration options available:
+
+* **SaveGeneratedCode**  
+If `true` captures the generated class code for the compilation that is used to execute your code. This will include the class and method wrappers around the code. You can use the `GeneratedCode` or `GeneratedCodeWithLineNumbers` proeprties to retrieve the code. The line numbers will match up with compilation errors return in the `ErrorMessage` so you can display an error message with compiler errors along with the code to optionally review the code in failure. 
+
+* **OutputAssembly**  
+You can optionally specify a filename to which the assembly is compiled. If this value is not set the assembly is generated into memory which is the default.
+
+* **GeneratedClassName**  
+By default this class generates a random class name for generically generated code. You can override the class name so you can load any generated types explicitly.
+
+* **ThrowExceptions**  
+If `true` compiler errors will throw exceptions rather than silently failing after setting error properties. The default is false and the recommended approach is to explicitly check for errors after compilation.
+
+**Error Properties** 
+
+When compilation errors occur the following error properties are set:
+
+* **Error**  
+A simple boolean flag that lets you quickly check for an error.
+
+* **ErrorMessage**  
+An error message string that shows any compilation errors along with line numbers into the generated code.
+
+* **GeneratedCode** **GeneratedCodeWithLineNumbers**  
+If you receive Error Messages with line numbers it might be useful to have the source code that was generated to co-relate the error to.
+
+
+
+
+
+### Error Properties
+`CSharpScriptExecution` has two error modes:
+
+* Compilation Errors
+* Runtime Errors
+
+The latter are not handled and need to be captured by your hosting application. You'll likely want to wrap a `try/catch` around any code you dynamically execute, either in the executing code itself, or the script execution code. You can capture the exception and treat it just like any other code in your host application.
+
+Compilation errors are trapped and reported by the class
+
+### Executing Generic Code: ExecuteCode()
+Let's start with the most generic functionality which is `ExecuteCode()` and `ExecuteCodeAsync()` which lets you execute a block of code, optionally pass in parameters and return a result value.
+
+The code you pass can use a `object[] parameters` array, to access any parameters you pass and can `return` a result value that you can pick up when executing the code.
+
+#### ExecuteCode()
+The following is a simple example of a code snippet that performs a calculation by adding to values and returning a string:
 
 ```cs
 var script = new CSharpScriptExecution()
 {
     SaveGeneratedCode = true,
-    CompilerMode = ScriptCompilerModes.Roslyn
 };
 script.AddDefaultReferencesAndNamespaces();
 
-//script.AddAssembly("Westwind.Utilities.dll");
-//script.AddNamespace("Westwind.Utilities");
-
 var code = $@"
-// Check some C# 6+ lang features
-var s = new {{ name = ""Rick""}}; // anonymous types
-Console.WriteLine(s?.name);       // null propagation
-
 // pick up and cast parameters
 int num1 = (int) @0;   // same as parameters[0];
 int num2 = (int) @1;   // same as parameters[1];
 
-// string templates
 var result = $""{{num1}} + {{num2}} = {{(num1 + num2)}}"";
-Console.WriteLine(result);
+
+Console.WriteLine(result);  // just for kicks in a test
 
 return result;
 ";
 
+// should return (`"10 + 20 = 30"`)
 string result = script.ExecuteCode(code,10,20) as string;
 
 Console.WriteLine($"Result: {result}");
@@ -131,171 +218,168 @@ Assert.IsFalse(script.Error, script.ErrorMessage);
 Assert.IsTrue(result.Contains(" = 30"));
 ```
 
-Note that the `return` in your code snippet is optional - you can just run code without a result value. 
+Note that the `return` in the code snippet is optional so you can omit it if you don't need to pass anything back.
 
-> Any parameters you pass in can be accessed either via `parameters[0]`, `parameters[1]` etc. or using a simpler string representation of `@0`, `@1`.
+#### Basic Error Handling
+If an error occurs during compilation the error is handled and the `Error` and `ErrorMessage` properties are set. If a runtime error occurs the code fires an exception in your code. You can also access the generated source code that is actually executed using `GeneratedClassCode` or `GeneratedClassCodeWithLineNumbers` - if the `SaveGeneratedCode` property is `true`.
 
-### Evaluating an expression
-If you want to evaluate a single expression, there's a shortcut `Evalute()` method that works pretty much the same:
+```cs
+var script = new CSharpScriptExecution() 
+{
+	SaveGeneratedCode = true,
+};
+script.AddDefaultReferencesAndNamespaces();
+
+string result = null;
+try 
+{
+	result = script.ExecuteCode(code,10,20) as string;
+}
+catch(Exception ex)
+{
+	// runtime error or script engine unexpected error
+	Console.WriteLine("Runtime Error: " + ex.Message);
+	return
+}
+
+// compilation error
+if (script.Error)   
+{
+	Console.WriteLine(script.ErrorMessage);
+    Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+}
+else 
+{
+	Console.WriteLine($"Result: {result}");
+}
+```
+
+#### ExcecuteCodeAsync()
+If your code snippet requires `await` calls or uses `Task` operations, you probably want to execute your code using `async` `await` functionality.
+
+```cs
+var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
+            script.AddDefaultReferencesAndNamespaces();
+
+            string code = @"
+await Task.Run(async () => {
+    {
+        Console.WriteLine($""Time before: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+        await Task.Delay(20);
+        Console.WriteLine($""Time after: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+    }
+});
+
+return $""Done at {DateTime.Now.ToString(""HH:mm:ss:fff"")}"";
+";
+
+string result = null;
+try {
+	result = await script.ExecuteCodeAsync<string>(code, null);
+}
+catch(Exception ex)
+{
+	Console.WriteLine("Runtime Error: " + ex.Message);
+	return;
+}
+
+if (script.Error)   // compile error
+{
+	Console.WriteLine(script.ErrorMessage);
+    Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+    return;
+}
+
+// all good!
+Console.WriteLine($"Result: {result}");
+```
+
+Note also in this code I'm using the generic `ExecuteCodeAsync<TResult>()` method which allows me to explicitly specify what type to return to avoid the `object` conversion from the first sample.
+
+> From here on out I'm not going to show error handling in the samples except where relevant to keep samples brief
+
+### Need More Control: ExecuteMethod()
+If you need more control over your code execution, rather than having a method created for execution **you can provide a complete method** as a string instead. The method can include a method header and `return` value. This allows you to exactly specify what types to pass as parameters, what types to return etc.
+
+> If your method has an `async` or `Task` or `Task<T>` signature you should likely use `ExecuteMethodAsync()` to call the method and `await` the call.
+
 
 ```cs
 var script = new CSharpScriptExecution()
 {
-    SaveGeneratedCode = true,
-};
-script.AddDefaultReferencesAndNamespaces();
-
-// Full syntax
-//object result = script.Evaluate("(decimal) parameters[0] + (decimal) parameters[1]", 10M, 20M);
-
-// Numbered parameter syntax is easier
-object result = script.Evaluate("(decimal) @0 + (decimal) @1", 10M, 20M);
-
-Console.WriteLine($"Result: {result}");
-Console.WriteLine($"Error: {script.Error}");
-Console.WriteLine(script.ErrorMessage);
-Console.WriteLine(script.GeneratedClassCode);
-
-Assert.IsFalse(script.Error, script.ErrorMessage);
-Assert.IsTrue(result is decimal, script.ErrorMessage);
-```            
-
-This method is a shortcut wrapper and simply wraps your code into a single line `return {exp};` statement. 
-
-### Executing a Method
-`ExecuteCode()` and `Evaluate()` are shortcuts for the slightly lower level and more flexible `ExecuteMethod()` method which as the name implies allows you to specify a single or multiple methods. In fact you can provide an **entire class body** including properties, events and nested class definitions in the code passed in. This gives a lot of flexibility as you can properly type parameters and return types:
-
-```csharp
-var script = new CSharpScriptExecution()
-{
-    SaveGeneratedCode = true,
-    CompilerMode = ScriptCompilerModes.Roslyn,
-    GeneratedClassName = "HelloWorldTestClass"
+    SaveGeneratedCode = true
 };
 script.AddDefaultReferencesAndNamespaces();
 
 string code = $@"
 public string HelloWorld(string name)
 {{
-string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
-return result;
+	string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
+	return result;
 }}";
 
-string result = script.ExecuteMethod(code,"HelloWorld","Rick") as string;
-
-Console.WriteLine($"Result: {result}");
-Console.WriteLine($"Error: {script.Error}");
-Console.WriteLine(script.ErrorMessage);
-Console.WriteLine(script.GeneratedClassCode);
-
-Assert.IsFalse(script.Error);
-Assert.IsTrue(result.Contains("Hello Rick"));
-```
-
-### More than just a Single Method
-Note that you can provide more than a method in the code block - you can provide an entire **class body** including additional methods, properties/fields, events and so on. Effectively you can build out an entire class this way. After intial execution you can access the `ObjectInstance` member and use either Reflection or `dynamic` to access the functionality on that class.
-
-```cs
-var script = new CSharpScriptExecution()
-{
-    SaveGeneratedCode = true,
-    CompilerMode = ScriptCompilerModes.Roslyn
-};
-script.AddDefaultReferencesAndNamespaces();
-
-// Class body with multiple methods and properties
-string code = $@"
-public string HelloWorld(string name)
-{{
-string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
-return result;
-}}
-
-public string GoodbyeName {{ get; set; }}
-
-public string GoodbyeWorld()
-{{
-string result = $""Goodbye {{GoodbyeName}}. Time is: {{DateTime.Now}}."";
-return result;
-}}
-";
-
 string result = script.ExecuteMethod(code, "HelloWorld", "Rick") as string;
-
-Console.WriteLine($"Result: {result}");
-Console.WriteLine($"Error: {script.Error}");
-Console.WriteLine(script.ErrorMessage);
-Console.WriteLine(script.GeneratedClassCode);
-
-Assert.IsFalse(script.Error);
-Assert.IsTrue(result.Contains("Hello Rick"));
-
-// You can pick up the ObjectInstance of the generated class
-// Make dynamic for easier access
-dynamic instance = script.ObjectInstance;
-
-instance.GoodbyeName = "Markus";
-result = instance.GoodbyeWorld();
-
-Console.WriteLine($"Result: {result}");
-Assert.IsTrue(result.Contains("Goodbye Markus"));
 ```
 
-### Compiling and Executing a Class
-You can also compile an **entire class** and then get passed back a `dynamic` reference to that class so that you can explicitly use that object:
+As you can see I'm providing a full method signature with signature header, body and a return value. Because I'm writing the method explicitly I can strongly type the method inputs and result values explicitly.
+
+#### ExecuteMethodAsync()
+The async version looks like this:
 
 
 ```cs
 var script = new CSharpScriptExecution()
 {
-    SaveGeneratedCode = true,
-    CompilerMode = ScriptCompilerModes.Roslyn
+    SaveGeneratedCode = true
 };
 script.AddDefaultReferencesAndNamespaces();
 
-var code = $@"
-using System;
-
-namespace MyApp
+string code = $@"
+public async Task<string> HelloWorldAsync(string name)
 {{
-    public class Math
-    {{
-        public string Add(int num1, int num2)
-        {{
-        // string templates
-        var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
-        Console.WriteLine(result);
-        
-        return result;
-        }}
-        
-        public string Multiply(int num1, int num2)
-        {{
-        // string templates
-        var result = $""{{num1}}  *  {{num2}} = {{(num1 * num2)}}"";
-        Console.WriteLine(result);
-        
-        return result;
-        }}
-        
-    }}
-}}
-";
+	await Task.Delay(10);  // some async task
+	string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
+	return result;
+}}";
 
-dynamic math = script.CompileClass(code);
-
-Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
-
-Assert.IsFalse(script.Error,script.ErrorMessage);
-Assert.IsNotNull(math);
-
-string addResult = math.Add(10, 20);
-string multiResult = math.Multiply(3 , 7);
-
-
-Assert.IsTrue(addResult.Contains(" = 30"));
-Assert.IsTrue(multiResult.Contains(" = 21"));
+string result = await script.ExecuteMethodAsync<string>(code, "HelloWorldAsync", "Rick");
 ```
+
+### Evaluating an expression: EvaluateMethod()
+If you want to evaluate a single expression, there's a shortcut `Evalute()` method that works pretty much the same:
+
+```csharp
+var script = new CSharpScriptExecution() { SaveGeneratedCode = true };
+script.AddDefaultReferencesAndNamespaces();
+
+// Numbered parameter syntax is easier
+var result = script.Evaluate<decimal>("(decimal) @0 + (decimal) @1", 10M, 20M);
+
+Console.WriteLine($"Result: {result}");  // 30
+Console.WriteLine(script.ErrorMessage);
+```
+
+I'm using the generic version here, but there are overloads that return `object` more generically.
+
+The async version works similar and allows you to evaluate expressions of methods or code that is async:
+
+```csharp
+var script = new CSharpScriptExecution() {SaveGeneratedCode = true,};
+script.AddDefaultReferencesAndNamespaces();
+
+string code = $@"
+await Task.Run( async ()=> {{
+	await Task.Delay(1);
+	return (decimal) @0 + (decimal) @1;
+}})";
+
+// Numbered parameter syntax is easier
+var result = await script.EvaluateAsync<decimal>(code, 10M, 20M);
+
+Console.WriteLine($"Result: {result}");  // 30
+Console.WriteLine($"Error: {script.Error}");
+```
+
 
 ## Template Script Execution
 This library also includes a `ScriptParser` class that is a very low impact string based template engine that can embed C# expressions and codeblocks using `{{ }}` *Handlebar* style syntax. The idea is to have an easy way to turn templates into executable code that can transform template text with code into a string result.
