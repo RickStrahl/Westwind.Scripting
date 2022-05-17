@@ -572,25 +572,52 @@ namespace Westwind.Scripting
             if (SaveGeneratedCode)
                 GeneratedClassCode = tree.ToString();
 
-            using (var codeStream = new MemoryStream())
-            {
-                var compilationResult = compilation.Emit(codeStream);
 
-                // Compilation Error handling
-                if (!compilationResult.Success)
+            if (string.IsNullOrEmpty(OutputAssembly)) // in Memory
+            {
+                using (var codeStream = new MemoryStream())
                 {
-                    StringBuilder sb = new StringBuilder();
-                    foreach (var diag in compilationResult.Diagnostics)
+                    var compilationResult = compilation.Emit(codeStream);
+
+                    // Compilation Error handling
+                    if (!compilationResult.Success)
                     {
-                        sb.AppendLine(diag.ToString());
+                        StringBuilder sb = new StringBuilder();
+                        foreach (var diag in compilationResult.Diagnostics)
+                        {
+                            sb.AppendLine(diag.ToString());
+                        }
+
+                        ErrorMessage = sb.ToString();
+                        SetErrors(new ApplicationException(ErrorMessage));
+                        return false;
                     }
 
-                    ErrorMessage = sb.ToString();
-                    SetErrors(new ApplicationException(ErrorMessage));
-                    return false;
+                    Assembly = Assembly.Load(codeStream.ToArray());
+                }
+            }
+            else
+            {
+                using (var codeStream = new FileStream(OutputAssembly, FileMode.Create, FileAccess.Write))
+                {
+                    var compilationResult = compilation.Emit(codeStream);
+
+                    // Compilation Error handling
+                    if (!compilationResult.Success)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        foreach (var diag in compilationResult.Diagnostics)
+                        {
+                            sb.AppendLine(diag.ToString());
+                        }
+
+                        ErrorMessage = sb.ToString();
+                        SetErrors(new ApplicationException(ErrorMessage));
+                        return false;
+                    }
                 }
 
-                Assembly = Assembly.Load(codeStream.ToArray());
+                Assembly = Assembly.LoadFrom(OutputAssembly);
             }
 
             return true;
