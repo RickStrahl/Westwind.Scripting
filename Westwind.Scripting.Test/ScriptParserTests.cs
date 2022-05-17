@@ -212,10 +212,8 @@ And we're done with this!
 
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, exec.ErrorMessage);
-
-
-            
         }
+
         /// <summary>
         /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
         /// generically execute a method that can receive a single input parameter.
@@ -264,6 +262,63 @@ And we're done with this!
             Assert.IsNotNull(result, exec.ErrorMessage ) ;
             
         }
+
+        [TestMethod]
+        public void NoCSharpCodeSnippetTest()
+        {
+            string script = @"
+<div>
+Hello World. Date is: today!
+</div>
+";
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+            var exec = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            exec.AddDefaultReferencesAndNamespaces();
+
+            
+            string result = ScriptParser.ExecuteScript(script,null, exec);
+
+            Console.WriteLine(result);
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, exec.ErrorMessage);
+        }
+
+        [TestMethod]
+        public async Task NoCSharpCodeSnippetAsyncTest()
+        {
+            string script = @"
+<div>
+Hello World. Date is: today!
+</div>
+";
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+            var exec = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            exec.AddDefaultReferencesAndNamespaces();
+
+
+            string result = await ScriptParser.ExecuteScriptAsync(script, null, exec);
+
+            Console.WriteLine(result);
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, exec.ErrorMessage);
+        }
+
 
     }
 

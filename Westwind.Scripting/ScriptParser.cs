@@ -23,7 +23,7 @@ namespace Westwind.Scripting
     ///
     /// Code Blocks:
     ///
-    /// {{% for(int x; x<10; x++  { }}
+    /// {{% for(int x; x&lt;10; x++  { }}
     ///     {{ x }}. Hello World
     /// {{% } }}
     /// 
@@ -48,7 +48,7 @@ namespace Westwind.Scripting
         {
             var atStart = scriptText.IndexOf(startDelim);
             if (atStart == -1)
-                return scriptText; // nothing to expand return as is
+                return "return " + EncodeStringLiteral(scriptText, true) + ";";
 
             var literal = new StringBuilder();
             using (var code = new StringWriter())
@@ -143,6 +143,9 @@ var writer = new StringWriter();
             string startDelim = "{{", string endDelim = "}}",
             string codeIndicator = "%")
         {
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+                return script;
+
             var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
             if (code == null)
                 return null;
@@ -181,6 +184,10 @@ var writer = new StringWriter();
         public static string ExecuteScript(string script, object model, CSharpScriptExecution scriptEngine = null,
             string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
         {
+
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+                return script;
+
             var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
             if (code == null)
                 return null;
@@ -202,20 +209,20 @@ var writer = new StringWriter();
 
 
         /// <summary>
-        /// Encodes a string to be represented as a c style string literal. The format
-        /// is essentially a JSON string that is returned in double quotes.
-        /// 
-        /// The string returned includes outer quotes by default: 
+        /// Encodes a string to be represented as a C# style string literal. 
+        ///
+        /// Example output:
         /// "Hello \"Rick\"!\r\nRock on"
         /// </summary>
-        /// <param name="s"></param>
+        /// <param name="plainString">string to encode</param>
+        /// <param name="addQuotes">if true adds quotes around the encoded text</param>
         /// <returns></returns>
         public static string EncodeStringLiteral(string plainString, bool addQuotes = true)
         {
             if (plainString == null)
                 return "null";
 
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             if (addQuotes)
                 sb.Append("\"");
 

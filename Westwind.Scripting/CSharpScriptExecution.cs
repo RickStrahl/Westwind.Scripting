@@ -724,7 +724,7 @@ namespace Westwind.Scripting
 /// Adds basic System assemblies and namespaces so basic
 /// operations work.
 /// </summary>
-/// <param name="dontAddLoadedAssemblies">
+/// <param name="dontLoadLoadedAssemblies">
 /// In .NET Core it's recommended you add all host assemblies to ensure
 /// that any referenced assemblies are also accessible in your
 /// script code. Important as in Core there are many small libraries
