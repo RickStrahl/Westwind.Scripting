@@ -24,16 +24,22 @@ namespace Westwind.Scripting
         /// Run a script execution asynchronously in the background to warm up Roslyn.
         /// Call this during application startup or anytime before you run the first
         /// script to ensure scripts execute quickly.
+        ///
+        /// Although this method returns `Task` so it can be tested
+        /// for success, in applications you typically will call this
+        /// without `await` on the result task and just let it operate
+        /// in the background.
         /// </summary>
-        public static void WarmupRoslyn()
+        public static Task<bool> WarmupRoslyn()
         {
             // warm up Roslyn in the background
-            Task.Run(() =>
+            return Task.Run(() =>
             {
                 var script = new CSharpScriptExecution();
-                {
-                    script.ExecuteCode("int x = 1; return x;", null);
-                }
+                script.AddDefaultReferencesAndNamespaces();
+                var result = script.ExecuteCode("int x = 1; return x;", null);
+
+                return result is 1;
             });
         }
 

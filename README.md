@@ -13,6 +13,12 @@ Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 Install-Package Westwind.Scripting
 ```
 <small>(currently you need to use the `-IncludePreRelease` flag for v1.0 that supports .NET Core and .NET Standard)</small>
+
+It supports the following targets:
+
+* Full .NET Framework (4.62+)
+* .NET 6.0
+* .NET Standard 2.0
  
 The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
 
@@ -99,7 +105,7 @@ if (script.Error)
 }	
 ```
 
-### Execute Code with a strongly typed Model
+### Execute Async Code with a strongly typed Model 
 
 ```csharp
 var script = new CSharpScriptExecution() {  SaveGeneratedCode = true };
@@ -119,6 +125,7 @@ string result =  Model.Message +  "" "" + DateTime.Now.ToString();
 return result;
 ";
 
+// Use generic version to specify result and model types
 string execResult = await script.ExecuteCodeAsync<string, ScriptTest>(code, model);
 ```
 
@@ -228,13 +235,13 @@ script.AddNamespace("Westwind.Utilities.Data");
 ```
 
 ### Configuration
-The `CSharpScriptExecution` is very simple and there are only a few configuration options available:
+The `CSharpScriptExecution` has only a few configuration options available:
 
 * **SaveGeneratedCode**  
-If `true` captures the generated class code for the compilation that is used to execute your code. This will include the class and method wrappers around the code. You can use the `GeneratedCode` or `GeneratedCodeWithLineNumbers` proeprties to retrieve the code. The line numbers will match up with compilation errors return in the `ErrorMessage` so you can display an error message with compiler errors along with the code to optionally review the code in failure. 
+If `true` captures the generated class code for the compilation that is used to execute your code. This will include the class and method wrappers around the code. You can use the `GeneratedCode` or `GeneratedCodeWithLineNumbers` properties to retrieve the code. The line numbers will match up with compilation errors return in the `ErrorMessage` so you can display an error message with compiler errors along with the code to optionally review the code in failure. 
 
 * **OutputAssembly**  
-You can optionally specify a filename to which the assembly is compiled. If this value is not set the assembly is generated into memory which is the default.
+You can optionally specify a filename to which the assembly is compiled. If this value is not set the assembly is generated in-memory which is the default.
 
 * **GeneratedClassName**  
 By default the class generated from any of the code methods generates a random class name. You can override the class name so you can load any generated types explicitly. Generally it doesn't matter what the class name is as the dynamic methods find the single class generated in the assembly.

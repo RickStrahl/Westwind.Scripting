@@ -20,7 +20,8 @@ namespace Westwind.Scripting.Test
             {
                 SaveGeneratedCode = true,
                 GeneratedNamespace = "ScriptExecutionTesting",
-                GeneratedClassName = "MyTest"
+                GeneratedClassName = "MyTest",
+                OutputAssembly = @"c:\temp\test2.dll"
             };
             script.AddDefaultReferencesAndNamespaces();
 
