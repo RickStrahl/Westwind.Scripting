@@ -16,9 +16,9 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* Full .NET Framework (4.62+)
-* .NET 6.0
-* .NET Standard 2.0
+* Full .NET Framework (net462)
+* .NET 6.0 (net60)
+* .NET Standard 2.0 (netstandard2.0)
  
 The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
 
@@ -247,7 +247,11 @@ You can optionally specify a filename to which the assembly is compiled. If this
 By default the class generated from any of the code methods generates a random class name. You can override the class name so you can load any generated types explicitly. Generally it doesn't matter what the class name is as the dynamic methods find the single class generated in the assembly.
 
 * **ThrowExceptions**  
-If `true` compiler errors will throw exceptions rather than silently failing after setting error properties. The default is false and the recommended approach is to explicitly check for errors after compilation.
+If `true` compiler errors will throw runtime execution exceptions rather than silently failing after setting error properties. 
+
+The default is `false` and the recommended approach is to explicitly check for errors after compilation and execution, by checking `Error`, `ErrorMessage` and `LastException` properties which we highly recommend.
+
+*Note: Compiler errors don't throw - only runtime errors do. Compiler errors set properties of the object as do execution errors when `ThrowExecptions =  false`.*
 
 **Error Properties** 
 
@@ -259,12 +263,11 @@ A simple boolean flag that lets you quickly check for an error.
 * **ErrorMessage**  
 An error message string that shows any compilation errors along with line numbers into the generated code.
 
-* **GeneratedCode** **GeneratedCodeWithLineNumbers**  
-If you receive Error Messages with line numbers it might be useful to have the source code that was generated to co-relate the error to.
+* **ErrorType**  
+Determines whether the error is `Compilation` or `Runtime` error.
 
-
-
-
+* **GeneratedCode and GeneratedCodeWithLineNumbers**  
+If you receive Error Messages with line numbers it might be useful to have the source code that was generated to co-relate the error to. If `true` compiled source code is saved - otherwise this property is null.
 
 ### Error Properties
 `CSharpScriptExecution` has two error modes:
