@@ -77,8 +77,11 @@ namespace Westwind.Scripting
         public bool SaveGeneratedCode { get; set; }
 
         /// <summary>
-        /// If true throws exceptions rather than failing silently
-        /// and returning error state. Default is false.
+        /// If true throws exceptions when executing the code rather
+        /// than setting the `Error`, `ErrorMessage` and `LastException`
+        /// properties.
+        /// 
+        /// Note: Compilation errors will not throw, but always set properties!
         /// </summary>
         public bool ThrowExceptions { get; set; }
 
@@ -96,6 +99,23 @@ namespace Westwind.Scripting
         /// method or script call
         /// </summary>
         public bool Error { get; set; }
+
+
+        /// <summary>
+        /// Determines whether the error is a compile time
+        /// error or runtime error
+        /// </summary>
+        public ExecutionErrorTypes ErrorType
+        {
+            get
+            {
+                if (LastException != null)
+                {
+                    return ExecutionErrorTypes.Runtime;
+                }
+                return ExecutionErrorTypes.Compilation;
+            }
+        }
 
 
         public Exception LastException { get; set; }
@@ -184,8 +204,7 @@ namespace Westwind.Scripting
                     return null;
             }
 
-            var result = InvokeMethod(ObjectInstance, methodName, parameters);
-            return result;
+            return InvokeMethod(ObjectInstance, methodName, parameters);
         }
 
         /// <summary>
@@ -248,7 +267,23 @@ namespace Westwind.Scripting
             if (taskResult == null)
                 return default;
 
-            var result = await taskResult;
+            TResult result;
+            if (ThrowExceptions)
+            {
+                result = await taskResult;
+            }
+            else
+            {
+                try
+                {
+                    result = await taskResult;
+                }
+                catch (Exception ex)
+                {
+                    SetErrors(ex);
+                    return default;
+                }
+            }
 
             return (TResult) result;
         }
@@ -565,7 +600,10 @@ namespace Westwind.Scripting
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
                 .WithOptions(
-                    new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                    new CSharpCompilationOptions(
+                        OutputKind.DynamicallyLinkedLibrary,
+                        reportSuppressedDiagnostics: true,
+                        optimizationLevel: OptimizationLevel.Debug))
                 .WithReferences(References)
                 .AddSyntaxTrees(tree);
 
@@ -960,12 +998,14 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
         {
             ClearErrors();
 
-            // *** Try to run it
+            if (ThrowExceptions)
+            {
+                return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
+            }
+
             try
             {
-                // *** Just invoke the method directly through Reflection
-                return instance.GetType()
-                    .InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
+                return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod,  null, instance, parameters);
             }
             catch (Exception ex)
             {
@@ -1025,5 +1065,11 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
         //{
         //    Compiler?.Dispose();
         //}
+    }
+
+    public enum ExecutionErrorTypes
+    {
+        Compilation,
+        Runtime
     }
 }

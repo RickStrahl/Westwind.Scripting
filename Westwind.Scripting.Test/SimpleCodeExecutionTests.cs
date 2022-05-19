@@ -290,6 +290,7 @@ public string HelloWorld(string name)
 
         }
 
+
         [TestMethod]
         public async Task ExecuteAsyncMethodTest()
         {
@@ -301,8 +302,10 @@ public string HelloWorld(string name)
             // lets not load assembly refs from host app in 6.0 but load explicitly below
             script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
 #if NET6_0
-            // Add .NET60 Runtime Assemblies - Nuget: Basic.References.Net60
+            // Add all .NET60 Runtime Assemblies - Nuget: Basic.References.Net60
             //script.AddAssemblies(Basic.Reference.Assemblies.Net60.All);  // need this because base lib doesn't load WebClient for example
+
+            // or explicitly add assemblies we need :(
             script.AddAssembly("System.Net.WebClient.dll");
 #endif
 
@@ -570,6 +573,75 @@ public class TestItem {
             Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, script.ErrorMessage);
 
+        }
+
+        [TestMethod]
+        public void ExecuteMethodWithExceptionTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            string code = $@"
+public string HelloWorld(string name)
+{{    
+    string result = null;  
+    result = result.ToString();  // boom
+
+    return result;
+}}";
+
+            string result = script.ExecuteMethod(code, "HelloWorld", "Rick") as string;
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine($"Message: {script.ErrorMessage}");
+            Console.WriteLine($"Type: {script.ErrorType}");
+            Console.WriteLine($"stack: " + script.LastException?.StackTrace);
+            Console.WriteLine($"    inner: " + script.LastException?.InnerException?.StackTrace);
+            
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsTrue(script.Error);
+            Assert.IsTrue(script.ErrorType == ExecutionErrorTypes.Runtime);
+
+        }
+
+        [TestMethod]
+        public async Task ExecuteMethodWithExceptionAsyncTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            string code = $@"
+public async Task<string> HelloWorld(string name)
+{{
+    string result = null;  
+    result = result.ToString();  // boom
+
+     await Task.Delay(1);
+    
+    return result;
+}}";
+
+            string result = await script.ExecuteMethodAsync<string>(code, "HelloWorld", "Rick");
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine($"Message: {script.ErrorMessage}");
+            Console.WriteLine($"Type: {script.ErrorType}");
+            Console.WriteLine($"stack: " + script.LastException?.StackTrace);
+            Console.WriteLine($"    inner: " + script.LastException?.InnerException?.StackTrace);
+
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsTrue(script.Error);
+            Assert.IsTrue(script.ErrorType == ExecutionErrorTypes.Runtime);
         }
     }
 

@@ -47,6 +47,9 @@ namespace Westwind.Scripting
             string codeIndicator = "%")
         {
             var atStart = scriptText.IndexOf(startDelim);
+
+            // no script in string - just return - this should be handled higher up
+            // and is in ExecuteXXXX methods.
             if (atStart == -1)
                 return "return " + EncodeStringLiteral(scriptText, true) + ";";
 
