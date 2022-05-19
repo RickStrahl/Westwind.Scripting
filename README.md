@@ -712,13 +712,24 @@ Console.WriteLine(result);
   
 ## Change Log
 
-### **Version 4.5** 
+### 1.0
+
+* **Switch to Roslyn CodeAnalysis APIs**  
+Switched from CodeDom compilation to Roslyn CodeAnalysis compilation which improves compiler startup, compilation performance and provides more detailed compilation information on errors.
 
 * **Add Support for Async Execution**  
 You can now use various `xxxAsync()` overloads to execute methods as `Task` based operations that can be `await`ed and can use `await` inside of scripts.
 
 * **Add ScriptParser for C# Template Scripting**  
 Added a very lightweight scripting engine that uses *Handlebars* style syntax for processing C# expressions and code blocks. Look at the `ScriptParser` class.
+
+#### BREAKING CHANGES FOR v1.0
+This version is a breaking change due to the changeover to the Roslyn APIs. While the APIs have stayed mostly the same, some of the dependent types have changed. Runtime requirements are also different with different libraries that are installed differently than the CodeDom dependencies. You may have to explicitly cleanup old application folders.
+
+### Version 0.4.5
+
+* **Last CodeDom Version**
+This version is the last version that works with CodeDom and that is fixed to .NET Framework. All later versions support .NET Framework and .NET Core. 
 
 ### **Version 0.3**  
 
