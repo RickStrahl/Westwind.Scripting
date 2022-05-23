@@ -1,12 +1,6 @@
 ﻿using System;
-using System.IO;
-using System.Net;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
-using Basic.Reference.Assemblies;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Westwind.Scripting;
-using Westwind.Utilities;
 
 namespace Westwind.Scripting.Test
 {
@@ -24,10 +18,7 @@ namespace Westwind.Scripting.Test
                 OutputAssembly = @"c:\temp\test2.dll"
             };
             script.AddDefaultReferencesAndNamespaces();
-
-//script.AddAssembly("Westwind.Utilities.dll");
-//script.AddNamespace("Westwind.Utilities");
-
+            
             var code = $@"
 // Check some C# 6+ lang features
 var s = new {{ name = ""Rick""}}; // anonymous types
@@ -582,7 +573,7 @@ public class TestItem {
             {
                 SaveGeneratedCode = true
             };
-            script.AddDefaultReferencesAndNamespaces();
+            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: true);
 
             string code = $@"
 public string HelloWorld(string name)
