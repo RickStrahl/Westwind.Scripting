@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Scripting;
 
@@ -200,11 +201,11 @@ And we're done with this!
             {
                 SaveGeneratedCode = true,
             };
-            exec.AddDefaultReferencesAndNamespaces();
+            exec.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
+            //exec.AddAssembly(typeof(ScriptParserTests));
             
 
-            //exec.AddAssembly(typeof(ScriptParserTests));
-            //exec.AddNamespace("Westwind.Scripting.Test");
+            exec.AddNamespace("Westwind.Scripting.Test");
 
             string result = ScriptParser.ExecuteScript(script, model, exec);
 

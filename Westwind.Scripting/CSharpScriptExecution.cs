@@ -105,18 +105,8 @@ namespace Westwind.Scripting
         /// Determines whether the error is a compile time
         /// error or runtime error
         /// </summary>
-        public ExecutionErrorTypes ErrorType
-        {
-            get
-            {
-                if (LastException != null)
-                {
-                    return ExecutionErrorTypes.Runtime;
-                }
-                return ExecutionErrorTypes.Compilation;
-            }
-        }
-
+        public ExecutionErrorTypes ErrorType { get; set; } = ExecutionErrorTypes.Compilation;
+        
 
         public Exception LastException { get; set; }
 
@@ -281,6 +271,7 @@ namespace Westwind.Scripting
                 catch (Exception ex)
                 {
                     SetErrors(ex);
+                    ErrorType = ExecutionErrorTypes.Runtime;
                     return default;
                 }
             }
@@ -450,22 +441,17 @@ namespace Westwind.Scripting
 
             code = ParseCodeWithParametersArray(code, parameters);
 
-            var objTask = ExecuteMethod("public async Task<object> ExecuteCode(params object[] parameters)" +
-                                        Environment.NewLine +
-                                        "{" +
-                                        code +
-                                        Environment.NewLine +
-                                        // force a return value - compiler will optimize this out
-                                        // if the code provides a return
-                                        "return default;" +
-                                        Environment.NewLine +
-                                        "}",
+            return ExecuteMethodAsync<object>("public async Task<object> ExecuteCode(params object[] parameters)" +
+                                              Environment.NewLine +
+                                              "{" +
+                                              code +
+                                              Environment.NewLine +
+                                              // force a return value - compiler will optimize this out
+                                              // if the code provides a return
+                                              "return default;" +
+                                              Environment.NewLine +
+                                              "}",
                 "ExecuteCode", parameters);
-
-            if (objTask == null || !(objTask is Task<object>))
-                return Task.FromResult<object>(null);
-
-            return (Task<object>) objTask;
         }
 
 
@@ -490,22 +476,18 @@ namespace Westwind.Scripting
 
             var typeName = typeof(TResult).FullName;
 
-            var objTask = ExecuteMethod($"public async Task<{typeName}> ExecuteCode(params object[] parameters)" +
-                                        Environment.NewLine +
-                                        "{" +
-                                        code +
-                                        Environment.NewLine +
-                                        // force a return value - compiler will optimize this out
-                                        // if the code provides a return
-                                        "return default;" +
-                                        Environment.NewLine +
-                                        "}",
+            return ExecuteMethodAsync<TResult>(
+                $"public async Task<{typeName}> ExecuteCode(params object[] parameters)" +
+                Environment.NewLine +
+                "{" +
+                code +
+                Environment.NewLine +
+                // force a return value - compiler will optimize this out
+                // if the code provides a return
+                "return default;" +
+                Environment.NewLine +
+                "}",
                 "ExecuteCode", parameters);
-
-            if (objTask == null || !(objTask is Task<TResult>))
-                return Task.FromResult<TResult>(default);
-
-            return (Task<TResult>) objTask;
         }
 
         /// <summary>
@@ -599,11 +581,7 @@ namespace Westwind.Scripting
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
-                .WithOptions(
-                    new CSharpCompilationOptions(
-                        OutputKind.DynamicallyLinkedLibrary,
-                        reportSuppressedDiagnostics: true,
-                        optimizationLevel: OptimizationLevel.Debug))
+                .WithOptions( new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary) )
                 .WithReferences(References)
                 .AddSyntaxTrees(tree);
 
@@ -776,8 +754,10 @@ namespace Westwind.Scripting
 /// </param>
 public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = false)
 {
+    // this library and CodeAnalysis libs
     AddAssembly(typeof(ReferenceList));
     AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+
 #if NETCORE
       AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
 #endif
@@ -970,6 +950,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             LastException = null;
             Error = false;
             ErrorMessage = null;
+            ErrorType = ExecutionErrorTypes.Compilation;
         }
 
         private void SetErrors(Exception ex)
@@ -1010,6 +991,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             catch (Exception ex)
             {
                 SetErrors(ex);
+                ErrorType = ExecutionErrorTypes.Runtime;
             }
 
             return null;
