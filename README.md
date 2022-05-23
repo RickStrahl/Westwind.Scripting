@@ -5,7 +5,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
-> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements!
+> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remain the same.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -247,11 +247,11 @@ You can optionally specify a filename to which the assembly is compiled. If this
 By default the class generated from any of the code methods generates a random class name. You can override the class name so you can load any generated types explicitly. Generally it doesn't matter what the class name is as the dynamic methods find the single class generated in the assembly.
 
 * **ThrowExceptions**  
-If `true` compiler errors will throw runtime execution exceptions rather than silently failing after setting error properties. 
+If `true` runtime errors will throw runtime execution exceptions rather than silently failing and setting error properties. 
 
 The default is `false` and the recommended approach is to explicitly check for errors after compilation and execution, by checking `Error`, `ErrorMessage` and `LastException` properties which we highly recommend.
 
-*Note: Compiler errors don't throw - only runtime errors do. Compiler errors set properties of the object as do execution errors when `ThrowExecptions =  false`.*
+> ***Note**: Compiler errors don't throw - only runtime errors do. Compiler errors set properties of the object as do execution errors when `ThrowExecptions =  false`.*
 
 **Error Properties** 
 
@@ -745,7 +745,7 @@ Switched from classic .NET projects to the new simpler .NET SDK project format f
 ## License
 This library is published under **MIT license** terms.
 
-**Copyright &copy; 2014-2021 Rick Strahl, West Wind Technologies**
+**Copyright &copy; 2014-2022 Rick Strahl, West Wind Technologies**
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sub license, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
