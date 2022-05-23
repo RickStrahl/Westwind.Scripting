@@ -12,7 +12,6 @@ Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 ```text
 Install-Package Westwind.Scripting
 ```
-<small>(currently you need to use the `-IncludePreRelease` flag for v1.0 that supports .NET Core and .NET Standard)</small>
 
 It supports the following targets:
 
