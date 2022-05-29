@@ -10,15 +10,16 @@ namespace Westwind.Scripting.Test
         [TestMethod]
         public void ExecuteCodeSnippetWithResult()
         {
+
             var script = new CSharpScriptExecution()
             {
                 SaveGeneratedCode = true,
                 GeneratedNamespace = "ScriptExecutionTesting",
                 GeneratedClassName = "MyTest",
-                OutputAssembly = @"c:\temp\test2.dll"
+            //    OutputAssembly = @"/temp/test2.dll"  // optionally save the assembly for later use or binary storage
             };
             script.AddDefaultReferencesAndNamespaces();
-            
+
             var code = $@"
 // Check some C# 6+ lang features
 var s = new {{ name = ""Rick""}}; // anonymous types
@@ -189,9 +190,9 @@ return result;
             string code = @"
 await Task.Run(async () => {
     {
-        Console.WriteLine($""Time before: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+        Console.WriteLine($""Time before: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");
         await Task.Delay(20);
-        Console.WriteLine($""Time after: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");        
+        Console.WriteLine($""Time after: {DateTime.Now.ToString(""HH:mm:ss:fff"")}"");
     }
 });
 
@@ -326,7 +327,7 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
                 Console.WriteLine(ex.Message);
                 return;
             }
-            
+
             Console.WriteLine($"Result: {result}");
             Console.WriteLine($"Error: {script.Error}");
             Console.WriteLine($"Error Message: {script.ErrorMessage}");
@@ -492,7 +493,7 @@ namespace MyApp
 
             // load runtime assemblies and common namespaces
             script.AddDefaultReferencesAndNamespaces(false);
-            
+
             // Add External Assembly (current folder)
             script.AddAssembly("Westwind.Utilities.dll");
 
@@ -501,7 +502,7 @@ namespace MyApp
 
             // Alternately: Load all loaded assemblies
             //script.AddLoadedAssemblies();
-            
+
             script.AddNamespace("Westwind.Utilities");
 
             // Add this Namespace for class reference below
@@ -536,7 +537,7 @@ return newWorld;
             // load runtime assemblies and common namespaces
             script.AddDefaultReferencesAndNamespaces();
 
-            
+
 
             string code = @"public string LinqTest(string search)
 {
@@ -551,7 +552,7 @@ return newWorld;
     return match.Name;
 }
 
-// Embedded Class 
+// Embedded Class
 public class TestItem {
    public string Name {get; set; }
 }
@@ -573,12 +574,12 @@ public class TestItem {
             {
                 SaveGeneratedCode = true
             };
-            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: true);
+            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
 
             string code = $@"
 public string HelloWorld(string name)
-{{    
-    string result = null;  
+{{
+    string result = null;
     result = result.ToString();  // boom
 
     return result;
@@ -592,11 +593,11 @@ public string HelloWorld(string name)
             Console.WriteLine($"Type: {script.ErrorType}");
             Console.WriteLine($"stack: " + script.LastException?.StackTrace);
             Console.WriteLine($"    inner: " + script.LastException?.InnerException?.StackTrace);
-            
+
             Console.WriteLine(script.GeneratedClassCode);
 
             Assert.IsTrue(script.Error);
-            Assert.IsTrue(script.ErrorType == ExecutionErrorTypes.Runtime);
+            Assert.AreEqual(script.ErrorType, ExecutionErrorTypes.Runtime,"Should be a runtime error: " + script.ErrorMessage);
 
         }
 
@@ -612,11 +613,11 @@ public string HelloWorld(string name)
             string code = $@"
 public async Task<string> HelloWorld(string name)
 {{
-    string result = null;  
+    string result = null;
     result = result.ToString();  // boom
 
      await Task.Delay(1);
-    
+
     return result;
 }}";
 
