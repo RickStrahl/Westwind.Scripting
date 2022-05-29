@@ -353,7 +353,7 @@ else
 }
 ```
 
-#### ExcecuteCodeAsync()
+#### ExecuteCodeAsync()
 If your code snippet requires `await` calls or uses `Task` operations, you probably want to execute your code using `async` `await` functionality.
 
 ```cs
@@ -668,7 +668,7 @@ Console.WriteLine(result);
 ```
 
 ### Execute the Code Generically
-If the model is not fixed and the value passed is of a various types, you can use the generic version that using `dynamic` model typing to access the model in the template. This code is actually simpler as you can use the `ScriptParser.ExecuteScript()` method directly without explictly converting the code first.
+If the model is not fixed and the value passed is of a various types, you can use the generic version that using `dynamic` model typing to access the model in the template. This code is actually simpler as you can use the `ScriptParser.ExecuteScript()` method directly without explicitly converting the code first.
 
 ```cs
 var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
@@ -733,7 +733,7 @@ This version is the last version that works with CodeDom and that is fixed to .N
 ### **Version 0.3**  
 
 * **Updated to latest Microsoft CodeDom libraries**  
-Updated to the latest Microsoft CodeDom compilation libraries which strealine the compiler process for Roslyn compilation with latest language features.
+Updated to the latest Microsoft CodeDom compilation libraries which streamline the compiler process for Roslyn compilation with latest language features.
 
 * **Remove support to pre .NET 4.72**  
 In order to keep the runtime dependencies down switched the library target to `net472` which is .NET Standard compliant and so pulls in a much smaller set of dependencies. This is potentially a breaking change for older .NET applications, which will have to stick with the `0.2.x` versions.
