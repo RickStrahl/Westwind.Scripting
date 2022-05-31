@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -201,10 +202,10 @@ And we're done with this!
             {
                 SaveGeneratedCode = true,
             };
-            exec.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
-            //exec.AddAssembly(typeof(ScriptParserTests));
-            
+            //exec.AddDefaultReferencesAndNamespaces();
+            exec.AddLoadedReferences();
 
+            exec.AddAssembly(typeof(ScriptParserTests));
             exec.AddNamespace("Westwind.Scripting.Test");
 
             string result = ScriptParser.ExecuteScript(script, model, exec);
@@ -241,7 +242,7 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 And we're done with this!
 ";
 
-            Console.WriteLine(script);
+            //Console.WriteLine(script);
 
 
             // Optional - build customized script engine
@@ -251,13 +252,21 @@ And we're done with this!
                 SaveGeneratedCode = true,
             };
             exec.AddDefaultReferencesAndNamespaces();
+            //exec.AddLoadedReferences();
 
-            //exec.AddAssembly(typeof(ScriptParserTests));
-            //exec.AddNamespace("Westwind.Scripting.Test");
 
+            foreach (var pe in exec.References)
+            {
+                Console.WriteLine("\"" + Path.GetFileName(pe.FilePath) + "\",");
+            }
+
+            exec.AddAssembly(typeof(ScriptParserTests));
+            exec.AddNamespace("Westwind.Scripting.Test");
+            
             string result = await ScriptParser.ExecuteScriptAsync(script, model, exec);
 
             Console.WriteLine(result);
+            Console.WriteLine("Error (" + exec.ErrorType + "): " + exec.ErrorMessage);
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(result, exec.ErrorMessage ) ;

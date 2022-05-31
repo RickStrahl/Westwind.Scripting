@@ -106,7 +106,7 @@ namespace Westwind.Scripting
         /// error or runtime error
         /// </summary>
         public ExecutionErrorTypes ErrorType { get; set; } = ExecutionErrorTypes.Compilation;
-        
+
 
         public Exception LastException { get; set; }
 
@@ -220,10 +220,10 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public TResult ExecuteMethod<TResult>(string code, string methodName, params object[] parameters)
         {
-            var result = ExecuteMethod(code, methodName,  parameters);
+            var result = ExecuteMethod(code, methodName, parameters);
 
             if (result is TResult)
-                return (TResult)result;
+                return (TResult) result;
 
             return default;
         }
@@ -248,12 +248,13 @@ namespace Westwind.Scripting
         /// <param name="parameters">any number of variable parameters</param>
         /// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
         /// <returns>result value of the method</returns>
-        public async Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
+        public async Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName,
+            params object[] parameters)
         {
             // this result will be a task of object (async method called)
             var taskResult = ExecuteMethod(code, methodName, parameters) as Task<TResult>;
 
-            
+
             if (taskResult == null)
                 return default;
 
@@ -407,18 +408,18 @@ namespace Westwind.Scripting
             code = ParseCodeWithParametersArray(code, parameters);
 
             var result = ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
-                                 Environment.NewLine +
-                                 "{" +
-                                 code +
-                                 Environment.NewLine +
-                                 // force a return value - compiler will optimize this out
-                                 // if the code provides a return
-                                 "return default;" +
-                                 Environment.NewLine +
-                                 "}",
+                                       Environment.NewLine +
+                                       "{" +
+                                       code +
+                                       Environment.NewLine +
+                                       // force a return value - compiler will optimize this out
+                                       // if the code provides a return
+                                       "return default;" +
+                                       Environment.NewLine +
+                                       "}",
                 "ExecuteCode", parameters);
 
-            return (TResult)result;
+            return (TResult) result;
         }
 
 
@@ -502,22 +503,22 @@ namespace Westwind.Scripting
         /// then accessible as a `Model` property in the code.
         /// </param>
         /// <returns></returns>
-        public Task<TResult> ExecuteCodeAsync<TResult,TModelType >(string code, TModelType model)
+        public Task<TResult> ExecuteCodeAsync<TResult, TModelType>(string code, TModelType model)
         {
             ClearErrors();
 
             var typeName = typeof(TModelType).FullName;
 
             var res = ExecuteMethodAsync<TResult>($"public async Task<object> ExecuteCode({typeName} Model)" +
-                                        Environment.NewLine +
-                                        "{" +
-                                        code +
-                                        Environment.NewLine +
-                                        // force a return value - compiler will optimize this out
-                                        // if the code provides a return
-                                        "return null;" +
-                                        Environment.NewLine +
-                                        "}",
+                                                  Environment.NewLine +
+                                                  "{" +
+                                                  code +
+                                                  Environment.NewLine +
+                                                  // force a return value - compiler will optimize this out
+                                                  // if the code provides a return
+                                                  "return null;" +
+                                                  Environment.NewLine +
+                                                  "}",
                 "ExecuteCode", model);
             return res;
         }
@@ -581,7 +582,7 @@ namespace Westwind.Scripting
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
-                .WithOptions( new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary) )
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
                 .WithReferences(References)
                 .AddSyntaxTrees(tree);
 
@@ -732,31 +733,62 @@ namespace Westwind.Scripting
             return code;
         }
 
-#endregion
+        #endregion
 
-#region Configuration Methods
+        #region Configuration Methods
 
-/// <summary>
-/// Adds basic System assemblies and namespaces so basic
-/// operations work.
-/// </summary>
-/// <param name="dontLoadLoadedAssemblies">
-/// In .NET Core it's recommended you add all host assemblies to ensure
-/// that any referenced assemblies are also accessible in your
-/// script code. Important as in Core there are many small libraries
-/// that comprise the core BCL/FCL.
-///
-/// For .NET Full this is not as important as most BCL/FCL features
-/// are automatically pulled by the System and System.Core default
-/// inclusions.
-///
-/// By default host assemblies are loaded.
-/// </param>
-public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = false)
-{
-    // this library and CodeAnalysis libs
-    AddAssembly(typeof(ReferenceList));
-    AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+
+        /// <summary>
+        /// Adds core system assemblies and namespaces for basic operation.
+        ///
+        /// Any additional references need to be explicitly added.
+        ///
+        /// Alternatelively use: AddLoadedReferences()
+        /// </summary>
+        public void AddDefaultReferencesAndNamespaces()
+        {
+         
+
+#if NET462
+            AddNetFrameworkDefaultReferences();
+            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
+#endif
+#if NETCORE
+            AddNetCoreDefaultReferences();
+            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
+#endif
+
+            AddNamespaces(DefaultNamespaces);
+        }
+
+        /// <summary>
+        /// Adds basic System assemblies and namespaces so basic
+        /// operations work.
+        /// </summary>
+        /// <param name="dontLoadLoadedAssemblies">
+        /// In .NET Core it's recommended you add all host assemblies to ensure
+        /// that any referenced assemblies are also accessible in your
+        /// script code. Important as in Core there are many small libraries
+        /// that comprise the core BCL/FCL.
+        ///
+        /// For .NET Full this is not as important as most BCL/FCL features
+        /// are automatically pulled by the System and System.Core default
+        /// inclusions.
+        ///
+        /// By default host assemblies are loaded.
+        /// </param>
+        [Obsolete("Please use AddDefaultReferencesAndNamespaces() or AddLoadedAssemblies()")]
+        public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies)
+        {
+            // this library and CodeAnalysis libs
+            AddAssembly(typeof(ReferenceList));
+            AddAssembly("Microsoft.CodeAnalysis.dll");
+            AddAssembly("Microsoft.CodeAnalysis.CSharp.dll");
+            AddAssembly("Microsoft.CSharp.dll");
+
+
+            if (!dontLoadLoadedAssemblies)
+                AddLoadedReferences();
 
 #if NETCORE
       AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
@@ -765,61 +797,156 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
 #endif
 
-            var runtimePath = Path.GetDirectoryName(typeof(object).Assembly.Location);
-
-    //var files = Directory.GetFiles(runtimePath, "*.dll");
-    //foreach (var file in files)
-    //{
-    //    AddAssembly(file);
-    //}
-
-
-    if (!dontLoadLoadedAssemblies)
-        AddLoadedAssemblies();
-
-
-    AddNamespaces("System",
-        "System.Text",
-        "System.Reflection",
-        "System.IO",
-        "System.Net",
-        "System.Collections",
-        "System.Collections.Generic",
-        "System.Collections.Concurrent",
-        "System.Text.RegularExpressions",
-        "System.Threading.Tasks",
-        "System.Linq");
-
-    }
+            AddNamespaces(DefaultNamespaces);
+        }
 
         /// <summary>
         /// Explicitly adds all referenced assemblies of the currently executing
-        /// process.
+        /// process. Also adds default namespaces.
         ///
         /// Useful in .NET Core to ensure that all those little tiny system assemblies
         /// that comprise NetCoreApp.App etc. dependencies get pulled in.
         ///
         /// For full framework this is less important as the base runtime pulls
         /// in all the system and system.core types.
+        ///
+        /// Alternative: use LoadDefaultReferencesAndNamespaces() and manually add
+        ///               
         /// </summary>
-        public void AddLoadedAssemblies()
-{
-    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-    foreach (var assembly in assemblies)
-    {
-        try
+        public void AddLoadedReferences()
         {
-            if (string.IsNullOrEmpty(assembly.Location)) continue;
-            AddAssembly(assembly.Location);
-        }
-        catch 
-        {
-        }
-    }
-}
+            AddAssembly(typeof(ReferenceList));
+            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+            AddAssembly("Microsoft.CSharp.dll");
 
-/// <summary>
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            foreach (var assembly in assemblies)
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(assembly.Location)) continue;
+                    AddAssembly(assembly.Location);
+                }
+                catch
+                {
+                }
+            }
+
+            AddNamespaces(DefaultNamespaces);
+        }
+
+        public void AddNetFrameworkDefaultReferences()
+        {
+            AddAssembly("mscorlib.dll");
+            AddAssembly("System.dll");
+            AddAssembly("System.Core.dll");
+            AddAssembly("Microsoft.CSharp.dll");
+
+            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
+
+            // this library and CodeAnalysis libs
+            AddAssembly(typeof(ReferenceList));  // Scripting Library
+        }
+
+        public void AddNetCoreDefaultReferences()
+        {
+
+
+
+            AddAssemblies(
+                "System.Private.CoreLib.dll",
+                "System.Runtime.dll",
+                "netstandard.dll",
+
+                "System.Console.dll",
+                "System.Linq.dll",
+                "System.Linq.Expressions.dll",  // IMPORTANT!
+                "System.Collections.dll",
+                "System.Text.RegularExpressions.dll",
+                "System.Net.dll",
+                "System.Net.WebClient.dll",
+                "System.Net.Http.dll",
+                "System.Private.Uri.dll",
+                "System.Reflection.dll",
+                "System.ComponentModel.Primitives.dll",
+
+                "System.Collections.Concurrent.dll",
+                "System.Collections.NonGeneric.dll",
+
+                //"System.Runtime.Extensions.dll",
+
+                //"System.Threading.Thread.dll",
+
+                //"System.Memory.dll",
+                //"System.Diagnostics.Process.dll",
+
+                //"System.Threading.ThreadPool.dll",
+                //"System.ComponentModel.dll",
+
+
+                //"System.Reflection.Primitives.dll",
+                //"System.Runtime.Loader.dll",
+                //"System.Net.Primitives.dll",
+                //"System.Reflection.Emit.dll",
+
+                //"System.Net.Sockets.dll",
+                //"System.Threading.Tasks.dll",
+                //"System.IO.FileSystem.dll",
+                //"System.Reflection.dll",
+                //"System.IO.dll",
+                //"System.Globalization.dll",
+                //"System.Reflection.Extensions.dll",
+                //"System.Collections.Immutable.dll",
+                //"System.IO.FileSystem.Primitives.dll",
+                //"System.Resources.ResourceManager.dll",
+                //"System.Diagnostics.TextWriterTraceListener.dll",
+                //"System.Reflection.Metadata.dll",
+
+                "Microsoft.CodeAnalysis.dll",
+                "Microsoft.CodeAnalysis.CSharp.dll",
+                "Microsoft.CSharp.dll"
+                );
+
+
+          
+
+            //"System.Private.CoreLib.dll",
+            // "System.Runtime.dll",
+            // "netstandard.dll",
+            // "System.Runtime.dll",
+            // "System.Runtime.InteropServices.dll",
+            // "System.Runtime.Extensions.dll",
+            // "System.Runtime.Loader.dll",
+            // "System.Threading.dll",
+            // "System.Threading.Tasks.dll",
+            // "System.IO.dll",
+            //"System.IO.FileSystem.dll",
+            // "System.Text.dll",
+            //"System.ObjectModel.dll",
+            // "System.Net.dll",
+            // "System.Net.Primitives.dll",
+            // "System.Private.CoreLib.dll",
+            // "System.Reflection.dll",
+            // "System.Reflection.Extensions.dll",
+            // "System.Reflection.Emit.dll",
+            // "System.Reflection.Metadata.dll",
+            //"System.Reflection.Primitives.dll",
+            //"System.Runtime.Loader.dll");
+
+
+            //#if NETCORE
+            //            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.Binder));
+            //#endif
+            // AddAssembly("Microsoft.CodeAnalysis.dll");
+            //AddAssembly("Microsoft.CodeAnalysis.CSharp.dll");
+
+            // this library and CodeAnalysis libs
+            AddAssembly(typeof(ReferenceList));  // Scripting Library
+
+        }
+
+        /// <summary>
         /// Adds an assembly from disk. Provide a full path if possible
         /// or a path that can resolve as part of the application folder
         /// or the runtime folder.
@@ -830,7 +957,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
             if (string.IsNullOrEmpty(assemblyDll)) return false;
 
             var file = Path.GetFullPath(assemblyDll);
-            
+
             if (!File.Exists(file))
             {
                 // check framework or dedicated runtime app folder
@@ -840,11 +967,13 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
                     return false;
             }
 
+            if (References.Any(r => r.FilePath == file)) return true;
+
             try
             {
                 var reference = MetadataReference.CreateFromFile(file);
                 References.Add(reference);
-             }
+            }
             catch
             {
                 return false;
@@ -852,6 +981,41 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 
             return true;
         }
+
+
+
+        public bool AddAssembly(PortableExecutableReference reference)
+        {
+            if (References.Any(r => r.FilePath == reference.FilePath))
+                return true;
+
+            References.Add(reference);
+            return true;
+        }
+
+        /// <summary>
+        /// Adds an assembly reference from an existing type
+        /// </summary>
+        /// <param name="type">any .NET type that can be referenced in the current application</param>
+        public bool AddAssembly(Type type)
+        {
+            try
+            {
+                if (References.Any(r => r.FilePath == type.Assembly.Location))
+                    return true;
+
+                var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
+                References.Add(systemReference);
+            }
+            catch
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+
 
 
         /// <summary>
@@ -867,13 +1031,13 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
         /// <param name="references">MetaDataReference or PortableExecutiveReference</param>
         public void AddAssemblies(IEnumerable<PortableExecutableReference> references)
         {
-            foreach(var reference in references)
+            foreach (var reference in references)
             {
                 References.Add(reference);
             }
         }
 
-        
+
         /// <summary>
         /// Adds a list of assemblies to the References
         /// collection.
@@ -885,32 +1049,6 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
                 AddAssembly(file);
         }
 
-
-        public bool AddAssembly(PortableExecutableReference reference)
-        {
-            References.Add(reference);
-            return true;
-        }
-
-        /// <summary>
-            /// Adds an assembly reference from an existing type
-            /// </summary>
-            /// <param name="type">any .NET type that can be referenced in the current application</param>
-            public bool AddAssembly(Type type)
-        {
-            try
-            {
-                var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
-                References.Add(systemReference);
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
-
-  
 
 
         /// <summary>
@@ -925,6 +1063,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
                 Namespaces.Clear();
                 return;
             }
+
             Namespaces.Add(nameSpace);
         }
 
@@ -945,6 +1084,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 
 
 #region Errors
+
         private void ClearErrors()
         {
             LastException = null;
@@ -963,9 +1103,14 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
                 throw LastException;
         }
 
-#endregion
+        public override string ToString()
+        {
+            return $"CSharpScriptExecution - {ErrorMessage}";
+        }
 
-#region Reflection Helpers
+        #endregion
+
+        #region Reflection Helpers
 
 
         /// <summary>
@@ -986,7 +1131,7 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 
             try
             {
-                return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod,  null, instance, parameters);
+                return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
             }
             catch (Exception ex)
             {
@@ -1040,13 +1185,15 @@ public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies = fa
 #endregion
 
 
-        ///// <summary>
-        /////  cleans up the compiler
-        ///// </summary>
-        //public void Dispose()
-        //{
-        //    Compiler?.Dispose();
-        //}
+        /// <summary>
+        /// List of default namespaces that are added when adding default references and namespaces
+        /// </summary>
+        public static string[] DefaultNamespaces =
+        {
+            "System", "System.Text", "System.Reflection", "System.IO", "System.Net", "System.Collections",
+            "System.Collections.Generic", "System.Collections.Concurrent", "System.Text.RegularExpressions",
+            "System.Threading.Tasks", "System.Linq"
+        };
     }
 
     public enum ExecutionErrorTypes

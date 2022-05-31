@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -211,6 +212,55 @@ return $""Done at {DateTime.Now.ToString(""HH:mm:ss:fff"")}"";
             Assert.IsTrue(result.StartsWith("Done at"));
         }
 
+
+        [TestMethod]
+        public async Task ExecuteCodeWithDynamicModelAsync()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            script.AddAssembly(typeof(ScriptTest));
+            script.AddNamespace("Westwind.Scripting.Test");
+
+            var model = new ScriptTest() { Message = "Hello World " };
+
+
+            
+
+            var code = @"
+dynamic Model = @0;
+
+var hclient = new System.Net.Http.HttpClient();
+
+var path = Path.GetFullPath(""\\temp\test.txt"");
+
+var bytes = Encoding.UTF8.GetBytes(""Hello World"");
+
+var list = new List<int> { 1,2,3,5 };
+
+var uri = new Uri(""https://albumviewer.west-wind.com/api/album/1"");
+var client = new WebClient();
+string result = client.DownloadString( uri);
+
+await Task.Delay(10); // test async
+
+result =  result + ""\n"" + Model.Message +  "" "" + DateTime.Now.ToString();
+return result;
+";
+
+
+            string execResult = await script.ExecuteCodeAsync<string>(code, model);
+
+            Console.WriteLine($"Result: {execResult}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
 
         [TestMethod]
         public async Task ExecuteCodeWithTypedModelAsync()
@@ -574,7 +624,7 @@ public class TestItem {
             {
                 SaveGeneratedCode = true
             };
-            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
+            script.AddDefaultReferencesAndNamespaces();
 
             string code = $@"
 public string HelloWorld(string name)
@@ -602,6 +652,54 @@ public string HelloWorld(string name)
         }
 
         [TestMethod]
+        public async Task TestDefaultAssemblyRequirements()
+        {
+
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true
+            };
+
+            // Don't use host assemblies - default + any manual adds!
+            script.AddDefaultReferencesAndNamespaces();
+
+
+            string code = $@"
+public async Task<string> HelloWorld(string name)
+{{
+
+    var bytes = System.Text.Encoding.UTF8.GetBytes(""Text"");
+    Console.WriteLine(bytes);  // Encoding
+
+    var path = Path.GetFullPath(""\\temp\\test.txt"");
+    Console.WriteLine(path); // System.IO
+
+    var num = new int[] {{ 1, 2, 3, 4, 5 }};
+    Console.WriteLine(num.Last());  // Linq
+
+    await Task.Delay(1);
+
+    string result = ""Hello World at: "" + DateTime.Now.ToString();
+    return result;
+}}";
+
+            string result = await script.ExecuteMethodAsync<string>(code, "HelloWorld", "Rick");
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine($"Message: {script.ErrorMessage}");
+            Console.WriteLine($"Type: {script.ErrorType}");
+            Console.WriteLine($"stack: " + script.LastException?.StackTrace);
+            Console.WriteLine($"    inner: " + script.LastException?.InnerException?.StackTrace);
+
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error);
+
+        }
+
+
+        [TestMethod]
         public async Task ExecuteMethodWithExceptionAsyncTest()
         {
             var script = new CSharpScriptExecution()
@@ -610,13 +708,14 @@ public string HelloWorld(string name)
             };
             script.AddDefaultReferencesAndNamespaces();
 
+            
             string code = $@"
 public async Task<string> HelloWorld(string name)
 {{
     string result = null;
     result = result.ToString();  // boom
 
-     await Task.Delay(1);
+    await Task.Delay(1);
 
     return result;
 }}";
@@ -630,7 +729,7 @@ public async Task<string> HelloWorld(string name)
             Console.WriteLine($"stack: " + script.LastException?.StackTrace);
             Console.WriteLine($"    inner: " + script.LastException?.InnerException?.StackTrace);
 
-            Console.WriteLine(script.GeneratedClassCode);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsTrue(script.Error);
             Assert.IsTrue(script.ErrorType == ExecutionErrorTypes.Runtime);
