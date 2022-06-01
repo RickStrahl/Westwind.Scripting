@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Text;
 
 
 namespace Westwind.Scripting
@@ -566,20 +567,109 @@ namespace Westwind.Scripting
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
-#endregion
+        #endregion
 
-#region Compilation and Code Generation
+        #region Compilation and Code Generation
 
         /// <summary>
-        /// Compiles and runs the source code for a complete assembly.
+        /// Compiles a class and creates an assembly from the compiled class.
+        ///
+        /// Assembly is stored on the `.Assembly` property. Use `noLoad()`
+        /// to bypass loading of the assembly
+        ///
+        /// Must include parameterless ctor()
         /// </summary>
-        /// <param name="source"></param>
+        /// <param name="source">Source code</param>
+        /// <param name="noLoad">if set doesn't load the assembly (useful only when OutputAssembly is set)</param>
         /// <returns></returns>
-        public bool CompileAssembly(string source)
+        public bool CompileAssembly(string source, bool noLoad = false)
         {
             ClearErrors();
 
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
+
+            var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithReferences(References)
+                .AddSyntaxTrees(tree);
+
+            if (SaveGeneratedCode)
+                GeneratedClassCode = tree.ToString();
+
+            if (string.IsNullOrEmpty(OutputAssembly)) // in Memory
+            {
+                using (var codeStream = new MemoryStream())
+                {
+                    var compilationResult = compilation.Emit(codeStream);
+
+                    // Compilation Error handling
+                    if (!compilationResult.Success)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        foreach (var diag in compilationResult.Diagnostics)
+                        {
+                            sb.AppendLine(diag.ToString());
+                        }
+
+                        ErrorMessage = sb.ToString();
+                        SetErrors(new ApplicationException(ErrorMessage));
+                        return false;
+                    }
+
+                    if (!noLoad)
+                        Assembly = Assembly.Load(codeStream.ToArray());
+                }
+            }
+            else
+            {
+                using (var codeStream = new FileStream(OutputAssembly, FileMode.Create, FileAccess.Write))
+                {
+                    var compilationResult = compilation.Emit(codeStream);
+
+                    // Compilation Error handling
+                    if (!compilationResult.Success)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        foreach (var diag in compilationResult.Diagnostics)
+                        {
+                            sb.AppendLine(diag.ToString());
+                        }
+
+                        ErrorMessage = sb.ToString();
+                        SetErrors(new ApplicationException(ErrorMessage));
+                        return false;
+                    }
+                }
+
+                if(!noLoad)
+                    Assembly = Assembly.LoadFrom(OutputAssembly);
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Compiles the source code for a complete class and then loads the
+        /// resulting assembly. 
+        ///
+        /// Loads the generated assembly and sets the `.Assembly` property if successful.
+        /// 
+        /// If `OutputAssembly` is set, the assembly is compiled to the specified file.
+        /// Otherwise the assembly is compiled 'in-memory' and cleaned up by the host
+        /// application/runtime.
+        ///
+        /// Must include parameterless ctor()
+        /// </summary>
+        /// <param name="codeInputStream">Stream that contains C# code</param>
+        /// <param name="noLoad">If set won't load the assembly and just compiles it. Useful only if OutputAssembly is set so you can explicitly load the assembly later.</param>
+        /// <returns></returns>
+        public bool CompileAssembly(Stream codeInputStream, bool noLoad = false)
+        {
+            ClearErrors();
+
+            var sourceCode = SourceText.From(codeInputStream);
+
+            var tree = SyntaxFactory.ParseSyntaxTree(sourceCode);
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
@@ -610,7 +700,8 @@ namespace Westwind.Scripting
                         return false;
                     }
 
-                    Assembly = Assembly.Load(codeStream.ToArray());
+                    if (!noLoad)
+                        Assembly = Assembly.Load(codeStream.ToArray());
                 }
             }
             else
@@ -634,7 +725,8 @@ namespace Westwind.Scripting
                     }
                 }
 
-                Assembly = Assembly.LoadFrom(OutputAssembly);
+                if (!noLoad)
+                    Assembly = Assembly.LoadFrom(OutputAssembly);
             }
 
             return true;
@@ -644,6 +736,8 @@ namespace Westwind.Scripting
         /// This method compiles a class and hands back a
         /// dynamic reference to that class that you can
         /// call members on.
+        ///
+        /// Must have include parameterless ctor()
         /// </summary>
         /// <param name="code">Fully self-contained C# class</param>
         /// <returns>Instance of that class or null</returns>
@@ -664,6 +758,29 @@ namespace Westwind.Scripting
         /// This method compiles a class and hands back a
         /// dynamic reference to that class that you can
         /// call members on.
+        /// 
+        /// Must have include parameterless ctor()
+        /// </summary>
+        /// <param name="code">Fully self-contained C# class</param>
+        /// <returns>Instance of that class or null</returns>
+        public dynamic CompileClass(Stream code)
+        {
+            var type = CompileClassToType(code);
+            if (type == null)
+                return null;
+
+            // Figure out the class name
+            GeneratedClassName = type.Name;
+            GeneratedNamespace = type.Namespace;
+
+            return CreateInstance();
+        }
+
+
+        /// <summary>
+        /// This method compiles a class and hands back a
+        /// dynamic reference to that class that you can
+        /// call members on.
         /// </summary>
         /// <param name="code">Fully self-contained C# class</param>
         /// <returns>Instance of that class or null</returns>
@@ -678,7 +795,7 @@ namespace Westwind.Scripting
                 if (!CompileAssembly(code))
                     return null;
 
-                CachedAssemblies[code.GetHashCode()] = Assembly;
+                CachedAssemblies[hash] = Assembly;
             }
             else
             {
@@ -688,6 +805,36 @@ namespace Westwind.Scripting
             // Figure out the class name
             return Assembly.ExportedTypes.First();
         }
+
+
+        /// <summary>
+        /// This method expects a fully self-contained class file
+        /// including namespace and using wrapper to compile
+        /// from an input stream.
+        /// </summary>
+        /// <param name="codeStream">Fully self-contained C# class</param>
+        /// <returns>A type reference to the generated class</returns>
+        public Type CompileClassToType(Stream codeStream)
+        {
+            int hash = codeStream.GetHashCode();
+
+            
+            if (!CachedAssemblies.ContainsKey(hash))
+            {
+                if (!CompileAssembly(codeStream))
+                    return null;
+
+                CachedAssemblies[hash] = Assembly;
+            }
+            else
+            {
+                Assembly = CachedAssemblies[hash];
+            }
+
+            // Figure out the class name
+            return Assembly.ExportedTypes.First();
+        }
+
 
         private StringBuilder GenerateClass(string code)
         {
