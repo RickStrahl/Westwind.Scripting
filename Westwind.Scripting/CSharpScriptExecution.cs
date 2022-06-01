@@ -747,7 +747,7 @@ namespace Westwind.Scripting
         /// </summary>
         public void AddDefaultReferencesAndNamespaces()
         {
-         
+
 
 #if NET462
             AddNetFrameworkDefaultReferences();
@@ -791,7 +791,7 @@ namespace Westwind.Scripting
                 AddLoadedReferences();
 
 #if NETCORE
-      AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
+            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
 #endif
 #if NET462
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
@@ -842,28 +842,25 @@ namespace Westwind.Scripting
             AddAssembly("System.dll");
             AddAssembly("System.Core.dll");
             AddAssembly("Microsoft.CSharp.dll");
+            AddAssembly("System.Net.Http.dll");
 
             AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
 
             // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList));  // Scripting Library
+            AddAssembly(typeof(ReferenceList)); // Scripting Library
         }
 
         public void AddNetCoreDefaultReferences()
         {
 
-
-
             AddAssemblies(
                 "System.Private.CoreLib.dll",
                 "System.Runtime.dll",
-                "netstandard.dll",
 
                 "System.Console.dll",
                 "System.Linq.dll",
-                "System.Linq.Expressions.dll",  // IMPORTANT!
-                "System.Collections.dll",
-                "System.Text.RegularExpressions.dll",
+                "System.Linq.Expressions.dll", // IMPORTANT!
+                "System.Text.RegularExpressions.dll", // Important
                 "System.Net.dll",
                 "System.Net.WebClient.dll",
                 "System.Net.Http.dll",
@@ -874,75 +871,13 @@ namespace Westwind.Scripting
                 "System.Collections.Concurrent.dll",
                 "System.Collections.NonGeneric.dll",
 
-                //"System.Runtime.Extensions.dll",
-
-                //"System.Threading.Thread.dll",
-
-                //"System.Memory.dll",
-                //"System.Diagnostics.Process.dll",
-
-                //"System.Threading.ThreadPool.dll",
-                //"System.ComponentModel.dll",
-
-
-                //"System.Reflection.Primitives.dll",
-                //"System.Runtime.Loader.dll",
-                //"System.Net.Primitives.dll",
-                //"System.Reflection.Emit.dll",
-
-                //"System.Net.Sockets.dll",
-                //"System.Threading.Tasks.dll",
-                //"System.IO.FileSystem.dll",
-                //"System.Reflection.dll",
-                //"System.IO.dll",
-                //"System.Globalization.dll",
-                //"System.Reflection.Extensions.dll",
-                //"System.Collections.Immutable.dll",
-                //"System.IO.FileSystem.Primitives.dll",
-                //"System.Resources.ResourceManager.dll",
-                //"System.Diagnostics.TextWriterTraceListener.dll",
-                //"System.Reflection.Metadata.dll",
-
                 "Microsoft.CodeAnalysis.dll",
                 "Microsoft.CodeAnalysis.CSharp.dll",
                 "Microsoft.CSharp.dll"
-                );
-
-
-          
-
-            //"System.Private.CoreLib.dll",
-            // "System.Runtime.dll",
-            // "netstandard.dll",
-            // "System.Runtime.dll",
-            // "System.Runtime.InteropServices.dll",
-            // "System.Runtime.Extensions.dll",
-            // "System.Runtime.Loader.dll",
-            // "System.Threading.dll",
-            // "System.Threading.Tasks.dll",
-            // "System.IO.dll",
-            //"System.IO.FileSystem.dll",
-            // "System.Text.dll",
-            //"System.ObjectModel.dll",
-            // "System.Net.dll",
-            // "System.Net.Primitives.dll",
-            // "System.Private.CoreLib.dll",
-            // "System.Reflection.dll",
-            // "System.Reflection.Extensions.dll",
-            // "System.Reflection.Emit.dll",
-            // "System.Reflection.Metadata.dll",
-            //"System.Reflection.Primitives.dll",
-            //"System.Runtime.Loader.dll");
-
-
-            //#if NETCORE
-            //            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.Binder));
-            //#endif
-            // AddAssembly("Microsoft.CodeAnalysis.dll");
-            //AddAssembly("Microsoft.CodeAnalysis.CSharp.dll");
+            );
 
             // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList));  // Scripting Library
+            AddAssembly(typeof(ReferenceList)); // Scripting Library
 
         }
 
@@ -1080,10 +1015,10 @@ namespace Westwind.Scripting
             }
         }
 
-#endregion
+        #endregion
 
 
-#region Errors
+        #region Errors
 
         private void ClearErrors()
         {
@@ -1182,7 +1117,7 @@ namespace Westwind.Scripting
             return (code).GetHashCode();
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
@@ -1190,9 +1125,9 @@ namespace Westwind.Scripting
         /// </summary>
         public static string[] DefaultNamespaces =
         {
-            "System", "System.Text", "System.Reflection", "System.IO", "System.Net", "System.Collections",
-            "System.Collections.Generic", "System.Collections.Concurrent", "System.Text.RegularExpressions",
-            "System.Threading.Tasks", "System.Linq"
+            "System", "System.Text", "System.Reflection", "System.IO", "System.Net", "System.Net.Http",
+            "System.Collections", "System.Collections.Generic", "System.Collections.Concurrent",
+            "System.Text.RegularExpressions", "System.Threading.Tasks", "System.Linq"
         };
     }
 

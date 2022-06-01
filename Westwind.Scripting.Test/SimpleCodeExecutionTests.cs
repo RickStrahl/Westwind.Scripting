@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -227,27 +228,13 @@ return $""Done at {DateTime.Now.ToString(""HH:mm:ss:fff"")}"";
 
             var model = new ScriptTest() { Message = "Hello World " };
 
-
             
-
             var code = @"
 dynamic Model = @0;
 
-var hclient = new System.Net.Http.HttpClient();
-
-var path = Path.GetFullPath(""\\temp\test.txt"");
-
-var bytes = Encoding.UTF8.GetBytes(""Hello World"");
-
-var list = new List<int> { 1,2,3,5 };
-
-var uri = new Uri(""https://albumviewer.west-wind.com/api/album/1"");
-var client = new WebClient();
-string result = client.DownloadString( uri);
-
 await Task.Delay(10); // test async
 
-result =  result + ""\n"" + Model.Message +  "" "" + DateTime.Now.ToString();
+string result =  Model.Message +  "" "" + DateTime.Now.ToString();
 return result;
 ";
 
@@ -261,6 +248,8 @@ return result;
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }
+
+     
 
         [TestMethod]
         public async Task ExecuteCodeWithTypedModelAsync()
@@ -733,6 +722,59 @@ public async Task<string> HelloWorld(string name)
 
             Assert.IsTrue(script.Error);
             Assert.IsTrue(script.ErrorType == ExecutionErrorTypes.Runtime);
+        }
+
+
+        [TestMethod]
+        public async Task ExecuteCodeWithManyDefaultTypeslAsync()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            script.AddAssembly(typeof(ScriptTest));
+            script.AddNamespace("Westwind.Scripting.Test");
+
+            var model = new ScriptTest() { Message = "Hello World " };
+
+            
+            var code = @"
+dynamic Model = @0;
+
+var hclient = new System.Net.Http.HttpClient();
+
+var al = new ArrayList();
+al.Add(10);
+
+var path = Path.GetFullPath(""\\temp\\test.txt"");
+
+var bytes = Encoding.UTF8.GetBytes(""Hello World"");
+
+var list = new List<int> { 1,2,3,5 };
+
+var uri = new Uri(""https://albumviewer.west-wind.com/api/album/1"");
+var client = new WebClient();
+string result = client.DownloadString( uri);
+
+var hc = new HttpClient();
+
+await Task.Delay(10); // test async
+
+result =  result + ""\n"" + Model.Message +  "" "" + DateTime.Now.ToString();
+return result;
+";
+
+
+            string execResult = await script.ExecuteCodeAsync<string>(code, model);
+
+            Console.WriteLine($"Result: {execResult}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
         }
     }
 
