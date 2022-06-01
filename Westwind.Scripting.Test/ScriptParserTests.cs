@@ -25,7 +25,8 @@ namespace Westwind.Scripting.Test
 
             Console.WriteLine(script + "\n\n");
 
-            var code = ScriptParser.ParseScriptToCode(script);
+            var scriptParser = new ScriptParser();
+            var code = scriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");
 
@@ -45,17 +46,15 @@ And we're done with this!
 
             Console.WriteLine(script + "\n\n");
 
-
-            var code = ScriptParser.ParseScriptToCode(script);
+            var scriptParser = new ScriptParser();
+            var code = scriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");
 
             Console.WriteLine(code);
 
-            // Create a default Execution Engine
-            var compiler = ScriptParser.CreateScriptEngine();
-
-            var result = compiler.ExecuteCode(code);
+            // Explicit let Script Engine Execute code
+            var result = scriptParser.ScriptEngine.ExecuteCode(code);
 
             Console.WriteLine(result);
         }
@@ -89,26 +88,25 @@ And we're done with this!
 
             Console.WriteLine(script);
 
-
-            var code = ScriptParser.ParseScriptToCode(script);
+            var scriptParser = new ScriptParser();
+            var code = scriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");
 
             Console.WriteLine(code);
 
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            exec.AddDefaultReferencesAndNamespaces();
-            exec.AddAssembly(typeof(ScriptParserTests));
-            exec.AddNamespace("Westwind.Scripting.Test");
+
+            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
             var method = @"public string HelloWorldScript(TestModel Model) { " +
                          code + "}";
 
-            var result = exec.ExecuteMethod(method, "HelloWorldScript", model);
+            var result = scriptParser.ScriptEngine.ExecuteMethod(method, "HelloWorldScript", model);
 
 
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, exec.ErrorMessage);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
 
             Console.WriteLine(result);
         }
@@ -132,16 +130,15 @@ And we're done with this!
 
             Console.WriteLine(script);
 
-
-            var code = ScriptParser.ParseScriptToCode(script);
+            var scriptParser = new ScriptParser();
+            var code = scriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");
 
             Console.WriteLine(code);
 
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            exec.AddDefaultReferencesAndNamespaces();
-
+            var exec = scriptParser.ScriptEngine;
+            
             // explicitly add the type and namespace so the script can find the model type
             // which we are passing in explicitly here
             exec.AddAssembly(typeof(ScriptParserTests));
@@ -191,19 +188,17 @@ And we're done with this!
 
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            //exec.AddDefaultReferencesAndNamespaces();
-            exec.AddDefaultReferencesAndNamespaces();
 
-            exec.AddAssembly(typeof(ScriptParserTests));
-            exec.AddNamespace("Westwind.Scripting.Test");
+            var scriptParser = new ScriptParser();
+            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
-            string result = ScriptParser.ExecuteScript(script, model, exec);
+            string result = scriptParser.ExecuteScript(script, model);
 
             Console.WriteLine(result);
 
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, exec.ErrorMessage);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
         }
 
         /// <summary>
@@ -231,29 +226,23 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 
 And we're done with this!
 ";
-
-            // Optional - build customized script engine
-            // so we can add custom
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            exec.AddDefaultReferencesAndNamespaces();
-            //exec.AddLoadedReferences();
-
-
-            foreach (var pe in exec.References)
+            var scriptParser = new ScriptParser();
+            
+            foreach (var pe in scriptParser.ScriptEngine.References)
             {
                 Console.WriteLine("\"" + Path.GetFileName(pe.FilePath) + "\",");
             }
 
-            exec.AddAssembly(typeof(ScriptParserTests));
-            exec.AddNamespace("Westwind.Scripting.Test");
+            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
-            string result = await ScriptParser.ExecuteScriptAsync(script, model, exec);
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
 
             Console.WriteLine(result);
-            Console.WriteLine("Error (" + exec.ErrorType + "): " + exec.ErrorMessage);
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Console.WriteLine("Error (" + scriptParser.ScriptEngine.ErrorType + "): " + scriptParser.ScriptEngine.ErrorMessage);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
-            Assert.IsNotNull(result, exec.ErrorMessage);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
 
         }
 
@@ -288,17 +277,16 @@ And we're done with this!
 
             Console.WriteLine(script);
 
+            var scriptParser = new ScriptParser();
 
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution() { SaveGeneratedCode = true, };
-            //exec.AddDefaultReferencesAndNamespaces();
-            exec.AddDefaultReferencesAndNamespaces();
-
+            var exec = scriptParser.ScriptEngine;
+            
             exec.AddAssembly(typeof(ScriptParserTests));
             exec.AddNamespace("Westwind.Scripting.Test");
 
-            string result = ScriptParser.ExecuteScript(script, model, exec);
+            string result = scriptParser.ExecuteScript(script, model, exec);
 
             Console.WriteLine(result);
 
@@ -306,7 +294,7 @@ And we're done with this!
             Assert.IsNotNull(result, exec.ErrorMessage);
 
             model.Name = "Johnny";
-            result = ScriptParser.ExecuteScript(script, model, exec);
+            result = scriptParser.ExecuteScript(script, model, exec);
             Console.WriteLine(result);
 
         }
@@ -323,18 +311,13 @@ Hello World. Date is: today!
             Console.WriteLine(script);
 
 
-            // Optional - build customized script engine
-            // so we can add custom
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            exec.AddDefaultReferencesAndNamespaces();
-
-
-            string result = ScriptParser.ExecuteScript(script, null, exec);
+            var scriptParser = new ScriptParser();
+            string result = scriptParser.ExecuteScript(script, null);
 
             Console.WriteLine(result);
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
-            Assert.IsNotNull(result, exec.ErrorMessage);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
         }
 
         [TestMethod]
@@ -348,18 +331,13 @@ Hello World. Date is: today!
             Console.WriteLine(script);
 
 
-            // Optional - build customized script engine
-            // so we can add custom
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
-            exec.AddDefaultReferencesAndNamespaces();
-
-
-            string result = await ScriptParser.ExecuteScriptAsync(script, null, exec);
+            var scriptParser = new ScriptParser();
+            string result = await scriptParser.ExecuteScriptAsync(script, null);
 
             Console.WriteLine(result);
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
 
-            Assert.IsNotNull(result, exec.ErrorMessage);
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
         }
 
 

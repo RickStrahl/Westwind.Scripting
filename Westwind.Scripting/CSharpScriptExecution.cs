@@ -1313,6 +1313,7 @@ namespace Westwind.Scripting
     public enum ExecutionErrorTypes
     {
         Compilation,
-        Runtime
+        Runtime,
+        None
     }
 }

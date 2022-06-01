@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 
 namespace Westwind.Scripting
 {
@@ -26,10 +27,52 @@ namespace Westwind.Scripting
     /// {{% for(int x; x&lt;10; x++  { }}
     ///     {{ x }}. Hello World
     /// {{% } }}
-    /// 
+    ///
+    /// Uses the `.ScriptEngine` property for execution and provides
+    /// error information there.
     /// </summary>
-    public class ScriptParser
+    public class ScriptParser 
     {
+        /// <summary>
+        /// Script Engine used if none is passed in
+        /// </summary>
+        public CSharpScriptExecution ScriptEngine
+        {
+            get
+            {
+                if (_scriptEngine == null)
+                    _scriptEngine = CreateScriptEngine();
+
+                return _scriptEngine;
+            }
+            set => _scriptEngine = value;
+        }
+        private CSharpScriptExecution _scriptEngine;
+
+
+        /// <summary>
+        /// Error Message if an error occurred
+        /// </summary>
+        public string ErrorMessage => ScriptEngine?.ErrorMessage;
+
+        /// <summary>
+        /// Type of error that occurred during compilation or execution of the template
+        /// </summary>
+        public ExecutionErrorTypes ErrorType => ScriptEngine?.ErrorType ?? ExecutionErrorTypes.None;
+
+
+        /// <summary>
+        /// Generated code that is compiled
+        /// </summary>
+        public string GeneratedClassCode => ScriptEngine?.GeneratedClassCode;
+
+        /// <summary>
+        /// Generated code with line numbers that is compiled. You can use this
+        /// to match error messages to code lines.
+        /// </summary>
+        public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
+
+        #region Script Execution
 
         /// <summary>
         /// Executes a script that supports {{ expression }} and {{% code block }} syntax
@@ -48,7 +91,7 @@ namespace Westwind.Scripting
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public static string ExecuteScript(string script, object model,
+        public string ExecuteScript(string script, object model,
             CSharpScriptExecution scriptEngine = null,
             string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
         {
@@ -64,9 +107,10 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" + code;
 
             if (scriptEngine == null)
-                scriptEngine = CreateScriptEngine();
+                scriptEngine = ScriptEngine;
+            else
+                ScriptEngine = scriptEngine;
             
-
             return scriptEngine.ExecuteCode(code, model) as string;
         }
 
@@ -91,7 +135,7 @@ namespace Westwind.Scripting
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public static async Task<string> ExecuteScriptAsync(string script,
+        public async Task<string> ExecuteScriptAsync(string script,
             object model = null,
             CSharpScriptExecution scriptEngine = null,
             string startDelim = "{{", string endDelim = "}}",
@@ -127,7 +171,7 @@ namespace Westwind.Scripting
         /// <param name="endDelim">code and expression end delimiter</param>
         /// <param name="codeIndicator">code block indicator that combines the start delim plus this character (ie. default of `%` combines to `{{%`)</param>
         /// <returns></returns>
-        public static string ParseScriptToCode(string scriptText, string startDelim = "{{", string endDelim = "}}",
+        public  string ParseScriptToCode(string scriptText, string startDelim = "{{", string endDelim = "}}",
             string codeIndicator = "%")
         {
             var atStart = scriptText.IndexOf(startDelim);
@@ -201,7 +245,9 @@ var writer = new StringWriter();
                 return code.ToString();
             }
         }
+        #endregion
 
+        #region Script Engine
 
         /// <summary>
         /// Creates an instance of a script engine with default configuration settings
@@ -213,7 +259,7 @@ var writer = new StringWriter();
         /// <param name="namespaces">optional list of name spaces</param>
         /// <param name="referenceTypes">optional list of reference types</param>
         /// <returns></returns>
-        public static CSharpScriptExecution CreateScriptEngine(
+        public CSharpScriptExecution CreateScriptEngine(
             string[] references = null,
             string[] namespaces = null,
             Type[] referenceTypes = null)
@@ -234,6 +280,49 @@ var writer = new StringWriter();
 
             return exec;
         }
+
+        /// <summary>
+        /// Adds an assembly to the list of references for compilation
+        /// using a dll filename
+        /// </summary>
+        /// <param name="assemblyFile">Assembly filenames</param>
+        public void AddAssembly(string assemblyFile) => ScriptEngine.AddAssembly(assemblyFile);
+
+
+        /// <summary>
+        /// Adds an assembly to the list of references for compilation
+        /// using a type that is loaded and contained in the assembly
+        /// </summary>
+        /// <param name="typeInAssembly">type loaded and contained in the target assembly</param>
+        public void AddAssembly(Type typeInAssembly) => ScriptEngine.AddAssembly(typeInAssembly);
+
+        /// <summary>
+        /// Adds several assembly to the list of references for compilation
+        /// using a dll filenames.
+        /// </summary>
+        /// <param name="assemblies">Assembly file names</param>
+        public void AddAssemblies(params string[] assemblies) => ScriptEngine.AddAssemblies(assemblies);
+
+        /// <summary>
+        /// list of meta references to assemblies. Can be used with `Basic.References
+        /// </summary>
+        /// <param name="metaAssemblies"></param>
+        public void AddAssemblies(params PortableExecutableReference[] metaAssemblies) => ScriptEngine.AddAssemblies(metaAssemblies);
+
+        /// <summary>
+        /// Add a namespace for compilation of the template
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        public void AddNamespace(string nameSpace) => ScriptEngine.AddNamespace(nameSpace);
+
+        /// <summary>
+        /// Add a list of namespaces for compilation of the template
+        /// </summary>
+        /// <param name="nameSpaces"></param>
+        public void AddNamespaces(params string[] nameSpaces) => ScriptEngine.AddNamespaces(nameSpaces);
+
+        #endregion
+
 
         /// <summary>
         /// Encodes a string to be represented as a C# style string literal. 
