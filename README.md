@@ -19,9 +19,9 @@ It supports the following targets:
 * .NET 6.0 (net60)
 * .NET Standard 2.0 (netstandard2.0)
  
-The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and script templates via the `ScriptParser` class.
+The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class.
 
-This execution class makes is very easy to integrate simple scripting or text merging features into applications with minimal effort.
+This execution class makes is very easy to integrate simple scripting or text merging features into applications using most modern C# features.
 
 ## Features
 * Easy C# code compilation and execution for:
@@ -32,6 +32,7 @@ This execution class makes is very easy to integrate simple scripting or text me
 * Caching of already compiled code
 * Ability to compile entire classes and load, execute them
 * Automatic Assembly Cleanup at shutdown
+* Async execution support
 * Error Handling
 	* Intercept compilation and execution errors
 	* Detailed compiler error messages
@@ -54,6 +55,14 @@ There are also async versions of the Execute and Evaluate methods:
 * `EvaluateAsync()`
 
 All method also have additional generic return type overloads.
+
+Additionally you can also compile self-contained classes:
+
+* `CompileClass()`
+* `CompileClassToType()`
+* `CompileAssembly()`
+
+These provide either quick compilation for later use, or direct type or assembly instantiation for immediate on the fly execution.
 
 ### Script Parser
 Script Templating using a Handlebars like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
