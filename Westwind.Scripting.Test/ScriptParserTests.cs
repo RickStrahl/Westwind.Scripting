@@ -45,18 +45,15 @@ And we're done with this!
 
             Console.WriteLine(script + "\n\n");
 
-            
+
             var code = ScriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");
 
             Console.WriteLine(code);
 
-            var compiler = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
-            compiler.AddDefaultReferencesAndNamespaces();
+            // Create a default Execution Engine
+            var compiler = ScriptParser.CreateScriptEngine();
 
             var result = compiler.ExecuteCode(code);
 
@@ -90,7 +87,7 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 And we're done with this!
 ";
 
-            Console.WriteLine(script );
+            Console.WriteLine(script);
 
 
             var code = ScriptParser.ParseScriptToCode(script);
@@ -99,10 +96,7 @@ And we're done with this!
 
             Console.WriteLine(code);
 
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             exec.AddDefaultReferencesAndNamespaces();
             exec.AddAssembly(typeof(ScriptParserTests));
             exec.AddNamespace("Westwind.Scripting.Test");
@@ -115,8 +109,6 @@ And we're done with this!
 
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, exec.ErrorMessage);
-           
-            
 
             Console.WriteLine(result);
         }
@@ -124,7 +116,7 @@ And we're done with this!
         [TestMethod]
         public async Task BasicScriptParserAndExecuteAsyncWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -147,10 +139,7 @@ And we're done with this!
 
             Console.WriteLine(code);
 
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             exec.AddDefaultReferencesAndNamespaces();
 
             // explicitly add the type and namespace so the script can find the model type
@@ -164,7 +153,7 @@ And we're done with this!
             var result = await exec.ExecuteMethodAsync<string>(method, "HelloWorldScript", model);
 
             Assert.IsNotNull(result, exec.ErrorMessage);
-            
+
             Console.WriteLine(result);
         }
 
@@ -181,13 +170,17 @@ And we're done with this!
         [TestMethod]
         public void ScriptParserExecuteWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
+      {{% for (int y = 1; y < 3; y++) { }}
+       {{ y}}. Yowsers
+      {{% } }}
+              
 {{% } }}
 
 And we're done with this!
@@ -198,12 +191,9 @@ And we're done with this!
 
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             //exec.AddDefaultReferencesAndNamespaces();
-            exec.AddLoadedReferences();
+            exec.AddDefaultReferencesAndNamespaces();
 
             exec.AddAssembly(typeof(ScriptParserTests));
             exec.AddNamespace("Westwind.Scripting.Test");
@@ -228,7 +218,7 @@ And we're done with this!
         [TestMethod]
         public async Task ScriptParserExecuteAsyncWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -242,15 +232,9 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 And we're done with this!
 ";
 
-            //Console.WriteLine(script);
-
-
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             exec.AddDefaultReferencesAndNamespaces();
             //exec.AddLoadedReferences();
 
@@ -262,16 +246,71 @@ And we're done with this!
 
             exec.AddAssembly(typeof(ScriptParserTests));
             exec.AddNamespace("Westwind.Scripting.Test");
-            
+
             string result = await ScriptParser.ExecuteScriptAsync(script, model, exec);
 
             Console.WriteLine(result);
             Console.WriteLine("Error (" + exec.ErrorType + "): " + exec.ErrorMessage);
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
 
-            Assert.IsNotNull(result, exec.ErrorMessage ) ;
-            
+            Assert.IsNotNull(result, exec.ErrorMessage);
+
         }
+
+
+        /// <summary>
+        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
+        /// generically execute a method that can receive a single input parameter.
+        /// The parameter is dynamic cast since it can be anything.
+        ///
+        /// If your parameter is always the same and fixed, you may want to consider
+        /// using the previous example and provide fixed typing to the executed method.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public void ScriptParserExecuteWithModelExecuteMultipleTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+      {{% for (int y = 1; y < 3; y++) { }}
+       {{ y}}. Yowsers
+      {{% } }}
+              
+{{% } }}
+
+And we're done with this!
+";
+
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+            var exec = new CSharpScriptExecution() { SaveGeneratedCode = true, };
+            //exec.AddDefaultReferencesAndNamespaces();
+            exec.AddDefaultReferencesAndNamespaces();
+
+            exec.AddAssembly(typeof(ScriptParserTests));
+            exec.AddNamespace("Westwind.Scripting.Test");
+
+            string result = ScriptParser.ExecuteScript(script, model, exec);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, exec.ErrorMessage);
+
+            model.Name = "Johnny";
+            result = ScriptParser.ExecuteScript(script, model, exec);
+            Console.WriteLine(result);
+
+        }
+
 
         [TestMethod]
         public void NoCSharpCodeSnippetTest()
@@ -286,14 +325,11 @@ Hello World. Date is: today!
 
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             exec.AddDefaultReferencesAndNamespaces();
 
-            
-            string result = ScriptParser.ExecuteScript(script,null, exec);
+
+            string result = ScriptParser.ExecuteScript(script, null, exec);
 
             Console.WriteLine(result);
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
@@ -314,10 +350,7 @@ Hello World. Date is: today!
 
             // Optional - build customized script engine
             // so we can add custom
-            var exec = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
+            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true,};
             exec.AddDefaultReferencesAndNamespaces();
 
 

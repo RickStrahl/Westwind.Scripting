@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 
@@ -165,37 +166,31 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            object instance = ObjectInstance;
+            int hash = GenerateHashCode(code);
 
-            if (instance == null)
+            if (!CachedAssemblies.ContainsKey(hash))
             {
-                int hash = GenerateHashCode(code);
-
                 var sb = GenerateClass(code);
-
-                if (!CachedAssemblies.ContainsKey(hash))
-                {
-                    if (!CompileAssembly(sb.ToString()))
-                        return null;
-
-                    CachedAssemblies[hash] = Assembly;
-                }
-                else
-                {
-                    Assembly = CachedAssemblies[hash];
-
-                    // Figure out the class name
-                    var type = Assembly.ExportedTypes.First();
-                    GeneratedClassName = type.Name;
-                    GeneratedNamespace = type.Namespace;
-                }
-
-                object tempInstance = CreateInstance();
-                if (tempInstance == null)
+                if (!CompileAssembly(sb.ToString()))
                     return null;
+
+                CachedAssemblies[hash] = Assembly;
+            }
+            else
+            {
+                Assembly = CachedAssemblies[hash];
+
+                // Figure out the class name
+                var type = Assembly.ExportedTypes.First();
+                GeneratedClassName = type.Name;
+                GeneratedNamespace = type.Namespace;
             }
 
-            return InvokeMethod(ObjectInstance, methodName, parameters);
+            var instance = CreateInstance(); // also stores into `ObjectInstance` so it can be reused
+            if (instance == null)
+                return null;
+
+            return InvokeMethod(instance, methodName, parameters);
         }
 
         /// <summary>
@@ -423,6 +418,39 @@ namespace Westwind.Scripting
             return (TResult) result;
         }
 
+        /// <summary>
+        /// Executes a snippet of code. Pass in a variable number of parameters
+        /// (accessible via the parameters[0..n] array) and return an object parameter.
+        /// Code should include:  return (object) SomeValue as the last line or return null
+        /// </summary>
+        /// <param name="code">The code to execute</param>
+        /// <param name="parameters">The parameters to pass the code
+        /// You can reference parameters as @0, @1, @2 in code to map
+        /// to the parameter array items (ie. @1 instead of parameters[1])
+        /// </param>
+        /// <returns>Result cast to a type you specify</returns>
+        public TResult ExecuteCode<TResult, TModelType>(string code, TModelType model)
+        {
+            ClearErrors();
+
+            var modelType = typeof(TModelType).FullName;
+            var resultType = typeof(TResult).FullName;
+
+            var result = ExecuteMethod<TResult>("public {resultType} ExecuteCode({typeName} Model)" +
+                                       Environment.NewLine +
+                                       "{" +
+                                       code +
+                                       Environment.NewLine +
+                                       // force a return value - compiler will optimize this out
+                                       // if the code provides a return
+                                       "return default;" +
+                                       Environment.NewLine +
+                                       "}",
+                "ExecuteCode", model);
+
+            return result;
+        }
+
 
         /// <summary>
         /// Executes a snippet of code. Pass in a variable number of parameters
@@ -596,53 +624,43 @@ namespace Westwind.Scripting
             if (SaveGeneratedCode)
                 GeneratedClassCode = tree.ToString();
 
-            if (string.IsNullOrEmpty(OutputAssembly)) // in Memory
+            bool isFileAssembly = false;
+            Stream codeStream = null;
+            if (string.IsNullOrEmpty(OutputAssembly)) 
             {
-                using (var codeStream = new MemoryStream())
-                {
-                    var compilationResult = compilation.Emit(codeStream);
-
-                    // Compilation Error handling
-                    if (!compilationResult.Success)
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        foreach (var diag in compilationResult.Diagnostics)
-                        {
-                            sb.AppendLine(diag.ToString());
-                        }
-
-                        ErrorMessage = sb.ToString();
-                        SetErrors(new ApplicationException(ErrorMessage));
-                        return false;
-                    }
-
-                    if (!noLoad)
-                        Assembly = Assembly.Load(codeStream.ToArray());
-                }
+                codeStream = new MemoryStream(); // in-memory assembly
             }
             else
             {
-                using (var codeStream = new FileStream(OutputAssembly, FileMode.Create, FileAccess.Write))
+                codeStream = new FileStream(OutputAssembly, FileMode.Create, FileAccess.Write);
+                isFileAssembly = true;
+            }
+
+            using (codeStream)
+            {
+                var compilationResult = compilation.Emit(codeStream);
+
+                // Compilation Error handling
+                if (!compilationResult.Success)
                 {
-                    var compilationResult = compilation.Emit(codeStream);
-
-                    // Compilation Error handling
-                    if (!compilationResult.Success)
+                    var sb = new StringBuilder();
+                    foreach (var diag in compilationResult.Diagnostics)
                     {
-                        StringBuilder sb = new StringBuilder();
-                        foreach (var diag in compilationResult.Diagnostics)
-                        {
-                            sb.AppendLine(diag.ToString());
-                        }
-
-                        ErrorMessage = sb.ToString();
-                        SetErrors(new ApplicationException(ErrorMessage));
-                        return false;
+                        sb.AppendLine(diag.ToString());
                     }
+
+                    ErrorMessage = sb.ToString();
+                    SetErrors(new ApplicationException(ErrorMessage));
+                    return false;
                 }
 
-                if(!noLoad)
-                    Assembly = Assembly.LoadFrom(OutputAssembly);
+                if (!noLoad)
+                {
+                    if (!isFileAssembly)
+                        Assembly = Assembly.Load(((MemoryStream) codeStream).ToArray());
+                    else
+                        Assembly = Assembly.LoadFrom(OutputAssembly);
+                }
             }
 
             return true;
@@ -836,11 +854,22 @@ namespace Westwind.Scripting
         }
 
 
-        private StringBuilder GenerateClass(string code)
+        /// <summary>
+        /// This method creates a class wrapper around a passed in class body.
+        ///
+        /// The wrapper creates the namespace, adds usings, and creates
+        /// the class header based on the property settings for the instance.
+        ///
+        /// You pass in the 'body' of the class which is properties, constants, methods etc.
+        /// to fill out the class
+        /// </summary>
+        /// <param name="classBody">The class body - methods, properties, constants etc. without a class header</param>
+        /// <returns></returns>
+        private StringBuilder GenerateClass(string classBody)
         {
             StringBuilder sb = new StringBuilder();
 
-            //*** Program lead in and class header
+            // Add default usings
             sb.AppendLine(Namespaces.ToString());
 
 
@@ -854,7 +883,7 @@ namespace Westwind.Scripting
 
             //*** The actual code to run in the form of a full method definition.
             sb.AppendLine();
-            sb.AppendLine(code);
+            sb.AppendLine(classBody);
             sb.AppendLine();
 
             sb.AppendLine("} " +
@@ -962,10 +991,6 @@ namespace Westwind.Scripting
         /// </summary>
         public void AddLoadedReferences()
         {
-            AddAssembly(typeof(ReferenceList));
-            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
-            AddAssembly("Microsoft.CSharp.dll");
-
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
             foreach (var assembly in assemblies)
@@ -1008,8 +1033,8 @@ namespace Westwind.Scripting
                 "System.Linq.dll",
                 "System.Linq.Expressions.dll", // IMPORTANT!
                 "System.Text.RegularExpressions.dll", // Important
-                "System.Net.dll",
-                "System.Net.WebClient.dll",
+                "System.IO.dll",
+                "System.Net.Primitives.dll",
                 "System.Net.Http.dll",
                 "System.Private.Uri.dll",
                 "System.Reflection.dll",
@@ -1018,9 +1043,9 @@ namespace Westwind.Scripting
                 "System.Collections.Concurrent.dll",
                 "System.Collections.NonGeneric.dll",
 
+                "Microsoft.CSharp.dll",
                 "Microsoft.CodeAnalysis.dll",
-                "Microsoft.CodeAnalysis.CSharp.dll",
-                "Microsoft.CSharp.dll"
+                "Microsoft.CodeAnalysis.CSharp.dll"
             );
 
             // this library and CodeAnalysis libs
@@ -1198,13 +1223,20 @@ namespace Westwind.Scripting
         /// <summary>
         /// Helper method to invoke a method on an object using Reflection
         /// </summary>
-        /// <param name="instance">An object instance. You can pass script.ObjectInstance</param>
+        /// <param name="instance">An object instance. null uses ObjectInstance property if set.</param>
         /// <param name="method">The method name as a string</param>
         /// <param name="parameters">a variable list of parameters to pass</param>
-        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">Throws if the instance is null</exception>
+        /// <returns>result from method call or null.</returns>
         public object InvokeMethod(object instance, string method, params object[] parameters)
         {
             ClearErrors();
+
+            if (instance == null)
+                instance = ObjectInstance;
+
+            if (instance == null)
+                throw new ArgumentNullException("Can't invoke Script Method: Instance not available.");
 
             if (ThrowExceptions)
             {
@@ -1224,21 +1256,21 @@ namespace Westwind.Scripting
             return null;
         }
 
+        
         /// <summary>
         /// Creates an instance of the object specified
         /// by the GeneratedNamespace and GeneratedClassName.
         ///
         /// Sets the ObjectInstance member which is returned
         /// </summary>
+        /// <param name="force">If true force to create a new instance regardless whether an instance is already loaded</param>
         /// <returns>Instance of the class or null on error</returns>
-        public object CreateInstance()
+        public object CreateInstance(bool force = false)
         {
             ClearErrors();
 
-            if (ObjectInstance != null)
+            if (ObjectInstance != null && !force)
                 return ObjectInstance;
-
-            // *** Create an instance of the new object
 
             try
             {

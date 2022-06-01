@@ -748,6 +748,8 @@ var hclient = new System.Net.Http.HttpClient();
 var al = new ArrayList();
 al.Add(10);
 
+var cookie = new System.Net.Cookie();
+
 var path = Path.GetFullPath(""\\temp\\test.txt"");
 
 var bytes = Encoding.UTF8.GetBytes(""Hello World"");
@@ -765,7 +767,10 @@ await Task.Delay(10); // test async
 result =  result + ""\n"" + Model.Message +  "" "" + DateTime.Now.ToString();
 return result;
 ";
+            // have to add this reference for .NET Core
+            script.AddAssembly("System.Net.WebClient.dll");
 
+            
 
             string execResult = await script.ExecuteCodeAsync<string>(code, model);
 

@@ -174,6 +174,8 @@ public class Test
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
             Assert.IsTrue(result.Contains("Time is:"));
+
+            var x = new {Name = "Rick", Time = DateTime.Now};
         }
 
     }
