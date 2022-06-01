@@ -86,7 +86,7 @@ namespace Westwind.Scripting
         public bool ThrowExceptions { get; set; }
 
 
-        #region Error Handling Properties
+#region Error Handling Properties
 
         /// <summary>
         /// Error message if an error occurred during the invoked
@@ -110,10 +110,10 @@ namespace Westwind.Scripting
 
         public Exception LastException { get; set; }
 
-        #endregion
+#endregion
 
 
-        #region Internal Settings
+#region Internal Settings
 
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Westwind.Scripting
         /// </summary>
         public object ObjectInstance { get; set; }
 
-        #endregion
+#endregion
 
 
 
@@ -136,7 +136,7 @@ namespace Westwind.Scripting
 
         }
 
-        #region Execution Methods
+#region Execution Methods
 
 
         /// <summary>
@@ -566,9 +566,9 @@ namespace Westwind.Scripting
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
-        #endregion
+#endregion
 
-        #region Compilation and Code Generation
+#region Compilation and Code Generation
 
         /// <summary>
         /// Compiles and runs the source code for a complete assembly.
@@ -733,9 +733,9 @@ namespace Westwind.Scripting
             return code;
         }
 
-        #endregion
+#endregion
 
-        #region Configuration Methods
+#region Configuration Methods
 
 
         /// <summary>
@@ -1015,10 +1015,10 @@ namespace Westwind.Scripting
             }
         }
 
-        #endregion
+#endregion
 
 
-        #region Errors
+#region Errors
 
         private void ClearErrors()
         {
@@ -1043,9 +1043,9 @@ namespace Westwind.Scripting
             return $"CSharpScriptExecution - {ErrorMessage}";
         }
 
-        #endregion
+#endregion
 
-        #region Reflection Helpers
+#region Reflection Helpers
 
 
         /// <summary>
@@ -1117,7 +1117,7 @@ namespace Westwind.Scripting
             return (code).GetHashCode();
         }
 
-        #endregion
+#endregion
 
 
         /// <summary>
