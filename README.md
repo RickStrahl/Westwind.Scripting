@@ -5,7 +5,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
-> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remain the same.
+> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remains the same.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -710,6 +710,14 @@ Console.WriteLine(result);
 
   
 ## Change Log
+
+### 1.0.10
+
+* **Add Stream Inputs for Class Compilation**  
+The various `CompileClass()` methods now take stream inputs to allow directly reading from files or memory streams.
+
+* **Clean up Default References and Namespaces for .NET Core**  
+Modified the default reference imports to create a minimal but somewhat functional baseline that allows running a variety of code running against common BCL/FCL functionality.
 
 ### 1.0
 
