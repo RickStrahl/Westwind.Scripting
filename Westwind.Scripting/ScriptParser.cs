@@ -49,6 +49,10 @@ namespace Westwind.Scripting
         }
         private CSharpScriptExecution _scriptEngine;
 
+        /// <summary>
+        /// Determines whether the was a compile time or runtime error
+        /// </summary>
+        public bool Error => ScriptEngine?.Error ?? false;
 
         /// <summary>
         /// Error Message if an error occurred
