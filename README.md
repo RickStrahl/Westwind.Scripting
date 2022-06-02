@@ -5,7 +5,7 @@
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
-> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from CodeDom, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remains the same.
+> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from the old CodeDom libraries, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remains the same.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -19,20 +19,17 @@ It supports the following targets:
 * .NET 6.0 (net60)
 * .NET Standard 2.0 (netstandard2.0)
  
-The small library provides an easy way to compile and execute C# code from source code provided at runtime. This library uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class.
-
-This execution class makes is very easy to integrate simple scripting or text merging features into applications using most modern C# features.
+This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class.
 
 ## Features
 * Easy C# code compilation and execution for:
-	* Code blocks 
+	* Code blocks  (generic execution)
 	* Full methods (method header/result value)
-	* Full classes (compile and load)
 	* Expressions  (evaluate expressions)
+	* Full classes (compile and load)
+* Async execution support
 * Caching of already compiled code
 * Ability to compile entire classes and load, execute them
-* Automatic Assembly Cleanup at shutdown
-* Async execution support
 * Error Handling
 	* Intercept compilation and execution errors
 	* Detailed compiler error messages
@@ -40,7 +37,7 @@ This execution class makes is very easy to integrate simple scripting or text me
 * Roslyn Warmup 
 * Template Scripting Engine using Handlebars-like with C# syntax
 
-### Runtime Compilation and Execution
+### CSharpScriptExecution: C# Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
 
 * `ExecuteCode()` -  Execute an arbitrary block of code. Pass parameters, return a value
@@ -64,7 +61,7 @@ Additionally you can also compile self-contained classes:
 
 These provide either quick compilation for later use, or direct type or assembly instantiation for immediate on the fly execution.
 
-### C# Template Script Expansion
+### ScriptParser: C# Template Script Expansion
 Script Templating using a *Handlebars* like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
 
 Methods:
