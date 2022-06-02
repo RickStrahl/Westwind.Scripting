@@ -105,8 +105,8 @@ And we're done with this!
             var result = scriptParser.ScriptEngine.ExecuteMethod(method, "HelloWorldScript", model);
 
 
-            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+            Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
 
             Console.WriteLine(result);
         }

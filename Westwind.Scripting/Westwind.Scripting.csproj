@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.0.10</Version>
+    <Version>1.1</Version>
     <TargetFrameworks>net60;net462;netstandard2.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
