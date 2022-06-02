@@ -64,14 +64,14 @@ Additionally you can also compile self-contained classes:
 
 These provide either quick compilation for later use, or direct type or assembly instantiation for immediate on the fly execution.
 
-### Script Parser
-Script Templating using a Handlebars like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
+### C# Template Script Expansion
+Script Templating using a *Handlebars* like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
 
 Methods:
 
-* `ParseScriptToCode()`
 * `ExecuteScript()`     
 * `ExecuteScriptAsync()`
+* `ParseScriptToCode()`
 
 Script parser expansion syntax used is:
 

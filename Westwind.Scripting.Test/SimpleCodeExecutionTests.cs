@@ -733,6 +733,10 @@ public async Task<string> HelloWorld(string name)
                 SaveGeneratedCode = true,
             };
             script.AddDefaultReferencesAndNamespaces();
+            script.AddLoadedReferences();
+
+            script.AddAssembly("System.Net.Http.dll");
+            script.AddAssembly("System.Net.WebClient.dll");
 
             script.AddAssembly(typeof(ScriptTest));
             script.AddNamespace("Westwind.Scripting.Test");

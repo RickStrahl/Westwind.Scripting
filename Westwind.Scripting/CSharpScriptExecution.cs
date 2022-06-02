@@ -64,11 +64,20 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCode { get; set; }
 
+
+        /// <summary>
+        /// Last generated code for this code snippet with line numbers
+        /// </summary>
         public string GeneratedClassCodeWithLineNumbers => Utils.GetTextWithLineNumbers(GeneratedClassCode);
 
-
+        /// <summary>
+        /// Name of the namespace that a class is generated in
+        /// </summary>
         public string GeneratedNamespace { get; set; } = "__ScriptExecution";
 
+        /// <summary>
+        /// Name of the class to generate. By default a unique name
+        /// </summary>
         public string GeneratedClassName { get; set; } = "__" + Utils.GenerateUniqueId();
 
 
@@ -1004,6 +1013,13 @@ namespace Westwind.Scripting
                 {
                 }
             }
+#if NETCORE
+            AddAssemblies(
+                "System.Linq.Expressions.dll", // IMPORTANT!
+                "System.Text.RegularExpressions.dll", // IMPORTANT!
+                "Microsoft.CSharp.dll"
+            );
+#endif
 
             AddNamespaces(DefaultNamespaces);
         }
@@ -1032,7 +1048,7 @@ namespace Westwind.Scripting
                 "System.Console.dll",
                 "System.Linq.dll",
                 "System.Linq.Expressions.dll", // IMPORTANT!
-                "System.Text.RegularExpressions.dll", // Important
+                "System.Text.RegularExpressions.dll", // IMPORTANT!
                 "System.IO.dll",
                 "System.Net.Primitives.dll",
                 "System.Net.Http.dll",
