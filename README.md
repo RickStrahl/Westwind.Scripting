@@ -245,11 +245,44 @@ script.AddNamespace("Westwind.Utilities");
 script.AddNamespace("Westwind.Utilities.Data");
 ```
 
+#### Allowing Assemblies and Namespaces in Code
+You can also add namespaces and - optionally - assembly references in code.
+
+##### Namespaces
+You can add valid namespace references in code by using the following syntax:
+
+```cs
+using Westwind.Utilities
+
+var errors = StringUtils.GetLines(Model.Errors);
+```
+Namespaces are always parsed if present.
+
+##### Assembly References
+Assembly references are **disabled by default** as they are a potential security issue. But you can enable them via the `AllowReferencesInCode` property set to `true`.
+
+Once enabled you can embed references like this:
+
+```cs
+#r MarkdownMonster.exe
+using MarkdownMonser
+
+var title = mmApp.Configuration.ApplicationName;
+```
+
+Assemblies are searched for in the application folder and in the runtime folder.
+
+####
+
 #### Configuration Properties
 The `CSharpScriptExecution` has only a few configuration options available:
 
 * **SaveGeneratedCode**  
 If `true` captures the generated class code for the compilation that is used to execute your code. This will include the class and method wrappers around the code. You can use the `GeneratedCode` or `GeneratedCodeWithLineNumbers` properties to retrieve the code. The line numbers will match up with compilation errors return in the `ErrorMessage` so you can display an error message with compiler errors along with the code to optionally review the code in failure. 
+
+* **AllowReferencesInCode**  
+If `true` allows references to be added in script code via
+`#r assembly.dll`.
 
 * **OutputAssembly**  
 You can optionally specify a filename to which the assembly is compiled. If this value is not set the assembly is generated in-memory which is the default.

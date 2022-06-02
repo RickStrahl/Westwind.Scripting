@@ -96,8 +96,14 @@ namespace Westwind.Scripting
         /// </summary>
         public bool ThrowExceptions { get; set; }
 
+        /// <summary>
+        /// If true parses references in code that are referenced with:
+        /// #r assembly.dll
+        /// </summary>
+        public bool AllowReferencesInCode { get; set; } = false;
 
-#region Error Handling Properties
+
+        #region Error Handling Properties
 
         /// <summary>
         /// Error message if an error occurred during the invoked
@@ -177,6 +183,9 @@ namespace Westwind.Scripting
 
             int hash = GenerateHashCode(code);
 
+            // check for #r and using directives
+            code = ParseReferencesInCode(code);
+            
             if (!CachedAssemblies.ContainsKey(hash))
             {
                 var sb = GenerateClass(code);
@@ -1138,9 +1147,6 @@ namespace Westwind.Scripting
             return true;
         }
 
-
-
-
         /// <summary>
         /// Add several reference assemblies in batch.
         ///
@@ -1187,7 +1193,8 @@ namespace Westwind.Scripting
                 return;
             }
 
-            Namespaces.Add(nameSpace);
+            if (!Namespaces.Contains(nameSpace))
+                Namespaces.Add(nameSpace);
         }
 
         /// <summary>
@@ -1231,9 +1238,80 @@ namespace Westwind.Scripting
             return $"CSharpScriptExecution - {ErrorMessage}";
         }
 
-#endregion
+        #endregion
 
-#region Reflection Helpers
+
+
+        /// <summary>
+        /// Parses references with this syntax:
+        ///
+        /// #r assembly.dll
+        ///
+        /// Each match found is added to the assembly list
+        /// </summary>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        private string ParseReferencesInCode(string code)
+        {
+            if (string.IsNullOrEmpty(code)) return code;
+
+            if (!code.Contains("#r ") && !code.Contains("using "))
+                return code;
+
+
+            StringBuilder sb = new StringBuilder();
+            var snippetLines = GetLines(code);
+
+            foreach (var line in snippetLines)
+            {
+                if (line.Trim().Contains("#r "))
+                {
+                    if (AllowReferencesInCode)
+                    {
+                        string assemblyName = line.Replace("#r ", "").Trim();
+                        AddAssembly(assemblyName);
+                        continue;
+                    }
+                    sb.AppendLine("// not allowed: " + line);
+                    continue;
+                }
+
+                if (line.Trim().Contains("using ") && !line.Contains("("))
+                {
+                    string ns = line.Replace("using ", "").Replace(";", "").Trim();
+                    AddNamespace(ns);
+                    continue;
+                }
+
+                sb.AppendLine(line);
+            }
+
+            return sb.ToString();
+        }
+
+
+
+        /// <summary>
+        /// Parses a string into an array of lines broken
+        /// by \r\n or \n
+        /// </summary>
+        /// <param name="s">String to check for lines</param>
+        /// <param name="maxLines">Optional - max number of lines to return</param>
+        /// <returns>array of strings, or null if the string passed was a null</returns>
+        protected static string[] GetLines(string s, int maxLines = 0)
+        {
+            if (s == null)
+                return null;
+
+            s = s.Replace("\r\n", "\n");
+
+            if (maxLines < 1)
+                return s.Split(new char[] { '\n' });
+
+            return s.Split(new char[] { '\n' }, maxLines);
+        }
+
+        #region Reflection Helpers
 
 
         /// <summary>

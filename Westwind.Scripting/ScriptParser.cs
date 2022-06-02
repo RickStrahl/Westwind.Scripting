@@ -76,6 +76,8 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
+
+ 
         #region Script Execution
 
         /// <summary>
@@ -249,6 +251,9 @@ var writer = new StringWriter();
                 return code.ToString();
             }
         }
+
+
+
         #endregion
 
         #region Script Engine
@@ -391,6 +396,7 @@ var writer = new StringWriter();
 
             return sb.ToString();
         }
+
     }
 }
 

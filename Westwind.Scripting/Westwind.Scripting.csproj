@@ -15,7 +15,7 @@ Features:
 * Execute code snippets with or without parameters and return values
 * Execute complete methods
 * Create and load classes
-* Handlebars like C# Text Script Expansion
+* C# Script Templates using Handlebars like syntax
       
     </Description>
     <Summary>Small library to dynamically compile and execute C# source code at runtime.</Summary>

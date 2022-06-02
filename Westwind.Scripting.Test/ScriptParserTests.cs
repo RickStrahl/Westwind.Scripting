@@ -10,6 +10,191 @@ namespace Westwind.Scripting.Test
     [TestClass]
     public class ScriptParserTests
     {
+
+
+
+        /// <summary>
+        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
+        /// generically execute a method that can receive a single input parameter.
+        /// The parameter is dynamic cast since it can be anything.
+        ///
+        /// If your parameter is always the same and fixed, you may want to consider
+        /// using the previous example and provide fixed typing to the executed method.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public void ExecuteScriptWithModelTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+
+            var scriptParser = new ScriptParser();
+
+            // add dependencies
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.AddNamespace("Westwind.Scripting.Test");
+
+            // Execute
+            string result = scriptParser.ExecuteScript(script, model);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+        }
+
+        /// <summary>
+        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
+        /// generically execute a method that can receive a single input parameter.
+        /// The parameter is dynamic cast since it can be anything.
+        ///
+        /// If your parameter is always the same and fixed, you may want to consider
+        /// using the previous example and provide fixed typing to the executed method.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public async Task ExecuteScriptAsyncWithModelTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+{{% await Task.Delay(10); }}
+
+And we're done with this!
+";
+            var scriptParser = new ScriptParser();
+
+            foreach (var pe in scriptParser.ScriptEngine.References)
+            {
+                Console.WriteLine("\"" + Path.GetFileName(pe.FilePath) + "\",");
+            }
+
+            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
+
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
+
+            Console.WriteLine(result);
+            Console.WriteLine("Error (" + scriptParser.ScriptEngine.ErrorType + "): " + scriptParser.ScriptEngine.ErrorMessage);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+
+        }
+
+
+        [TestMethod]
+        public void ExecuteScriptWithModelWithReferenceTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+
+            Console.WriteLine(script);
+
+
+            // Optional - build customized script engine
+            // so we can add custom
+
+            var scriptParser = new ScriptParser();
+
+            // add dependencies
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.AddNamespace("Westwind.Scripting.Test");
+
+            // Execute
+            string result = scriptParser.ExecuteScript(script, model);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+        }
+
+
+        /// <summary>
+        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
+        /// generically execute a method that can receive a single input parameter.
+        /// The parameter is dynamic cast since it can be anything.
+        ///
+        /// If your parameter is always the same and fixed, you may want to consider
+        /// using the previous example and provide fixed typing to the executed method.
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public void ScriptParserExecuteWithModelExecuteMultipleTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+      {{% for (int y = 1; y < 3; y++) { }}
+       {{ y}}. Yowsers
+      {{% } }}
+              
+{{% } }}
+
+And we're done with this!
+";
+
+            Console.WriteLine(script);
+
+            var scriptParser = new ScriptParser();
+
+            // Optional - build customized script engine
+            // so we can add custom
+            var exec = scriptParser.ScriptEngine;
+
+            exec.AddAssembly(typeof(ScriptParserTests));
+            exec.AddNamespace("Westwind.Scripting.Test");
+
+            string result = scriptParser.ExecuteScript(script, model, exec);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, exec.ErrorMessage);
+
+            model.Name = "Johnny";
+            result = scriptParser.ExecuteScript(script, model, exec);
+            Console.WriteLine(result);
+
+        }
+
+
+
         [TestMethod]
         public void BasicScriptParserTest()
         {
@@ -153,150 +338,6 @@ And we're done with this!
             Assert.IsNotNull(result, exec.ErrorMessage);
 
             Console.WriteLine(result);
-        }
-
-
-        /// <summary>
-        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
-        /// generically execute a method that can receive a single input parameter.
-        /// The parameter is dynamic cast since it can be anything.
-        ///
-        /// If your parameter is always the same and fixed, you may want to consider
-        /// using the previous example and provide fixed typing to the executed method.
-        /// </summary>
-        /// <returns></returns>
-        [TestMethod]
-        public void ScriptParserExecuteWithModelTest()
-        {
-            var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
-
-            string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
-}}
-{{ x }}. Hello World {{Model.Name}}
-{{% } }}
-
-And we're done with this!
-";
-
-            Console.WriteLine(script);
-
-
-            // Optional - build customized script engine
-            // so we can add custom
-
-            var scriptParser = new ScriptParser();
-
-            // add dependencies
-            scriptParser.AddAssembly(typeof(ScriptParserTests));
-            scriptParser.AddNamespace("Westwind.Scripting.Test");
-
-            // Execute
-            string result = scriptParser.ExecuteScript(script, model);
-
-            Console.WriteLine(result);
-
-            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
-        }
-
-        /// <summary>
-        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
-        /// generically execute a method that can receive a single input parameter.
-        /// The parameter is dynamic cast since it can be anything.
-        ///
-        /// If your parameter is always the same and fixed, you may want to consider
-        /// using the previous example and provide fixed typing to the executed method.
-        /// </summary>
-        /// <returns></returns>
-        [TestMethod]
-        public async Task ScriptParserExecuteAsyncWithModelTest()
-        {
-            var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
-
-            string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
-}}
-{{ x }}. Hello World {{Model.Name}}
-{{% } }}
-
-{{% await Task.Delay(10); }}
-
-And we're done with this!
-";
-            var scriptParser = new ScriptParser();
-            
-            foreach (var pe in scriptParser.ScriptEngine.References)
-            {
-                Console.WriteLine("\"" + Path.GetFileName(pe.FilePath) + "\",");
-            }
-
-            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
-            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
-
-            string result = await scriptParser.ExecuteScriptAsync(script, model);
-
-            Console.WriteLine(result);
-            Console.WriteLine("Error (" + scriptParser.ScriptEngine.ErrorType + "): " + scriptParser.ScriptEngine.ErrorMessage);
-            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
-
-            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
-
-        }
-
-
-        /// <summary>
-        /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
-        /// generically execute a method that can receive a single input parameter.
-        /// The parameter is dynamic cast since it can be anything.
-        ///
-        /// If your parameter is always the same and fixed, you may want to consider
-        /// using the previous example and provide fixed typing to the executed method.
-        /// </summary>
-        /// <returns></returns>
-        [TestMethod]
-        public void ScriptParserExecuteWithModelExecuteMultipleTest()
-        {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
-
-            string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
-}}
-{{ x }}. Hello World {{Model.Name}}
-      {{% for (int y = 1; y < 3; y++) { }}
-       {{ y}}. Yowsers
-      {{% } }}
-              
-{{% } }}
-
-And we're done with this!
-";
-
-            Console.WriteLine(script);
-
-            var scriptParser = new ScriptParser();
-
-            // Optional - build customized script engine
-            // so we can add custom
-            var exec = scriptParser.ScriptEngine;
-            
-            exec.AddAssembly(typeof(ScriptParserTests));
-            exec.AddNamespace("Westwind.Scripting.Test");
-
-            string result = scriptParser.ExecuteScript(script, model, exec);
-
-            Console.WriteLine(result);
-
-            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, exec.ErrorMessage);
-
-            model.Name = "Johnny";
-            result = scriptParser.ExecuteScript(script, model, exec);
-            Console.WriteLine(result);
-
         }
 
 

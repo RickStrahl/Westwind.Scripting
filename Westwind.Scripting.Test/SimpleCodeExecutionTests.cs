@@ -249,7 +249,48 @@ return result;
             Assert.IsFalse(script.Error, script.ErrorMessage);
         }
 
-     
+        [TestMethod]
+        public async Task ExecuteCodeWithDynamicModelWithReferencesAsync()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                AllowReferencesInCode = true
+            };
+            script.AddDefaultReferencesAndNamespaces();
+            
+            // do this in the code snippet
+            //script.AddAssembly(typeof(ScriptTest));
+            //script.AddNamespace("Westwind.Scripting.Test");
+
+            var model = new ScriptTest() { Message = "Hello World " };
+
+
+            var code = @"
+#r Westwind.ScriptExecution.Test.dll
+using Westwind.Scripting.Test
+
+dynamic Model = @0;
+
+await Task.Delay(10); // test async
+
+string result =  Model.Message +  "" "" + DateTime.Now.ToString();
+return result;
+";
+
+
+            string execResult = await script.ExecuteCodeAsync<string>(code, model);
+
+            Console.WriteLine($"Result: {execResult}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
+
+
+
 
         [TestMethod]
         public async Task ExecuteCodeWithTypedModelAsync()
