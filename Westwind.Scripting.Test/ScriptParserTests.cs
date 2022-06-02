@@ -137,7 +137,8 @@ And we're done with this!
 
             Console.WriteLine(code);
 
-            var exec = scriptParser.ScriptEngine;
+            var exec = new CSharpScriptExecution();
+            exec.AddDefaultReferencesAndNamespaces();
             
             // explicitly add the type and namespace so the script can find the model type
             // which we are passing in explicitly here
@@ -174,10 +175,6 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
-      {{% for (int y = 1; y < 3; y++) { }}
-       {{ y}}. Yowsers
-      {{% } }}
-              
 {{% } }}
 
 And we're done with this!
@@ -190,9 +187,12 @@ And we're done with this!
             // so we can add custom
 
             var scriptParser = new ScriptParser();
-            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
-            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
+            // add dependencies
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.AddNamespace("Westwind.Scripting.Test");
+
+            // Execute
             string result = scriptParser.ExecuteScript(script, model);
 
             Console.WriteLine(result);
