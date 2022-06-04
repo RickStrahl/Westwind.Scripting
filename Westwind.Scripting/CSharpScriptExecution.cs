@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 
 
@@ -50,21 +51,6 @@ namespace Westwind.Scripting
         public ReferenceList References { get; } = new ReferenceList();
 
 
-
-        /// <summary>
-        /// Filename for the output assembly to generate. If empty the
-        /// assembly is generated in memory (dynamic filename managed by
-        /// the .NET runtime)
-        /// </summary>
-        public string OutputAssembly { get; set; }
-
-
-        /// <summary>
-        /// Last generated code for this code snippet
-        /// </summary>
-        public string GeneratedClassCode { get; set; }
-
-
         /// <summary>
         /// Last generated code for this code snippet with line numbers
         /// </summary>
@@ -80,6 +66,10 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassName { get; set; } = "__" + Utils.GenerateUniqueId();
 
+        /// <summary>
+        /// Last generated code for this code snippet
+        /// </summary>
+        public string GeneratedClassCode { get; set; }
 
         /// <summary>
         /// Determines whether GeneratedCode will be set with the source
@@ -101,6 +91,24 @@ namespace Westwind.Scripting
         /// #r assembly.dll
         /// </summary>
         public bool AllowReferencesInCode { get; set; } = false;
+
+        /// <summary>
+        /// Filename for the output assembly to generate. If empty the
+        /// assembly is generated in memory (dynamic filename managed by
+        /// the .NET runtime)
+        /// </summary>
+        public string OutputAssembly { get; set; }
+
+        /// <summary>
+        /// Determines whether the code is compiled in Debug or Release mode
+        /// Defaults to Release and there's no good reason for scripts to use
+        /// anything else since debug info is not available in Reflection invoked
+        /// or dynamically invoked methods.
+        ///
+        /// Useful only when generating classes with OutputAssembly set when
+        /// creating self-contained assemblies for other uses.
+        /// </summary>
+        public bool CompileWithDebug { get; set; }
 
 
         #region Error Handling Properties
@@ -125,6 +133,13 @@ namespace Westwind.Scripting
         public ExecutionErrorTypes ErrorType { get; set; } = ExecutionErrorTypes.Compilation;
 
 
+        /// <summary>
+        /// Last Exception fired when a runtime error occurs
+        ///
+        /// Generally this only contains the error message, but
+        /// there's no call stack information available due
+        /// to the Reflection or dynamic code invocation
+        /// </summary>
         public Exception LastException { get; set; }
 
 #endregion
@@ -211,6 +226,8 @@ namespace Westwind.Scripting
             return InvokeMethod(instance, methodName, parameters);
         }
 
+
+
         /// <summary>
         /// Executes a complete method by wrapping it into a class, compiling
         /// and instantiating the class and calling the method.
@@ -241,6 +258,58 @@ namespace Westwind.Scripting
 
             return default;
         }
+
+
+        /// <summary>
+        /// Executes a complete async method by wrapping it into a class, compiling
+        /// and instantiating the class and calling the method and unwrapping the
+        /// task result.
+        ///
+        /// Class should include full class header (instance type, return value and parameters)
+        ///
+        /// "public async Task&lt;object&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        /// "public async Task HelloWorld(string name) { await Task.Delay(1); Console.WriteLine(name); }"
+        /// 
+        /// Async Method Note: Keep in mind that
+        /// the method is not cast to that result - it's cast to object so you
+        /// have to unwrap it:
+        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+        /// </summary>
+        /// <param name="code">One or more complete methods.</param>
+        /// <param name="methodName">Name of the method to call.</param>
+        /// <param name="parameters">any number of variable parameters</param>
+        /// <returns>result value of the method</returns>
+        public async Task<object> ExecuteMethodAsync(string code, string methodName, params object[] parameters)
+        {
+            // this result will be a task of object (async method called)
+            var taskResult = ExecuteMethod(code, methodName, parameters) as Task<object>;
+
+            if (taskResult == null)
+                return default;
+
+            object result = null;
+            if (ThrowExceptions)
+            {
+                result = await ((Task<object>) taskResult);
+            }
+            else
+            {
+                try
+                {
+                    result = await ((Task<object>) taskResult);
+                }
+                catch (Exception ex)
+                {
+                    SetErrors(ex);
+                    ErrorType = ExecutionErrorTypes.Runtime;
+                    return default;
+                }
+            }
+
+            return result; 
+        }
+
 
         /// <summary>
         /// Executes a complete async method by wrapping it into a class, compiling
@@ -398,7 +467,9 @@ namespace Westwind.Scripting
                                  Environment.NewLine +
                                  // force a return value - compiler will optimize this out
                                  // if the code provides a return
-                                 "return null;" +
+                                 (!code.Contains("return ")
+                                     ? "return default;" + Environment.NewLine
+                                     : string.Empty) +
                                  Environment.NewLine +
                                  "}",
                 "ExecuteCode", parameters);
@@ -428,7 +499,9 @@ namespace Westwind.Scripting
                                        Environment.NewLine +
                                        // force a return value - compiler will optimize this out
                                        // if the code provides a return
-                                       "return default;" +
+                                       (!code.Contains("return ")
+                                           ? "return default;" + Environment.NewLine
+                                           : string.Empty) +
                                        Environment.NewLine +
                                        "}",
                 "ExecuteCode", parameters);
@@ -461,8 +534,9 @@ namespace Westwind.Scripting
                                        Environment.NewLine +
                                        // force a return value - compiler will optimize this out
                                        // if the code provides a return
-                                       "return default;" +
-                                       Environment.NewLine +
+                                       (!code.Contains("return ")
+                                           ? "return default;" + Environment.NewLine
+                                           : string.Empty) +
                                        "}",
                 "ExecuteCode", model);
 
@@ -496,8 +570,10 @@ namespace Westwind.Scripting
                                               Environment.NewLine +
                                               // force a return value - compiler will optimize this out
                                               // if the code provides a return
-                                              "return default;" +
-                                              Environment.NewLine +
+
+                                              (!code.Contains("return ")
+                                                  ? "return default;" + Environment.NewLine
+                                                  : string.Empty) +
                                               "}",
                 "ExecuteCode", parameters);
         }
@@ -532,7 +608,9 @@ namespace Westwind.Scripting
                 Environment.NewLine +
                 // force a return value - compiler will optimize this out
                 // if the code provides a return
-                "return default;" +
+                (!code.Contains("return ")
+                    ? "return default;" + Environment.NewLine
+                    : string.Empty) +
                 Environment.NewLine +
                 "}",
                 "ExecuteCode", parameters);
@@ -563,7 +641,9 @@ namespace Westwind.Scripting
                                                   Environment.NewLine +
                                                   // force a return value - compiler will optimize this out
                                                   // if the code provides a return
-                                                  "return null;" +
+                                                  (!code.Contains("return ")
+                                                      ? "return default;" + Environment.NewLine
+                                                      : string.Empty) +
                                                   Environment.NewLine +
                                                   "}",
                 "ExecuteCode", model);
@@ -634,8 +714,12 @@ namespace Westwind.Scripting
 
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
 
+            
+            var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
+            
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
-                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
+                            optimizationLevel: optimizationLevel ))
                 .WithReferences(References)
                 .AddSyntaxTrees(tree);
 
@@ -656,7 +740,14 @@ namespace Westwind.Scripting
 
             using (codeStream)
             {
-                var compilationResult = compilation.Emit(codeStream);
+                EmitResult compilationResult = null;
+                if (CompileWithDebug)
+                {
+                    var debugOptions = CompileWithDebug ? DebugInformationFormat.Embedded : DebugInformationFormat.Pdb;
+                    compilationResult = compilation.Emit(codeStream, options: new EmitOptions(debugInformationFormat: debugOptions));
+                }
+                else 
+                    compilationResult = compilation.Emit(codeStream);
 
                 // Compilation Error handling
                 if (!compilationResult.Success)
@@ -1241,6 +1332,7 @@ namespace Westwind.Scripting
         #endregion
 
 
+        #region String Helpers
 
         /// <summary>
         /// Parses references with this syntax:
@@ -1270,6 +1362,7 @@ namespace Westwind.Scripting
                     {
                         string assemblyName = line.Replace("#r ", "").Trim();
                         AddAssembly(assemblyName);
+                        sb.AppendLine("// " + line);
                         continue;
                     }
                     sb.AppendLine("// not allowed: " + line);
@@ -1280,6 +1373,7 @@ namespace Westwind.Scripting
                 {
                     string ns = line.Replace("using ", "").Replace(";", "").Trim();
                     AddNamespace(ns);
+                    sb.AppendLine("// " + line);
                     continue;
                 }
 
@@ -1298,7 +1392,7 @@ namespace Westwind.Scripting
         /// <param name="s">String to check for lines</param>
         /// <param name="maxLines">Optional - max number of lines to return</param>
         /// <returns>array of strings, or null if the string passed was a null</returns>
-        protected static string[] GetLines(string s, int maxLines = 0)
+        public static string[] GetLines(string s, int maxLines = 0)
         {
             if (s == null)
                 return null;
@@ -1310,6 +1404,32 @@ namespace Westwind.Scripting
 
             return s.Split(new char[] { '\n' }, maxLines);
         }
+
+
+
+        /// <summary>
+        /// Returns 0 offset line number where matched line lives
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="matchLine"></param>
+        /// <returns></returns>
+        public static int FindCodeLine(string code, string matchLine)
+        {
+            matchLine = matchLine.Trim();
+
+            var lines = CSharpScriptExecution.GetLines(code);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                if (line.Trim() == matchLine.Trim())
+                    return i;
+            }
+
+            return -1;
+        }
+
+
+        #endregion
 
         #region Reflection Helpers
 
@@ -1335,7 +1455,7 @@ namespace Westwind.Scripting
             if (ThrowExceptions)
             {
                 return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
-            }
+            } 
 
             try
             {
