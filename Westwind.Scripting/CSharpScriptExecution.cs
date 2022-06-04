@@ -130,7 +130,7 @@ namespace Westwind.Scripting
         /// Determines whether the error is a compile time
         /// error or runtime error
         /// </summary>
-        public ExecutionErrorTypes ErrorType { get; set; } = ExecutionErrorTypes.Compilation;
+        public ExecutionErrorTypes ErrorType { get; set; } = ExecutionErrorTypes.None;
 
 
         /// <summary>
@@ -462,7 +462,7 @@ namespace Westwind.Scripting
 
             return ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
                                  Environment.NewLine +
-                                 "{" +
+                                 "{\n" +
                                  code +
                                  Environment.NewLine +
                                  // force a return value - compiler will optimize this out
@@ -494,7 +494,7 @@ namespace Westwind.Scripting
 
             var result = ExecuteMethod("public object ExecuteCode(params object[] parameters)" +
                                        Environment.NewLine +
-                                       "{" +
+                                       "{\n" +
                                        code +
                                        Environment.NewLine +
                                        // force a return value - compiler will optimize this out
@@ -529,7 +529,7 @@ namespace Westwind.Scripting
 
             var result = ExecuteMethod<TResult>("public {resultType} ExecuteCode({typeName} Model)" +
                                        Environment.NewLine +
-                                       "{" +
+                                       "{\n" +
                                        code +
                                        Environment.NewLine +
                                        // force a return value - compiler will optimize this out
@@ -565,7 +565,7 @@ namespace Westwind.Scripting
 
             return ExecuteMethodAsync<object>("public async Task<object> ExecuteCode(params object[] parameters)" +
                                               Environment.NewLine +
-                                              "{" +
+                                              "{\n" +
                                               code +
                                               Environment.NewLine +
                                               // force a return value - compiler will optimize this out
@@ -636,7 +636,7 @@ namespace Westwind.Scripting
 
             var res = ExecuteMethodAsync<TResult>($"public async Task<object> ExecuteCode({typeName} Model)" +
                                                   Environment.NewLine +
-                                                  "{" +
+                                                  "{\n" +
                                                   code +
                                                   Environment.NewLine +
                                                   // force a return value - compiler will optimize this out
@@ -758,6 +758,7 @@ namespace Westwind.Scripting
                         sb.AppendLine(diag.ToString());
                     }
 
+                    ErrorType = ExecutionErrorTypes.Compilation;
                     ErrorMessage = sb.ToString();
                     SetErrors(new ApplicationException(ErrorMessage));
                     return false;
@@ -1311,7 +1312,7 @@ namespace Westwind.Scripting
             LastException = null;
             Error = false;
             ErrorMessage = null;
-            ErrorType = ExecutionErrorTypes.Compilation;
+            ErrorType = ExecutionErrorTypes.None;
         }
 
         private void SetErrors(Exception ex)

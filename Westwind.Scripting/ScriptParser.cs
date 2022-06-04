@@ -158,10 +158,10 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" + code;
 
             if (scriptEngine == null)
-                scriptEngine = CreateScriptEngine();
+                ScriptEngine = CreateScriptEngine();
 
-            string result = await scriptEngine.ExecuteCodeAsync(code, model) as string;
-
+            string result = await ScriptEngine.ExecuteCodeAsync(code, model) as string;
+            
             return result;
         }
 

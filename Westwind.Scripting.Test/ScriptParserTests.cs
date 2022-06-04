@@ -103,6 +103,38 @@ And we're done with this!
 
         }
 
+        [TestMethod]
+        public async Task ExecuteScriptAsyncWithCompilerErrorTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+
+            //{ {% await Task.Delay(10); } }
+            var scriptParser = new ScriptParser();
+            //scriptParser.ScriptEngine.CompileWithDebug = true;
+            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
+
+            string result = scriptParser.ExecuteScript(script, model);
+            //string result = await scriptParser.ExecuteScriptAsync(script, model);
+
+            Console.WriteLine(result);
+            Console.WriteLine("Error (" + scriptParser.ScriptEngine.ErrorType + "): " + scriptParser.ScriptEngine.ErrorMessage);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+
+        }
+
 
         [TestMethod]
         public void ExecuteScriptWithModelWithReferenceTest()
