@@ -394,6 +394,7 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
     catch(Exception ex) {{
         Console.WriteLine(""ERROR in method: "" + ex.Message);
     }}
+    Console.WriteLine(""done with output..."");
 
     return json;
 }}";
@@ -416,6 +417,63 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
             Assert.IsFalse(script.Error, script.ErrorMessage);
             Assert.IsNotNull(result,"Not a JSON response");
         }
+
+        [TestMethod]
+        public async Task ExecuteAsyncVoidMethodTest()
+        {
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                AllowReferencesInCode = true
+            };
+
+            // lets not load assembly refs from host app in 6.0 but load explicitly below
+            script.AddDefaultReferencesAndNamespaces();
+            script.AddAssemblies("System.Net.WebCLient.dll");
+
+            string code = $@"
+public async Task<object> GetJsonFromAlbumViewer(int id)
+{{
+    Console.WriteLine(""Starting..."");
+
+    var wc = new WebClient();
+    var uri = new Uri(""https://albumviewer.west-wind.com/api/album/"" + id);
+
+    string json = ""123"";
+    try{{
+Console.WriteLine(""Retrieving..."");
+        json =  await wc.DownloadStringTaskAsync(uri);
+
+ Console.WriteLine(""JSON retrieved..."");
+    }}
+    catch(Exception ex) {{
+        Console.WriteLine(""ERROR in method: "" + ex.Message);
+    }}
+
+    Console.WriteLine(""All done in method"");
+
+    return json;
+}}";
+
+            try
+            {
+                // void method
+                var result = await script.ExecuteMethodAsync(code, "GetJsonFromAlbumViewer", 37);
+                Console.WriteLine("Returned Value: " + result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine($"Error Message: {script.ErrorMessage}");
+            Console.WriteLine(script.GeneratedClassCode);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
+
 
         [TestMethod]
         public void ExecuteMoreThanOneMethodTest()
@@ -452,16 +510,14 @@ return result;
             Assert.IsFalse(script.Error);
             Assert.IsTrue(result.Contains("Hello Rick"));
 
+            // grab the last created instance
             dynamic instance = script.ObjectInstance;
 
-            instance.GoodbyeName = "Markus";
+            instance.GoodbyeName = "Kevin";
             result = instance.GoodbyeWorld();
 
-
-
             Console.WriteLine($"Result: {result}");
-            Assert.IsTrue(result.Contains("Goodbye Markus"));
-
+            Assert.IsTrue(result.Contains("Goodbye Kevin"));
         }
 
 
@@ -832,6 +888,8 @@ return result;
     public class ScriptTest
     {
         public string Message { get; set; } = "Hello wonderful World!!!";
+        public string Name { get; set; }
+        public int Id { get; set; }
     }
 
 

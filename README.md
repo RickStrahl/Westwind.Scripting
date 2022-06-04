@@ -1,11 +1,9 @@
-# Westwind Csharp Scripting
+# Westwind CSharp Scripting
 
 **Dynamically compile and execute CSharp code at runtime**
 
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
-
-> Note: Version 1.0 is a major version update that might break existing code due to dependency changes. Version 1.0 switches to native Roslyn APIs from the old CodeDom libraries, which results in different assembly imports and runtime distribution requirements! However the execution APIs syntax otherwise remains the same.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
