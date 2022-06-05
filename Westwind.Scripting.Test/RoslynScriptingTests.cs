@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +13,7 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Westwind.Utilities;
 
 namespace Westwind.Scripting.Test
 {
@@ -57,6 +59,10 @@ public class __Executor {
 
         Console.WriteLine(""All done in method"");
 
+        dynamic name = ""Rick"";
+        Console.WriteLine(name);
+
+        var s = Westwind.Utilities.StringUtils.ExtractString(""132123123"",""13"",""23"");
         return json;
     }
 
@@ -66,14 +72,19 @@ public class __Executor {
             AddNetFrameworkDefaultReferences();
 #else
             AddNetCoreDefaultReferences();
-            AddAssembly(typeof(System.Net.WebClient));
+            AddAssembly("System.Net.WebClient.dll");
 #endif
+
+            AddAssembly(typeof(Westwind.Utilities.StringUtils));
+
 
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
             var compilation = CSharpCompilation.Create("Executor.cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: OptimizationLevel.Release))
+                //.WithReferences(Basic.Reference.Assemblies.Net60.All)   // NUGET Package for all framework references
                 .WithReferences(References)
+                
                 .AddSyntaxTrees(tree);
 
             string errorMessage = null;
@@ -115,41 +126,33 @@ public class __Executor {
         [TestMethod]
         public async Task RoslynCSharpScriptingTest()
         {
-            var code = @"
-#r ""System.Console.dll""
+            var westwindAssemblyPath = Path.GetFullPath("Westwind.Utilities.dll");
 
-using System;
-//dynamic Model = this;
-
+            var code = $@"
+#r ""{westwindAssemblyPath}""
 Console.WriteLine(Message);
 
+dynamic name = ""Rick"";
+Console.WriteLine(name);
+
 Console.WriteLine(""Hello World #2"");
+
+// External Reference
+Console.WriteLine(StringUtils.Replicate(""42"",10));
+
+// Uncommon (deprecated) type - still works
+var wc = new System.Net.WebClient();
+var json = wc.DownloadString(new Uri(""https://albumviewer.west-wind.com/api/album/37""));
+
 return ""OK"";
-";
+";          
+            var options =
+                ScriptOptions.Default
+                    .AddReferences(typeof(StringUtils).Assembly)
+                    .AddImports("System",
+                "System.IO", "System.Text",
+                "System.Text.RegularExpressions", "Westwind.Utilities");
 
-
-            var options = ScriptOptions.Default;
-
-            options.AddReferences(
-                typeof(Console).Assembly,
-                typeof(System.Net.WebClient).Assembly,
-                typeof(System.Uri).Assembly,
-                typeof(System.Dynamic.DynamicObject).Assembly, // System.Code
-                typeof(System.Runtime.CompilerServices.DynamicAttribute).Assembly,
-                typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo).Assembly, // Microsoft.CSharp
-                typeof(System.Runtime.CompilerServices.DynamicAttribute).Assembly);
-
-            options.AddReferences(MetadataReference.CreateFromFile(typeof(System.Uri).Assembly.Location));
-                
-            options.AddImports("System",
-                "System.Dynamic", "System.IO", "System.Text",
-                "System.Text.RegularExpressions");
-
-
-            //var script = CSharpScript.Create(code, options, model.GetType());
-
-            //ScriptState<
-            //var result = await script.RunAsync(model);
 
             ScriptState<object> result;
             try
@@ -313,11 +316,6 @@ return json;
             AddAssembly("System.Core.dll");
             AddAssembly("Microsoft.CSharp.dll");
             AddAssembly("System.Net.Http.dll");
-
-            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
-
-            // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList)); // Scripting Library
         }
 
         public void AddAssemblies(params string[] assemblies)
@@ -329,33 +327,30 @@ return json;
 
         public void AddNetCoreDefaultReferences()
         {
+            var rtPath = Path.GetDirectoryName(typeof(object).Assembly.Location) +
+                         Path.DirectorySeparatorChar;
 
             AddAssemblies(
-                "System.Private.CoreLib.dll",
-                "System.Runtime.dll",
+                rtPath + "System.Private.CoreLib.dll",
+                rtPath + "System.Runtime.dll",
+                rtPath + "System.Console.dll",
+                rtPath + "netstandard.dll",
 
-                "System.Console.dll",
-                "System.Linq.dll",
-                "System.Linq.Expressions.dll", // IMPORTANT!
-                "System.Text.RegularExpressions.dll", // IMPORTANT!
-                "System.IO.dll",
-                "System.Net.Primitives.dll",
-                "System.Net.Http.dll",
-                "System.Private.Uri.dll",
-                "System.Reflection.dll",
-                "System.ComponentModel.Primitives.dll",
+                rtPath + "System.Text.RegularExpressions.dll", // IMPORTANT!
+                rtPath + "System.Linq.dll",
+                rtPath + "System.Linq.Expressions.dll", // IMPORTANT!
 
-                "System.Collections.Concurrent.dll",
-                "System.Collections.NonGeneric.dll",
-
-                "Microsoft.CSharp.dll",
-                "Microsoft.CodeAnalysis.dll",
-                "Microsoft.CodeAnalysis.CSharp.dll"
+                rtPath + "System.IO.dll",
+                rtPath + "System.Net.Primitives.dll",
+                rtPath + "System.Net.Http.dll",
+                rtPath + "System.Private.Uri.dll",
+                rtPath + "System.Reflection.dll",
+                rtPath + "System.ComponentModel.Primitives.dll",
+                rtPath + "System.Globalization.dll",
+                rtPath + "System.Collections.Concurrent.dll",
+                rtPath + "System.Collections.NonGeneric.dll",
+                rtPath + "Microsoft.CSharp.dll"
             );
-
-            // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList)); // Scripting Library
-
         }
 
 

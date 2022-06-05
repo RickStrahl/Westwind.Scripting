@@ -77,7 +77,7 @@ namespace Westwind.Scripting
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
 
- 
+
         #region Script Execution
 
         /// <summary>
@@ -112,12 +112,46 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "dynamic Model = parameters[0];\n" + code;
 
-            if (scriptEngine == null)
-                scriptEngine = ScriptEngine;
-            else
+            if (scriptEngine != null)
                 ScriptEngine = scriptEngine;
-            
-            return scriptEngine.ExecuteCode(code, model) as string;
+
+            return ScriptEngine.ExecuteCode(code, model) as string;
+        }
+
+
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="startDelim">Optional start delimiter for script tags</param>
+        /// <param name="endDelim">Optional end delimiter for script tags</param>
+        /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public string ExecuteScript<TModelType>(string script, TModelType model,
+            CSharpScriptExecution scriptEngine = null,
+            string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+        {
+
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+                return script;
+
+            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            if (code == null)
+                return null;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+            return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }
 
         /// <summary>
@@ -157,11 +191,56 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "dynamic Model = parameters[0];\n" + code;
 
-            if (scriptEngine == null)
-                ScriptEngine = CreateScriptEngine();
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
 
             string result = await ScriptEngine.ExecuteCodeAsync(code, model) as string;
+
+            return result;
+        }
+
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result. This version allows for `async` code inside of
+        /// the template.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Model is exposed as `dynamic`
+        /// which allows passing any value without requiring type dependencies at compile time.
+        /// 
+        /// Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="startDelim">Optional start delimiter for script tags</param>
+        /// <param name="endDelim">Optional end delimiter for script tags</param>
+        /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public async Task<string> ExecuteScriptAsync<TModelType>(string script,
+            TModelType model = default,
+            CSharpScriptExecution scriptEngine = null,
+            string startDelim = "{{", string endDelim = "}}",
+            string codeIndicator = "%")
+        {
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+                return script;
+
+            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            if (code == null)
+                return null;
+
+            // expose the parameter as Model
+            //code = "dynamic Model = parameters[0];\n" + code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
             
+            string result = await ScriptEngine.ExecuteCodeAsync<string, TModelType>(code, model) as string;
+
             return result;
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Dynamic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Emit;
@@ -36,10 +37,6 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 
 And we're done with this!
 ";
-
-            Console.WriteLine(script);
-
-
             // Optional - build customized script engine
             // so we can add custom
 
@@ -83,15 +80,10 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 
 And we're done with this!
 ";
+            
             var scriptParser = new ScriptParser();
-
-            foreach (var pe in scriptParser.ScriptEngine.References)
-            {
-                Console.WriteLine("\"" + Path.GetFileName(pe.FilePath) + "\",");
-            }
-
-            scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
-            scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+            scriptParser.AddNamespace("Westwind.Scripting.Test");
 
             string result = await scriptParser.ExecuteScriptAsync(script, model);
 
@@ -100,7 +92,6 @@ And we're done with this!
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
-
         }
 
         [TestMethod]
@@ -170,6 +161,43 @@ And we're done with this!
 
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+        }
+
+
+
+        [TestMethod]
+        public void CSharpExecutionExecuteScriptWithModelWithReferenceTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+
+            string script = @"
+Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+{{% for(int x=1; x<3; x++) {
+}}
+{{ x }}. Hello World {{Model.Name}}
+{{% } }}
+
+And we're done with this!
+";
+            
+            // Optional - build customized script engine
+            // so we can add custom
+
+            var exec = CSharpScriptExecution.CreateDefault();
+            
+            // add dependencies
+            exec.AddAssembly(typeof(ScriptParserTests));
+            exec.AddNamespace("Westwind.Scripting.Test");
+
+            // Execute
+            string result = exec.ExecuteScript(script, model);
+
+            Console.WriteLine(result);
+
+
+            Console.WriteLine(script);
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Assert.IsNotNull(result, exec.ErrorMessage);
         }
 
 
@@ -354,7 +382,7 @@ And we're done with this!
 
             Console.WriteLine(code);
 
-            var exec = new CSharpScriptExecution();
+            var exec = new CSharpScriptExecution() { SaveGeneratedCode = true};
             exec.AddDefaultReferencesAndNamespaces();
             
             // explicitly add the type and namespace so the script can find the model type
@@ -370,6 +398,7 @@ And we're done with this!
             Assert.IsNotNull(result, exec.ErrorMessage);
 
             Console.WriteLine(result);
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
         }
 
 

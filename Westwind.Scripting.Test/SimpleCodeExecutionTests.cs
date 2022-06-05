@@ -329,35 +329,46 @@ return result;
         [TestMethod]
         public void ExecuteMethodTest()
         {
-            var script = new CSharpScriptExecution()
+            var exec = new CSharpScriptExecution()
             {
                 SaveGeneratedCode = true
             };
-            script.AddDefaultReferencesAndNamespaces();
+            exec.AddDefaultReferencesAndNamespaces();
+            exec.AddAssembly("System.Net.WebClient.dll");
 
             string code = $@"
 public string HelloWorld(string name)
 {{
+    var wc = new System.Net.WebClient();
+    wc.DownloadString(new Uri(""https://west-wind.com""));
+
     string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
+
+    var first = new int[] {{ 1,2,3,4,5 }}.First();
+    Console.WriteLine(first);
+    
+    dynamic name2 = ""RIck"";
+    Console.WriteLine(name2);
+
     return result;
 }}";
 
-            string result = script.ExecuteMethod(code, "HelloWorld", "Rick") as string;
+            string result = exec.ExecuteMethod(code, "HelloWorld", "Rick") as string;
 
             Console.WriteLine($"Result: {result}");
-            Console.WriteLine($"Error: {script.Error}");
-            Console.WriteLine(script.ErrorMessage);
-            Console.WriteLine(script.GeneratedClassCode);
+            Console.WriteLine($"Error: {exec.Error}");
+            Console.WriteLine(exec.ErrorMessage);
+            Console.WriteLine(exec.GeneratedClassCode);
 
-            Assert.IsFalse(script.Error);
+            Assert.IsFalse(exec.Error);
             Assert.IsTrue(result.Contains("Hello Rick"));
 
             // Just invoke the method again directly without any compilation/building
             // this is the fastest way to do multiple invocations.
-            result = script.InvokeMethod(script.ObjectInstance, "HelloWorld", "Markus") as string;
+            result = exec.InvokeMethod(exec.ObjectInstance, "HelloWorld", "Markus") as string;
 
             Console.WriteLine($"Result: {result}");
-            Assert.IsFalse(script.Error);
+            Assert.IsFalse(exec.Error);
             Assert.IsTrue(result.Contains("Hello Markus"));
 
         }
@@ -527,19 +538,11 @@ return result;
         /// support latest C# features
         /// </summary>
         [TestMethod]
-        public void ClassicModeTest()
+        public void SimplestMethodExecutionTest()
         {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true
-            };
-            script.AddDefaultReferencesAndNamespaces();
-
-            Console.WriteLine(script.References.Count);
-
-            //script.AddAssembly("Westwind.Utilities.dll");
-            //script.AddNamespace("Westwind.Utilities");
-
+            // Create configured instance with Default References and Namespaces loaded
+            var exec = CSharpScriptExecution.CreateDefault();
+            
             var code = $@"
 public string Add(int num1, int num2)
 {{
@@ -550,72 +553,11 @@ public string Add(int num1, int num2)
     return result;
 }}
 ";
-
-            string result = script.ExecuteMethod(code, "Add", 10, 5) as string;
+            string result = exec.ExecuteMethod<string>(code, "Add", 10, 5);
 
             Console.WriteLine("Result: " + result);
-            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
-            Assert.IsFalse(script.Error, script.ErrorMessage);
-        }
-
-
-        /// <summary>
-        /// Compile a class and return instance as dynamic
-        /// </summary>
-        [TestMethod]
-        public void CompileClassTest()
-        {
-            var script = new CSharpScriptExecution()
-            {
-                SaveGeneratedCode = true,
-            };
-            script.AddDefaultReferencesAndNamespaces();
-
-            var code = $@"
-using System;
-
-namespace MyApp
-{{
-    public class Math
-    {{
-        public string Add(int num1, int num2)
-        {{
-            // string templates
-            var result = num1 + "" + "" + num2 + "" = "" + (num1 + num2);
-            Console.WriteLine(result);
-
-            return result;
-        }}
-
-        public string Multiply(int num1, int num2)
-        {{
-           // string templates
-            var result = $""{{num1}}  *  {{num2}} = {{ num1 * num2 }}"";
-            Console.WriteLine(result);
-
-            result = $""Take two: {{ result ?? ""No Result"" }}"";
-            Console.WriteLine(result);
-
-            return result;
-        }}
-    }}
-}}
-";
-
-            dynamic math = script.CompileClass(code);
-
-            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
-
-            Assert.IsFalse(script.Error,script.ErrorMessage);
-
-            Assert.IsNotNull(math);
-
-            string addResult = math.Add(10, 20);
-            string multiResult = math.Multiply(3 , 7);
-
-
-            Assert.IsTrue(addResult.Contains(" = 30"));
-            Assert.IsTrue(multiResult.Contains(" = 21"));
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+            Assert.IsFalse(exec.Error, exec.ErrorMessage);
         }
 
 

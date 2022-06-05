@@ -45,6 +45,7 @@ public class Test
             };
             script.AddDefaultReferencesAndNamespaces();
 
+            // dynamic required since host doesn't know about this new type
             dynamic gen = script.CompileClass(code);
 
             Assert.IsFalse(script.Error, script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);

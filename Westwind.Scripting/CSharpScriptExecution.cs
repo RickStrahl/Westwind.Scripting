@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
+using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Text;
 
 
@@ -161,14 +162,41 @@ namespace Westwind.Scripting
 
 #endregion
 
-
-
-        public CSharpScriptExecution()
+        /// <summary>
+        /// Creates a default Execution Engine which has:
+        ///
+        /// * AddDefaultReferences and Namespaces set
+        /// * SaveGeneratedCode = true
+        ///
+        /// Optionally allows to pass in references and namespaces
+        /// </summary>
+        /// <param name="references"></param>
+        /// <param name="namespaces"></param>
+        /// <param name="referenceTypes"></param>
+        /// <returns></returns>
+        public static CSharpScriptExecution CreateDefault(
+            string[] references = null,
+            string[] namespaces = null,
+            Type[] referenceTypes = null)
         {
+            var exec = new CSharpScriptExecution() { SaveGeneratedCode = true };
+            exec.AddDefaultReferencesAndNamespaces();
 
+            if (references != null && references.Length > 0)
+                exec.AddAssemblies(references);
+            if (referenceTypes != null && referenceTypes.Length > 0)
+            {
+                for (int i = 0; i < referenceTypes.Length; i++)
+                    exec.AddAssembly(referenceTypes[i]);
+            }
+
+            if (namespaces != null)
+                exec.AddNamespaces(namespaces);
+
+            return exec;
         }
 
-#region Execution Methods
+        #region Execution Methods
 
 
         /// <summary>
@@ -527,7 +555,7 @@ namespace Westwind.Scripting
             var modelType = typeof(TModelType).FullName;
             var resultType = typeof(TResult).FullName;
 
-            var result = ExecuteMethod<TResult>("public {resultType} ExecuteCode({typeName} Model)" +
+            var result = ExecuteMethod<TResult>($"public {resultType} ExecuteCode({modelType} Model)" +
                                        Environment.NewLine +
                                        "{\n" +
                                        code +
@@ -632,9 +660,10 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            var typeName = typeof(TModelType).FullName;
+            var resultTypename = typeof(TModelType).FullName;
+            var typeName = typeof(TResult).FullName;
 
-            var res = ExecuteMethodAsync<TResult>($"public async Task<object> ExecuteCode({typeName} Model)" +
+            var res = ExecuteMethodAsync<TResult>($"public async Task<{typeName}> ExecuteCode({resultTypename} Model)" +
                                                   Environment.NewLine +
                                                   "{\n" +
                                                   code +
@@ -673,7 +702,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// Executes a method from an assembly that was previously compiled.
         ///
-        /// Looks in cached assemblies
+        /// Creates the instance based on the current settings of this class.
         /// </summary>
         /// <param name="code"></param>
         /// <param name="assembly"></param>
@@ -691,6 +720,39 @@ namespace Westwind.Scripting
                 return null;
 
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
+        }
+
+        #endregion
+
+        #region Execute Script
+
+
+        /// <summary>
+        /// Executes a script template that interpolates `{{ }}` C# expressions
+        /// and `{{% }}` C# code blocks in a string.
+        /// </summary>
+        /// <param name="csharpTemplate"></param>
+        /// <param name="model"></param>
+        /// <typeparam name="TModelType"></typeparam>
+        /// <returns></returns>
+        public string ExecuteScript<TModelType>(string csharpTemplate, TModelType model)
+        {
+            var script = new ScriptParser() {ScriptEngine = this};
+            return script.ExecuteScript<TModelType>(csharpTemplate, model);
+        }
+
+        /// <summary>
+        /// Executes a script template that interpolates `{{ }}` C# expressions
+        /// and `{{% }}` C# code blocks in a string.
+        /// </summary>
+        /// <param name="csharpTemplate"></param>
+        /// <param name="model"></param>
+        /// <typeparam name="TModelType"></typeparam>
+        /// <returns></returns>
+        public Task<string> ExecuteScriptAsync<TModelType>(string csharpTemplate, TModelType model)
+        {
+            var script = new ScriptParser() { ScriptEngine = this };
+            return script.ExecuteScriptAsync<TModelType>(csharpTemplate, model);
         }
 
         #endregion
@@ -717,10 +779,11 @@ namespace Westwind.Scripting
             
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
             
+            
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
                             optimizationLevel: optimizationLevel ))
-                .WithReferences(References)
+                .AddReferences(References)
                 .AddSyntaxTrees(tree);
 
             if (SaveGeneratedCode)
@@ -1021,7 +1084,7 @@ namespace Westwind.Scripting
 
 #endregion
 
-#region Configuration Methods
+#region Refereneces and Namespaces
 
 
         /// <summary>
@@ -1068,20 +1131,9 @@ namespace Westwind.Scripting
         {
             // this library and CodeAnalysis libs
             AddAssembly(typeof(ReferenceList));
-            AddAssembly("Microsoft.CodeAnalysis.dll");
-            AddAssembly("Microsoft.CodeAnalysis.CSharp.dll");
-            AddAssembly("Microsoft.CSharp.dll");
-
-
+            
             if (!dontLoadLoadedAssemblies)
                 AddLoadedReferences();
-
-#if NETCORE
-            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo));
-#endif
-#if NET462
-            AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
-#endif
 
             AddNamespaces(DefaultNamespaces);
         }
@@ -1114,11 +1166,13 @@ namespace Westwind.Scripting
                 {
                 }
             }
+
+            AddAssembly("Microsoft.CSharp.dll"); // dynamic
+
 #if NETCORE
             AddAssemblies(
                 "System.Linq.Expressions.dll", // IMPORTANT!
-                "System.Text.RegularExpressions.dll", // IMPORTANT!
-                "Microsoft.CSharp.dll"
+                "System.Text.RegularExpressions.dll" // IMPORTANT!
             );
 #endif
 
@@ -1133,41 +1187,38 @@ namespace Westwind.Scripting
             AddAssembly("Microsoft.CSharp.dll");
             AddAssembly("System.Net.Http.dll");
 
-            AddAssembly(typeof(Microsoft.CodeAnalysis.CSharpExtensions));
-
             // this library and CodeAnalysis libs
             AddAssembly(typeof(ReferenceList)); // Scripting Library
         }
 
         public void AddNetCoreDefaultReferences()
         {
+            var rtPath = Path.GetDirectoryName(typeof(object).Assembly.Location) +
+                               Path.DirectorySeparatorChar;
 
             AddAssemblies(
-                "System.Private.CoreLib.dll",
-                "System.Runtime.dll",
+                rtPath + "System.Private.CoreLib.dll",
+                rtPath + "System.Runtime.dll",
+                rtPath + "System.Console.dll",
 
-                "System.Console.dll",
-                "System.Linq.dll",
-                "System.Linq.Expressions.dll", // IMPORTANT!
-                "System.Text.RegularExpressions.dll", // IMPORTANT!
-                "System.IO.dll",
-                "System.Net.Primitives.dll",
-                "System.Net.Http.dll",
-                "System.Private.Uri.dll",
-                "System.Reflection.dll",
-                "System.ComponentModel.Primitives.dll",
+                rtPath + "System.Text.RegularExpressions.dll", // IMPORTANT!
+                rtPath + "System.Linq.dll",
+                rtPath + "System.Linq.Expressions.dll", // IMPORTANT!
 
-                "System.Collections.Concurrent.dll",
-                "System.Collections.NonGeneric.dll",
-
-                "Microsoft.CSharp.dll",
-                "Microsoft.CodeAnalysis.dll",
-                "Microsoft.CodeAnalysis.CSharp.dll"
+                rtPath + "System.IO.dll",
+                rtPath + "System.Net.Primitives.dll",
+                rtPath + "System.Net.Http.dll",
+                rtPath + "System.Private.Uri.dll",
+                rtPath + "System.Reflection.dll",
+                rtPath + "System.ComponentModel.Primitives.dll",
+                rtPath + "System.Globalization.dll",
+                rtPath + "System.Collections.Concurrent.dll",
+                rtPath + "System.Collections.NonGeneric.dll",
+                rtPath + "Microsoft.CSharp.dll"
             );
 
             // this library and CodeAnalysis libs
             AddAssembly(typeof(ReferenceList)); // Scripting Library
-
         }
 
         /// <summary>
@@ -1509,6 +1560,15 @@ namespace Westwind.Scripting
         private int GenerateHashCode(string code)
         {
             return (code).GetHashCode();
+        }
+
+        /// <summary>
+        /// Returns path of the runtime or in self contained install local folder
+        /// </summary>
+        /// <returns></returns>
+        private string GetRuntimePath()
+        {
+            return Path.GetDirectoryName(typeof(object).Assembly.Location);
         }
 
 #endregion
