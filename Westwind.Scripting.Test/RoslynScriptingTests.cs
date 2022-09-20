@@ -77,14 +77,12 @@ public class __Executor {
 
             AddAssembly(typeof(Westwind.Utilities.StringUtils));
 
-
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
             var compilation = CSharpCompilation.Create("Executor.cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: OptimizationLevel.Release))
                 //.WithReferences(Basic.Reference.Assemblies.Net60.All)   // NUGET Package for all framework references
                 .WithReferences(References)
-                
                 .AddSyntaxTrees(tree);
 
             string errorMessage = null;

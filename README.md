@@ -19,6 +19,10 @@ It supports the following targets:
  
 This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class.
 
+For more information than the overview documentation and some of the concepts and code that runs this library, you check out this introductory blog post:
+
+* [Runtime Code Compilation Revisited for Roslyn](https://weblog.west-wind.com/posts/2022/Jun/07/Runtime-CSharp-Code-Compilation-Revisited-for-Roslyn)
+
 ## Features
 * Easy C# code compilation and execution for:
 	* Code blocks  (generic execution)

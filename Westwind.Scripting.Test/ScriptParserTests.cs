@@ -12,7 +12,30 @@ namespace Westwind.Scripting.Test
     public class ScriptParserTests
     {
 
+        [TestMethod]
+        public void ExecuteScriptNoModelTest()
+        {
+            string script = @"
+Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
+{{% for(int x=1; x<3; x++) { }}
+{{ x }}. Hello World
+{{% } }}
+
+DONE!
+";
+            Console.WriteLine(script + "\n\n");
+
+            var scriptParser = new ScriptParser();
+            var result = scriptParser.ExecuteScript(script, null);
+
+            Console.WriteLine(result);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCode);
+
+            Assert.IsNotNull(script, "Code should not be null or empty");
+
+            
+        }
 
         /// <summary>
         /// This method uses the `ScriptParser.ExecuteScriptAsync()` method to
@@ -111,7 +134,7 @@ And we're done with this!
 
             //{ {% await Task.Delay(10); } }
             var scriptParser = new ScriptParser();
-            //scriptParser.ScriptEngine.CompileWithDebug = true;
+            scriptParser.ScriptEngine.SaveGeneratedCode = true;
             scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
             scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
@@ -194,7 +217,6 @@ And we're done with this!
 
             Console.WriteLine(result);
 
-
             Console.WriteLine(script);
             Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, exec.ErrorMessage);
@@ -259,15 +281,14 @@ And we're done with this!
         public void BasicScriptParserTest()
         {
             string script = @"
-	Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
-	
-	{{% for(int x=1; x<3; x++) { }}
-	   Hello World
-	{{% } }}
-	
-	DONE!
-";
+Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
+{{% for(int x=1; x<3; x++) { }}
+{{ x }}. Hello World
+{{% } }}
+
+DONE!
+";
             Console.WriteLine(script + "\n\n");
 
             var scriptParser = new ScriptParser();
