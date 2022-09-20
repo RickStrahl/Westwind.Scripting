@@ -11,9 +11,9 @@ $len = $filename.length
 
 if ($len -gt 0) {
     Write-Host "signing... $filename"
-    nuget sign  ".\nupkg\$filename"   -CertificateSubject "West Wind Technologies" -timestamper " http://timestamp.digicert.com"
+    # nuget sign  ".\nupkg\$filename"   -CertificateSubject "West Wind Technologies" -timestamper " http://timestamp.digicert.com"
     
     cd ./nupkg
-    nuget push  "$filename" -source nuget.org
+    nuget push  "$filename" -source "https://nuget.org"   
     cd ..
 }

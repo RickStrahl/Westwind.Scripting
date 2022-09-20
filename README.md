@@ -13,13 +13,13 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* Full .NET Framework (net462)
 * .NET 6.0 (net60)
+* Full .NET Framework (net462)
 * .NET Standard 2.0 (netstandard2.0)
  
-This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class.
+This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class that can evaluate expressions and structured C# statements in a handlebars like template language.
 
-For more information than the overview documentation and some of the concepts and code that runs this library, you check out this introductory blog post:
+For more information than this overview documentation provides and discussion of the concepts and code that runs this library,  you can check out this introductory blog post:
 
 * [Runtime Code Compilation Revisited for Roslyn](https://weblog.west-wind.com/posts/2022/Jun/07/Runtime-CSharp-Code-Compilation-Revisited-for-Roslyn)
 
