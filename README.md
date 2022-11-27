@@ -29,7 +29,7 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* .NET 6.0 (net60)
+* .NET 6.0 (net60), .NET 7.0 (net70)
 * Full .NET Framework (net462)
 * .NET Standard 2.0 (netstandard2.0)
  
@@ -763,6 +763,14 @@ Assemblies are cached based on the code that is used to run them so repeatedly r
 Assemblies, once loaded, cannot be unloaded until the process shuts down. While overhead for loading a new assembly is not great it does add overhead with every unique instantiation of a code snippet or template.
 
 ## Change Log
+
+### 1.2
+
+* **Add .NET 7.0 Target**  
+Added explicit target for .NET 7.0.
+
+* **Updated Roslyn Libraries with support for C# 11**  
+Updated to latest Roslyn compiler libraries that support C# 11 syntax.
 
 ### 1.1
 
