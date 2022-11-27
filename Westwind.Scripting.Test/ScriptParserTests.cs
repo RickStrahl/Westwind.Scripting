@@ -138,8 +138,8 @@ And we're done with this!
             scriptParser.ScriptEngine.AddAssembly(typeof(ScriptParserTests));
             scriptParser.ScriptEngine.AddNamespace("Westwind.Scripting.Test");
 
-            string result = scriptParser.ExecuteScript(script, model);
-            //string result = await scriptParser.ExecuteScriptAsync(script, model);
+            //string result = scriptParser.ExecuteScript(script, model);
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
 
             Console.WriteLine(result);
             Console.WriteLine("Error (" + scriptParser.ScriptEngine.ErrorType + "): " + scriptParser.ScriptEngine.ErrorMessage);

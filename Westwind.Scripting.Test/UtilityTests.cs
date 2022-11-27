@@ -20,7 +20,7 @@ namespace Westwind.Scripting.Test
         }
 
         [TestMethod]
-        public async Task FindCodeLineTest()
+        public void FindCodeLineTest()
         {
             string code = @"using System;
 using System.Text;

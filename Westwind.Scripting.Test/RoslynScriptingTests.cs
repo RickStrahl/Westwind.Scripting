@@ -88,7 +88,7 @@ public class __Executor {
             string errorMessage = null;
             Assembly assembly = null;
 
-            bool isFileAssembly = false;
+        
             Stream codeStream = null;
             using (codeStream = new MemoryStream())
             {
