@@ -1,3 +1,17 @@
+---
+title: Westwind CSharp Scripting
+abstract: ''
+categories: ''
+keywords: ''
+weblogName: West Wind Web Log
+postId: 3441922
+dontInferFeaturedImage: false
+dontStripH1Header: false
+postStatus: publish
+featuredImageUrl: https://img.shields.io/nuget/v/Westwind.Scripting.svg
+permalink: https://weblog.west-wind.com/posts/2022/Sep/19/Westwind-CSharp-Scripting
+postDate: 2022-09-19T21:00:41.2984711-07:00
+---
 # Westwind CSharp Scripting
 
 **Dynamically compile and execute CSharp code at runtime**
@@ -812,11 +826,11 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Give back
-If you find this library useful, consider making a small donation:
+This library is free to use and integrate with for both personal and commercial use.
+
+If you find this library useful, consider [sponsoring the author](https://github.com/sponsors/RickStrahl), or making a small donation:
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KPJQRQQ9BFEBW" 
     title="Find this library useful? Consider making a small donation." alt="Make Donation" style="text-decoration: none;">
 	<img src="https://weblog.west-wind.com/images/donation.png" />
 </a>
-
-

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.1.6</Version>
-    <TargetFrameworks>net60;net462;netstandard2.0</TargetFrameworks>
+    <Version>1.2</Version>
+    <TargetFrameworks>net60;net70;net462;netstandard2.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
     <Copyright>© West Wind Technologies 2011-2022</Copyright>
@@ -38,6 +38,9 @@ Features:
   <PropertyGroup Condition="'$(TargetFramework)' == 'net60'">
     <DefineConstants>NETCORE;NET60;</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net70'">
+    <DefineConstants>NETCORE;NET70;</DefineConstants>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net462'">
     <DefineConstants>NETFULL;</DefineConstants>
   </PropertyGroup>
@@ -51,8 +54,8 @@ Features:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.4.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net462'">
     <Reference Include="Microsoft.CSharp" />
