@@ -826,14 +826,14 @@ namespace Westwind.Scripting
                     SetErrors(new ApplicationException(ErrorMessage));
                     return false;
                 }
+            }
 
-                if (!noLoad)
-                {
-                    if (!isFileAssembly)
-                        Assembly = Assembly.Load(((MemoryStream) codeStream).ToArray());
-                    else
-                        Assembly = Assembly.LoadFrom(OutputAssembly);
-                }
+            if (!noLoad)
+            {
+                if (!isFileAssembly)
+                    Assembly = Assembly.Load(((MemoryStream) codeStream).ToArray());
+                else
+                    Assembly = Assembly.LoadFrom(OutputAssembly);
             }
 
             return true;
@@ -1110,33 +1110,33 @@ namespace Westwind.Scripting
             AddNamespaces(DefaultNamespaces);
         }
 
-        /// <summary>
-        /// Adds basic System assemblies and namespaces so basic
-        /// operations work.
-        /// </summary>
-        /// <param name="dontLoadLoadedAssemblies">
-        /// In .NET Core it's recommended you add all host assemblies to ensure
-        /// that any referenced assemblies are also accessible in your
-        /// script code. Important as in Core there are many small libraries
-        /// that comprise the core BCL/FCL.
-        ///
-        /// For .NET Full this is not as important as most BCL/FCL features
-        /// are automatically pulled by the System and System.Core default
-        /// inclusions.
-        ///
-        /// By default host assemblies are loaded.
-        /// </param>
-        [Obsolete("Please use AddDefaultReferencesAndNamespaces() or AddLoadedAssemblies()")]
-        public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies)
-        {
-            // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList));
+        ///// <summary>
+        ///// Adds basic System assemblies and namespaces so basic
+        ///// operations work.
+        ///// </summary>
+        ///// <param name="dontLoadLoadedAssemblies">
+        ///// In .NET Core it's recommended you add all host assemblies to ensure
+        ///// that any referenced assemblies are also accessible in your
+        ///// script code. Important as in Core there are many small libraries
+        ///// that comprise the core BCL/FCL.
+        /////
+        ///// For .NET Full this is not as important as most BCL/FCL features
+        ///// are automatically pulled by the System and System.Core default
+        ///// inclusions.
+        /////
+        ///// By default host assemblies are loaded.
+        ///// </param>
+        //[Obsolete("Please use AddDefaultReferencesAndNamespaces() or AddLoadedAssemblies()")]
+        //public void AddDefaultReferencesAndNamespaces(bool dontLoadLoadedAssemblies)
+        //{
+        //    // this library and CodeAnalysis libs
+        //    AddAssembly(typeof(ReferenceList));
             
-            if (!dontLoadLoadedAssemblies)
-                AddLoadedReferences();
+        //    if (!dontLoadLoadedAssemblies)
+        //        AddLoadedReferences();
 
-            AddNamespaces(DefaultNamespaces);
-        }
+        //    AddNamespaces(DefaultNamespaces);
+        //}
 
         /// <summary>
         /// Explicitly adds all referenced assemblies of the currently executing
@@ -1278,7 +1278,7 @@ namespace Westwind.Scripting
             {
                 if (References.Any(r => r.FilePath == type.Assembly.Location))
                     return true;
-
+                
                 var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
                 References.Add(systemReference);
             }
@@ -1525,7 +1525,8 @@ namespace Westwind.Scripting
         
         /// <summary>
         /// Creates an instance of the object specified
-        /// by the GeneratedNamespace and GeneratedClassName.
+        /// by the GeneratedNamespace and GeneratedClassName
+        /// in the currently active, compiled assembly
         ///
         /// Sets the ObjectInstance member which is returned
         /// </summary>
