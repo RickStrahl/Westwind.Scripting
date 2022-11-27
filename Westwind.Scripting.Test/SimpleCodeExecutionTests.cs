@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Westwind.Utilities;
 
 namespace Westwind.Scripting.Test
 {
@@ -383,8 +384,8 @@ public string HelloWorld(string name)
             };
 
             // lets not load assembly refs from host app in 6.0 but load explicitly below
-            script.AddDefaultReferencesAndNamespaces(dontLoadLoadedAssemblies: false);
-#if NET6_0
+            script.AddDefaultReferencesAndNamespaces();
+#if NET6_0_OR_GREATER
             // Add all .NET60 Runtime Assemblies - Nuget: Basic.References.Net60
             //script.AddAssemblies(Basic.Reference.Assemblies.Net60.All);  // need this because base lib doesn't load WebClient for example
 
@@ -570,7 +571,7 @@ public string Add(int num1, int num2)
             };
 
             // load runtime assemblies and common namespaces
-            script.AddDefaultReferencesAndNamespaces(false);
+            script.AddDefaultReferencesAndNamespaces();
 
             // Add External Assembly (current folder)
             script.AddAssembly("Westwind.Utilities.dll");
@@ -579,7 +580,7 @@ public string Add(int num1, int num2)
             script.AddAssembly(typeof(SimpleCodeExecutionTests));
 
             // Alternately: Load all loaded assemblies
-            //script.AddLoadedAssemblies();
+            script.AddLoadedReferences();
 
             script.AddNamespace("Westwind.Utilities");
 
@@ -588,7 +589,7 @@ public string Add(int num1, int num2)
 
 
             string code = @"
-// ing text = parameters[0] as string;
+// string text = parameters[0] as string;
 
 var scriptTest = new ScriptTest();
 string text = scriptTest.Message;
@@ -823,6 +824,71 @@ return result;
             Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
+
+
+        [TestMethod]
+        public void TwoDynamicClassesTest()
+        {
+            var class1Code = @"
+using System;
+
+namespace Test1 {
+    public class Person
+    {
+        public string Name {get; set; } = ""Rick"";
+        public string Description {get; set; } = ""Testing"";
+    } 
+}
+";
+
+            var class2Code = @"
+using System;
+using Test1;
+
+namespace Test
+{
+
+    public class Customer
+    {
+        public Test1.Person CustomerInfo {get; set; } = new Test1.Person();
+        public string CustomerNumber  { get; set; }         
+    } 
+}
+";
+
+            var script = new CSharpScriptExecution();
+            script.AddLoadedReferences();
+            script.SaveGeneratedCode = true;
+            script.GeneratedClassName = "__person";
+            script.OutputAssembly = @"c:\temp\person.dll";
+
+            var personType = script.CompileClassToType(class1Code);
+            var person = Activator.CreateInstance(personType);
+
+
+            Assert.IsNotNull(person, "Person should not be null. " + script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);
+            Console.WriteLine("Location: " + personType.Assembly.Location);
+            
+            //script = new CSharpScriptExecution();
+            //script.AddDefaultReferencesAndNamespaces(); //AddLoadedReferences();
+            //script.AddAssembly(script.OutputAssembly);
+            
+            script.SaveGeneratedCode = true;
+            script.GeneratedClassName = "__customer";
+            script.OutputAssembly = null;
+            script.AddAssembly(personType);
+            var customerType = script.CompileClassToType(class2Code);
+
+            Assert.IsNotNull(customerType, "Customer should not be null. " + script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);
+            Console.WriteLine(customerType);
+            Console.WriteLine(customerType.Assembly.Location);
+
+            dynamic customer = Activator.CreateInstance(customerType);
+
+            
+            Assert.IsNotNull(customer.CustomerInfo.Name, "Customer should not be null");
+            Console.WriteLine(customer.CustomerInfo.Name);
         }
     }
 
