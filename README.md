@@ -762,6 +762,19 @@ Assemblies are cached based on the code that is used to run them so repeatedly r
 ### No Unloading
 Assemblies, once loaded, cannot be unloaded until the process shuts down. While overhead for loading a new assembly is not great it does add overhead with every unique instantiation of a code snippet or template.
 
+
+## Westwind.Scripting FAQ
+
+### Referencing other In-Memory Types is not supported
+If you are creating multiple compilations that are dynamically compiled, and you need to reference one dynamic compilation in a second compilation, **you have to ensure that referenced type was compiled to disk, not into memory**. 
+
+There are a number of issues resolving dynamically created types both at compile time and runtime. There's a way to get the compiler to work, but we've not figured out a way to get an in-memory type to be loaded from another assembly when creating the instance - the referenced type can't be resolved *even if it is already loaded in the process*.  (see [here](https://github.com/RickStrahl/Westwind.Scripting/issues/7) and [here](https://github.com/dotnet/roslyn/issues/65627)).
+
+Bottom line: If you need a dynamically compiled type from another compilation **use to-disk compilation for the referenced type's code**. 
+
+Said another way, you can only use in-memory compilation for top level execution, not for inclusion as a reference. 
+
+
 ## Change Log
 
 ### 1.2
