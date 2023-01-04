@@ -1,17 +1,3 @@
----
-title: Westwind CSharp Scripting
-abstract: ''
-categories: ''
-keywords: ''
-weblogName: West Wind Web Log
-postId: 3441922
-dontInferFeaturedImage: false
-dontStripH1Header: false
-postStatus: publish
-featuredImageUrl: https://img.shields.io/nuget/v/Westwind.Scripting.svg
-permalink: https://weblog.west-wind.com/posts/2022/Sep/19/Westwind-CSharp-Scripting
-postDate: 2022-09-19T21:00:41.2984711-07:00
----
 # Westwind CSharp Scripting
 
 **Dynamically compile and execute CSharp code at runtime**

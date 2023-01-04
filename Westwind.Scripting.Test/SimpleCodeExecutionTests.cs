@@ -866,7 +866,7 @@ namespace Test
             var personType = script.CompileClassToType(class1Code);
             var person = Activator.CreateInstance(personType);
 
-
+            
             Assert.IsNotNull(person, "Person should not be null. " + script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);
             Console.WriteLine("Location: " + personType.Assembly.Location);
             
@@ -876,8 +876,10 @@ namespace Test
             
             script.SaveGeneratedCode = true;
             script.GeneratedClassName = "__customer";
-            script.OutputAssembly = null;
+            script.OutputAssembly = @"c:\temp\customer.dll";
+
             script.AddAssembly(personType);
+            
             var customerType = script.CompileClassToType(class2Code);
 
             Assert.IsNotNull(customerType, "Customer should not be null. " + script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);

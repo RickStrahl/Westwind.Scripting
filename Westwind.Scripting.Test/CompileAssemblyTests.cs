@@ -84,7 +84,9 @@ public class Test
             script.AddDefaultReferencesAndNamespaces();
 
             dynamic result = script.CompileClass(code);
-            Assert.IsFalse(script.Error, script.ErrorMessage);
+
+            // Should have an error
+            Assert.IsTrue(script.Error, script.ErrorMessage);
         }
 
         [TestMethod]
