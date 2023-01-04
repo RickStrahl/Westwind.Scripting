@@ -1,17 +1,16 @@
 ﻿using System;
-using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
-using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Text;
 
 
@@ -63,12 +62,19 @@ namespace Westwind.Scripting
         public string GeneratedNamespace { get; set; } = "__ScriptExecution";
 
         /// <summary>
-        /// Name of the class to generate. By default a unique name
+        /// Name of the class when a class name is not explicitly provided
+        /// as part of the code compiled.
+        ///
+        /// Always used for the module name.
+        ///
+        /// By default this value is a unique generated id. Make sure if you
+        /// create multiple compilations that you change the name here,
+        /// otherwise you end up with duplicate module names that fail.
         /// </summary>
         public string GeneratedClassName { get; set; } = "__" + Utils.GenerateUniqueId();
 
         /// <summary>
-        /// Last generated code for this code snippet
+        /// Last generated code for this code snippet if SaveGeneratedCode = true
         /// </summary>
         public string GeneratedClassCode { get; set; }
 
@@ -780,9 +786,11 @@ namespace Westwind.Scripting
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
             
             
-            var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
-                .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
-                            optimizationLevel: optimizationLevel ))
+            var compilation = CSharpCompilation.Create(GeneratedClassName)
+                .WithOptions(new CSharpCompilationOptions(
+                            OutputKind.DynamicallyLinkedLibrary,
+                            optimizationLevel: optimizationLevel)
+                )
                 .AddReferences(References)
                 .AddSyntaxTrees(tree);
 
@@ -807,7 +815,8 @@ namespace Westwind.Scripting
                 if (CompileWithDebug)
                 {
                     var debugOptions = CompileWithDebug ? DebugInformationFormat.Embedded : DebugInformationFormat.Pdb;
-                    compilationResult = compilation.Emit(codeStream, options: new EmitOptions(debugInformationFormat: debugOptions));
+                    compilationResult = compilation.Emit(codeStream,
+                        options: new EmitOptions(debugInformationFormat: debugOptions ));
                 }
                 else 
                     compilationResult = compilation.Emit(codeStream);
@@ -823,7 +832,9 @@ namespace Westwind.Scripting
 
                     ErrorType = ExecutionErrorTypes.Compilation;
                     ErrorMessage = sb.ToString();
-                    SetErrors(new ApplicationException(ErrorMessage));
+
+                    // no exception here during compilation - return the error
+                    SetErrors(new ApplicationException(ErrorMessage),true);  
                     return false;
                 }
             }
@@ -1268,27 +1279,45 @@ namespace Westwind.Scripting
             return true;
         }
 
-        /// <summary>
-        /// Adds an assembly reference from an existing type
-        /// </summary>
-        /// <param name="type">any .NET type that can be referenced in the current application</param>
-        public bool AddAssembly(Type type)
-        {
-            try
-            {
-                if (References.Any(r => r.FilePath == type.Assembly.Location))
-                    return true;
-                
-                var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
-                References.Add(systemReference);
-            }
-            catch
-            {
-                return false;
-            }
-
+/// <summary>
+/// Adds an assembly reference from an existing type
+/// </summary>
+/// <param name="type">any .NET type that can be referenced in the current application</param>
+public bool AddAssembly(Type type)
+{
+    try
+    {
+        // *** TODO: need a better way to identify for in memory dlls that don't have location
+        if (References.Any(r => r.FilePath == type.Assembly.Location))
             return true;
+
+        if (string.IsNullOrEmpty(type.Assembly.Location))
+        {
+#if NETCORE
+            unsafe
+            {
+                bool result = type.Assembly.TryGetRawMetadata(out byte* metaData, out int size);
+                var moduleMetaData = ModuleMetadata.CreateFromMetadata( (nint) metaData, size);
+                var assemblyMetaData = AssemblyMetadata.Create(moduleMetaData);
+                References.Add(assemblyMetaData.GetReference());
+            }
+#else
+            return false;
+#endif
         }
+        else
+        {
+            var systemReference = MetadataReference.CreateFromFile(type.Assembly.Location);
+            References.Add(systemReference);
+        }
+    }
+    catch
+    {
+        return false;
+    }
+
+    return true;
+}
 
         /// <summary>
         /// Add several reference assemblies in batch.
@@ -1366,13 +1395,20 @@ namespace Westwind.Scripting
             ErrorType = ExecutionErrorTypes.None;
         }
 
-        private void SetErrors(Exception ex)
+
+        /// <summary>
+        /// Error wrapper that assigns exception, errormessage and error flag.
+        /// Also throws exception by if ThrowException is enabled
+        /// </summary>
+        /// <param name="ex"></param>
+        /// <param name="noExceptions"></param>
+        private void SetErrors(Exception ex, bool noExceptions = false)
         {
             Error = true;
             LastException = ex.GetBaseException();
             ErrorMessage = LastException.Message;
 
-            if (ThrowExceptions)
+            if (ThrowExceptions && !noExceptions)
                 throw LastException;
         }
 
@@ -1381,10 +1417,10 @@ namespace Westwind.Scripting
             return $"CSharpScriptExecution - {ErrorMessage}";
         }
 
-        #endregion
+#endregion
 
 
-        #region String Helpers
+#region String Helpers
 
         /// <summary>
         /// Parses references with this syntax:
@@ -1481,9 +1517,9 @@ namespace Westwind.Scripting
         }
 
 
-        #endregion
+#endregion
 
-        #region Reflection Helpers
+#region Reflection Helpers
 
 
         /// <summary>

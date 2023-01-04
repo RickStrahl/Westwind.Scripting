@@ -65,6 +65,27 @@ public class Test
 
         }
 
+        [TestMethod]
+        public void CompileInvalidClassDefinitionShouldNotThrow()
+        {
+            var code = @"
+        using System;
+
+        namespace Testing.Test
+        {
+            public class Test
+            {
+                public void Foo();
+            }
+        }";
+
+            var script = new CSharpScriptExecution() { ThrowExceptions = true };
+
+            script.AddDefaultReferencesAndNamespaces();
+
+            dynamic result = script.CompileClass(code);
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
 
         [TestMethod]
         public void CompileClassAndExecuteFromStream()
