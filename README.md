@@ -61,7 +61,9 @@ Additionally you can also compile self-contained classes:
 * `CompileClassToType()`
 * `CompileAssembly()`
 
-These provide either quick compilation for later use, or direct type or assembly instantiation for immediate on the fly execution.
+These `CompileXXX()` methods provide compilation only without execution and create an instance, type or assembly respectively. You can cache these in your application for later re-use and **much faster execution**. 
+
+Use these methods if you need to repeatedly execute the same code and when performance is important as using re-used cached instances is an order of magnitude faster than using the `ExecuteXXX()` methods repeatedly.
 
 ### ScriptParser: C# Template Script Expansion
 Script Templating using a *Handlebars* like syntax that can expand **C# expressions** and **C# structured code** in text templates that produce transformed text output, can be achieved using the `ScriptParser` class.
@@ -550,6 +552,15 @@ Assert.IsTrue(multiResult.Contains(" = 21"));
 // if you need access to the assembly or save it you can
 var assembly = script.Assembly; 
 ```
+
+### Reusing Compiled Classes, Types and Assemblies for Better Performance
+If you plan on **repeatedly calling the same C# code**, you want to avoid re-compiling or even reloading the code from string or even a cached assembly using the `ExecuteXXX()` methods. While these methods cache code after initial compilation, they still have to re-load the type to execute each time, and then execute using Reflection. Initial compilation is always very slow, but even cached code assembly and type loading has significant overhead, that is **much slower** than directly invoking code.
+
+For multiple run code we recommend you use a lower level approach using the `CompileXXX()` methods to create an instance or type, and hang on to it in your application. Whenever you need to re-run the code you can then use the cached instance or type to execute your code. This removes assembly and type loading which add significant overhead.
+
+Performance using these cached instances will be an order of magnitude faster than using `ExecuteMethod()` or `ExecuteCode()` (even with cached assemblies). Cached instances can simply make a `dynamic` or `Reflection` call to the relevant code without reloading or matching code to an assembly and type creation.
+
+If speed is important this is the most efficient approach.
 
 ## Template Script Execution: ScriptParser
 Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser`class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
