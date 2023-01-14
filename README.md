@@ -771,6 +771,40 @@ Bottom line: If you need a dynamically compiled type from another compilation **
 
 Said another way, you can only use in-memory compilation for top level execution, not for inclusion as a reference unless you build a custom assembly resolver (which I have not been able to figure out since there's no physical assembly to resolve from).
 
+### Westwind.Scripting Performance
+A number of people have raised issues commenting that startup performance is slow. Yes that's the case, because the first time this library is called it has to load  Roslyn which is a huge library and it takes time to load; it's slow. Depending on the type of machine you're running on this can take a couple of seconds for the first hit. So yes that overhead will happen and there's no way to avoid it.
+
+There are couple of things to mitigate this issue:
+
+* Pre-compile and Save your compiled assembly
+* Try to pre-load Roslyn at App startup
+
+
+#### Precompile your Code and Save Assembly
+At the end of the day this library compiles code that ends up in an assembly, so rather than compiling your code every time you execute it, try to compile ahead of time and save your compiled assembly when you capture the code to be executed. You can store the assembly for later execution either on disk or some other stream based data store. 
+
+This may allow you to avoid loading Roslyn at all in most runtime situations, and only load it when you add new code that needs to be compiled. For example, if you're adding code snippets that a user enters, you can compile and capture the code snippet when the user enters the code. Then when the application starts you can load the already compiled assembly to execute the code. 
+
+Another related tip especially for snippet libraries that are user provided is to combine many snippets into a single class and map each snippet to a method. So rather than loading many types you can load up one type of code snippets that get executed as needed from an already loaded instance.
+
+#### Pre-Load Roslyn on Startup
+You can warm up Roslyn **in the background** during application startup, using `RoslynLifetimeManager.WarmupRoslyn()`. This method does a `Task.Run()` to create a very simple expression that is compiled into memory and executed to force Roslyn to load outside of the main application thread. 
+
+To do this call:
+
+```csharp
+// at app startup - runs a background task, but don't await
+_ = RoslynLifetimeManager.WarmupRoslyn();
+```
+
+
+### Performance Tips
+
+#### Running Code in a Loop
+If you are running code repetitively, you should avoid using the various `ExecuteXXX()` methods and instead use `CompileClass()` to create a type instance, then re-use that type instance for execution. Although this library caches assemblies for the exact same code and doesn't recompile it, `ExecuteXXX()` methods still have to load an instance of the type each time which adds a bit of overhead.
+
+It's much more efficient using `CompileClass()` to create a type instance, and then calling a method on it. Better yet, cache the `MethodInfo` to execute or create a delegate that can be reused for the specific method.
+
 
 ## Change Log
 
