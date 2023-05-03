@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
+using System.Runtime.Loader;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -117,6 +118,20 @@ namespace Westwind.Scripting
         /// </summary>
         public bool CompileWithDebug { get; set; }
 
+        /// <summary>
+        /// The AssemblyLoadContext the assembly should be loaded in.
+        /// If not assigned, assemblies will get loaded by the default Assembly.Load methods
+        /// If the alternate AssemblyLoadContext is assigned, that will be used instead
+        /// This allows for unloading of the loaded assemblies
+        /// </summary>
+        public AssemblyLoadContext AlternateAssemblyLoadContext { get; set; }
+
+        /// <summary>
+        /// If disabled, assemblies will not be cached through hashes
+        /// Instead for each execution a new unique assembly will get generated and loaded
+        /// This combined with an alternate AssemblyLoadContext can lower the memory pressure of long running programs executing a lot of different code
+        /// </summary>
+        public bool DisableAssemblyCaching { get; set; }
 
         #region Error Handling Properties
 
@@ -235,13 +250,14 @@ namespace Westwind.Scripting
             // check for #r and using directives
             code = ParseReferencesInCode(code);
             
-            if (!CachedAssemblies.ContainsKey(hash))
+            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
             {
                 var sb = GenerateClass(code);
                 if (!CompileAssembly(sb.ToString()))
                     return null;
 
-                CachedAssemblies[hash] = Assembly;
+                if (!DisableAssemblyCaching)
+                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
@@ -842,9 +858,9 @@ namespace Westwind.Scripting
             if (!noLoad)
             {
                 if (!isFileAssembly)
-                    Assembly = Assembly.Load(((MemoryStream) codeStream).ToArray());
+                    Assembly = LoadAssembly(((MemoryStream) codeStream).ToArray());
                 else
-                    Assembly = Assembly.LoadFrom(OutputAssembly);
+                    Assembly = LoadAssemblyFrom(OutputAssembly);
             }
 
             return true;
@@ -903,7 +919,7 @@ namespace Westwind.Scripting
                     }
 
                     if (!noLoad)
-                        Assembly = Assembly.Load(codeStream.ToArray());
+                        Assembly = LoadAssembly(codeStream.ToArray());
                 }
             }
             else
@@ -928,7 +944,7 @@ namespace Westwind.Scripting
                 }
 
                 if (!noLoad)
-                    Assembly = Assembly.LoadFrom(OutputAssembly);
+                    Assembly = LoadAssemblyFrom(OutputAssembly);
             }
 
             return true;
@@ -992,12 +1008,13 @@ namespace Westwind.Scripting
 
             GeneratedClassCode = code;
 
-            if (!CachedAssemblies.ContainsKey(hash))
+            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
             {
                 if (!CompileAssembly(code))
                     return null;
 
-                CachedAssemblies[hash] = Assembly;
+                if (!DisableAssemblyCaching)
+                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
@@ -1021,12 +1038,13 @@ namespace Westwind.Scripting
             int hash = codeStream.GetHashCode();
 
             
-            if (!CachedAssemblies.ContainsKey(hash))
+            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
             {
                 if (!CompileAssembly(codeStream))
                     return null;
 
-                CachedAssemblies[hash] = Assembly;
+                if (!DisableAssemblyCaching)
+                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
@@ -1095,7 +1113,7 @@ namespace Westwind.Scripting
 
 #endregion
 
-#region Refereneces and Namespaces
+#region References and Namespaces
 
 
         /// <summary>
@@ -1608,7 +1626,25 @@ public bool AddAssembly(Type type)
             return Path.GetDirectoryName(typeof(object).Assembly.Location);
         }
 
-#endregion
+        private Assembly LoadAssembly(byte[] rawAssembly)
+        {
+            if (AlternateAssemblyLoadContext == null)
+            {
+                return Assembly.Load(rawAssembly);
+            }
+            return AlternateAssemblyLoadContext.LoadFromStream(new MemoryStream(rawAssembly));
+        }
+
+        private Assembly LoadAssemblyFrom(string assemblyFile)
+        {
+            if (AlternateAssemblyLoadContext == null)
+            {
+                return Assembly.LoadFrom(assemblyFile);
+            }
+            return AlternateAssemblyLoadContext.LoadFromAssemblyPath(assemblyFile);
+        }
+
+        #endregion
 
 
         /// <summary>
