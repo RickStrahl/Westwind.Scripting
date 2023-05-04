@@ -118,6 +118,7 @@ namespace Westwind.Scripting
         /// </summary>
         public bool CompileWithDebug { get; set; }
 
+#if NETCORE
         /// <summary>
         /// The AssemblyLoadContext the assembly should be loaded in.
         /// If not assigned, assemblies will get loaded by the default Assembly.Load methods
@@ -125,6 +126,7 @@ namespace Westwind.Scripting
         /// This allows for unloading of the loaded assemblies
         /// </summary>
         public AssemblyLoadContext AlternateAssemblyLoadContext { get; set; }
+#endif
 
         /// <summary>
         /// If disabled, assemblies will not be cached through hashes
@@ -1628,20 +1630,24 @@ public bool AddAssembly(Type type)
 
         private Assembly LoadAssembly(byte[] rawAssembly)
         {
-            if (AlternateAssemblyLoadContext == null)
+#if NETCORE
+            if (AlternateAssemblyLoadContext != null)
             {
-                return Assembly.Load(rawAssembly);
+                return AlternateAssemblyLoadContext.LoadFromStream(new MemoryStream(rawAssembly));
             }
-            return AlternateAssemblyLoadContext.LoadFromStream(new MemoryStream(rawAssembly));
+#endif
+            return Assembly.Load(rawAssembly);
         }
 
         private Assembly LoadAssemblyFrom(string assemblyFile)
         {
-            if (AlternateAssemblyLoadContext == null)
+#if NETCORE
+            if (AlternateAssemblyLoadContext != null)
             {
-                return Assembly.LoadFrom(assemblyFile);
+                return AlternateAssemblyLoadContext.LoadFromAssemblyPath(assemblyFile);
             }
-            return AlternateAssemblyLoadContext.LoadFromAssemblyPath(assemblyFile);
+#endif
+            return Assembly.LoadFrom(assemblyFile);
         }
 
         #endregion
