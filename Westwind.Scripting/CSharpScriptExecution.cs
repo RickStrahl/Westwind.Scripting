@@ -247,28 +247,36 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            int hash = GenerateHashCode(code);
-
             // check for #r and using directives
             code = ParseReferencesInCode(code);
-            
-            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
+
+            if (DisableAssemblyCaching)
             {
                 var sb = GenerateClass(code);
                 if (!CompileAssembly(sb.ToString()))
                     return null;
-
-                if (!DisableAssemblyCaching)
-                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
-                Assembly = CachedAssemblies[hash];
+                int hash = GenerateHashCode(code);
 
-                // Figure out the class name
-                var type = Assembly.ExportedTypes.First();
-                GeneratedClassName = type.Name;
-                GeneratedNamespace = type.Namespace;
+                if (!CachedAssemblies.ContainsKey(hash))
+                {
+                    var sb = GenerateClass(code);
+                    if (!CompileAssembly(sb.ToString()))
+                        return null;
+
+                    CachedAssemblies[hash] = Assembly;
+                }
+                else
+                {
+                    Assembly = CachedAssemblies[hash];
+
+                    // Figure out the class name
+                    var type = Assembly.ExportedTypes.First();
+                    GeneratedClassName = type.Name;
+                    GeneratedNamespace = type.Namespace;
+                }
             }
 
             var instance = CreateInstance(); // also stores into `ObjectInstance` so it can be reused
@@ -1006,22 +1014,30 @@ namespace Westwind.Scripting
         /// <returns>Instance of that class or null</returns>
         public Type CompileClassToType(string code)
         {
-            int hash = code.GetHashCode();
-
             GeneratedClassCode = code;
 
-            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
+            if (DisableAssemblyCaching)
             {
                 if (!CompileAssembly(code))
                     return null;
-
-                if (!DisableAssemblyCaching)
-                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
-                Assembly = CachedAssemblies[hash];
+                int hash = code.GetHashCode();
+
+                if (!CachedAssemblies.ContainsKey(hash))
+                {
+                    if (!CompileAssembly(code))
+                        return null;
+
+                    CachedAssemblies[hash] = Assembly;
+                }
+                else
+                {
+                    Assembly = CachedAssemblies[hash];
+                }
             }
+
 
             // Figure out the class name
             return Assembly.ExportedTypes.First();
@@ -1037,22 +1053,28 @@ namespace Westwind.Scripting
         /// <returns>A type reference to the generated class</returns>
         public Type CompileClassToType(Stream codeStream)
         {
-            int hash = codeStream.GetHashCode();
-
-            
-            if (DisableAssemblyCaching || !CachedAssemblies.ContainsKey(hash))
+            if (DisableAssemblyCaching)
             {
                 if (!CompileAssembly(codeStream))
                     return null;
-
-                if (!DisableAssemblyCaching)
-                    CachedAssemblies[hash] = Assembly;
             }
             else
             {
-                Assembly = CachedAssemblies[hash];
-            }
+                int hash = codeStream.GetHashCode();
+                if (!CachedAssemblies.ContainsKey(hash))
+                {
 
+                    if (!CompileAssembly(codeStream))
+                        return null;
+
+                    CachedAssemblies[hash] = Assembly;
+                }
+                else
+                {
+                    Assembly = CachedAssemblies[hash];
+                }
+
+            }
             // Figure out the class name
             return Assembly.ExportedTypes.First();
         }
