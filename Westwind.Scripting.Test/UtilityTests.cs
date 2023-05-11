@@ -80,6 +80,7 @@ Console.WriteLine(""Retrieving..."");
 
         }
 
+#if NETCORE
         [TestMethod]
         public void UseAlternateAssemblyLoadContext_LoadsAssembliesInAlternateContextTest()
         {
@@ -129,5 +130,7 @@ return a + b;";
             Assert.AreEqual(10, myContext.Assemblies.Count());
             myContext.Unload();
         }
+#endif
     }
+
 }

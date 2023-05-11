@@ -808,6 +808,15 @@ It's much more efficient using `CompileClass()` to create a type instance, and t
 
 ## Change Log
 
+### 1.2.5
+
+* **Add AssemblyContext Loading which allows for Unloading**  
+In .NET Core you can now assign an AssemblyContext to load assemblies into, which allows for unloading of assemblies. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
+
+* **DisableAssemblyCaching**  
+By default this library caches generated assemblies based on the code that is passed in to execute. The `CSharpScriptExecution.DisableAssemblyCaching` property disables this caching in scenarios where you know code is never re-executed. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
+
+
 ### 1.2
 
 * **Add .NET 7.0 Target**  
