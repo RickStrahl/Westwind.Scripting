@@ -756,9 +756,13 @@ Code snippets, methods and evaluations as well as templates are compiled into as
 ### Cached Assemblies
 Assemblies are cached based on the code that is used to run them so repeatedly running the **exact same template** uses the cached version automatically.
 
-### No Unloading
-Assemblies, once loaded, cannot be unloaded until the process shuts down. While overhead for loading a new assembly is not great it does add overhead with every unique instantiation of a code snippet or template.
+You can disable this functionality with the `DisableAssemblyCaching` which can be a little more efficient and resource conscious if you know that scripts are either always recreated and never reused.
 
+### No Unloading
+Assemblies, once loaded, cannot be unloaded until the process shuts down or the AssemblyLoadContext is unloaded. In  .NET Framework there's no way to unload, but in .NET Core you can use an alternate AssemblyLoadContext.
+
+### Alternate AssemblyLoadContext for  Unloading (.NET Core)
+In .NET Core it's possible to unload assemblies using the `CSharpScriptExecution.AlternateAssemblyLoadContext` which if provided can be used to unload assemblies loaded in the context conditionally.
 
 ## Westwind.Scripting FAQ
 
@@ -810,8 +814,8 @@ It's much more efficient using `CompileClass()` to create a type instance, and t
 
 ### 1.2.5
 
-* **Add AssemblyContext Loading which allows for Unloading**  
-In .NET Core you can now assign an AssemblyContext to load assemblies into, which allows for unloading of assemblies. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
+* **Add AlternateAssemblyLoadContext which allows for Assembly Unloading**  
+In .NET Core you can now assign an alternate AssemblyLoadContext to load assemblies into via the `AlternateAssemblyLoadContext`, which allows for unloading of assemblies. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
 
 * **DisableAssemblyCaching**  
 By default this library caches generated assemblies based on the code that is passed in to execute. The `CSharpScriptExecution.DisableAssemblyCaching` property disables this caching in scenarios where you know code is never re-executed. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
