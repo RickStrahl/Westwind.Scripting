@@ -430,6 +430,58 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
             Assert.IsNotNull(result,"Not a JSON response");
         }
 
+
+
+        [TestMethod]
+        public void ExecuteMethodWithRuntimeExceptionTest()
+        {
+            var exec = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                ThrowExceptions = false,  // capture error
+                CompileWithDebug = true   // provide error info for stack trace
+            };
+            exec.AddDefaultReferencesAndNamespaces();
+            exec.AddAssembly("System.Net.WebClient.dll");
+
+            string code = $@"
+public string HelloWorld(string name)
+{{
+    var wc = new System.Net.WebClient();
+    wc.DownloadString(new Uri(""https://west-wind.com""));
+
+    string result = $""Hello {{name}}. Time is: {{DateTime.Now}}."";
+
+    // This should cause a runtime error
+    string x = null;
+    x = x.Trim();
+
+    var first = new int[] {{ 1,2,3,4,5 }}.First();
+    Console.WriteLine(first);
+    
+    dynamic name2 = ""RIck"";
+    Console.WriteLine(name2);
+
+    return result;
+}}";
+
+            string result = exec.ExecuteMethod(code, "HelloWorld", "Rick") as string;
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {exec.Error}");
+            Console.WriteLine(exec.ErrorMessage);
+
+            // Since we compiled for Debug we should get a line number
+            Console.WriteLine(exec.LastException.StackTrace);
+
+            // which you can correlate to the generated code
+            Console.WriteLine(exec.GeneratedClassCodeWithLineNumbers);
+
+            // yup we had an error
+            Assert.IsTrue(exec.Error);
+        }
+
+
         [TestMethod]
         public async Task ExecuteAsyncVoidMethodTest()
         {

@@ -283,7 +283,21 @@ namespace Westwind.Scripting
             if (instance == null)
                 return null;
 
-            return InvokeMethod(instance, methodName, parameters);
+            if (ThrowExceptions)
+            {
+                return InvokeMethod(instance, methodName, parameters);
+            }
+
+            try
+            {
+                return InvokeMethod(instance, methodName, parameters);
+            }
+            catch (Exception ex)
+            {
+                SetErrors(ex);
+                ErrorType = ExecutionErrorTypes.Runtime;
+                return default;
+            }
         }
 
 
@@ -311,7 +325,26 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public TResult ExecuteMethod<TResult>(string code, string methodName, params object[] parameters)
         {
-            var result = ExecuteMethod(code, methodName, parameters);
+            object result;
+            if (ThrowExceptions)
+            {
+                result = ExecuteMethod(code, methodName, parameters);
+            }
+            else
+            {
+
+                try
+                {
+                    result = ExecuteMethod(code, methodName, parameters);
+                }
+                catch (Exception ex)
+                {
+                    SetErrors(ex);
+                    ErrorType = ExecutionErrorTypes.Runtime;
+                    return default;
+                }
+            }
+
 
             if (result is TResult)
                 return (TResult) result;
