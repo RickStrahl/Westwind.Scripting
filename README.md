@@ -812,12 +812,17 @@ It's much more efficient using `CompileClass()` to create a type instance, and t
 
 ## Change Log
 
+### 1.2.7
+
+* **CSharpScriptExecution.ExecuteMethodAsyncVoid for Async Void Methods**  
+Due to the way tasks are handled in .NET it's not possible to cast a  void `Task` to a `Task<T>` result. For this reason separate methods are needed for the two versions of `ExecuteMethodAsync()` and `ExecuteMethodAsync<TResult>()` as `ExecuteMethodAsyncVoid()` and `ExecuteMethodAsyncVoid<TResult>()` respectively. Use these methods if you explicitly don't want to return a value.
+
 ### 1.2.5
 
-* **Add AlternateAssemblyLoadContext which allows for Assembly Unloading**  
+* **Add CSharpScriptExecution.AlternateAssemblyLoadContext which allows for Assembly Unloading**  
 In .NET Core you can now assign an alternate AssemblyLoadContext to load assemblies into via the `AlternateAssemblyLoadContext`, which allows for unloading of assemblies. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
 
-* **DisableAssemblyCaching**  
+* **CSharpScriptExecution.DisableAssemblyCaching**  
 By default this library caches generated assemblies based on the code that is passed in to execute. The `CSharpScriptExecution.DisableAssemblyCaching` property disables this caching in scenarios where you know code is never re-executed. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
 
 
