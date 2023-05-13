@@ -1,21 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.2.5</Version>
+    <Version>1.2.7</Version>
     <TargetFrameworks>net60;net70;net462;netstandard2.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
     <Copyright>© West Wind Technologies 2011-2023</Copyright>
     <Product>Westwind.ScriptExecution</Product>
-    <Description>Small library to dynamically compile and execute C# source code from string input at runtime.
+    <Description>
+      Small library to dynamically compile and execute C# source code from string input at runtime.
 
-Features:
+      Features:
 
-* Evaluate C# Expressions
-* Execute code snippets with or without parameters and return values
-* Execute complete methods
-* Create and load classes
-* C# Script Templates using Handlebars like syntax
-      
+      * Evaluate C# Expressions
+      * Execute code snippets with or without parameters and return values
+      * Execute complete methods
+      * Create and load classes
+      * C# Script Templates using Handlebars like syntax
+
     </Description>
     <Summary>Small library to dynamically compile and execute C# source code at runtime.</Summary>
 
@@ -27,7 +28,7 @@ Features:
     <PackageProjectUrl>https://github.com/RickStrahl/Westwind.Scripting</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RickStrahl/Westwind.Scripting</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-  
+
     <DebugType>embedded</DebugType>
     <NoWarn>$(NoWarn);CS1591;CS1572;CS1573</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -44,7 +45,7 @@ Features:
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net462'">
     <DefineConstants>NETFULL;</DefineConstants>
   </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -57,11 +58,11 @@ Features:
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.5.0" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net462'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="Microsoft.CSharp" />
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>

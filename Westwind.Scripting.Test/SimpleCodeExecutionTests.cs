@@ -375,6 +375,7 @@ public string HelloWorld(string name)
         }
 
 
+
         [TestMethod]
         public async Task ExecuteAsyncMethodTest()
         {
@@ -430,6 +431,35 @@ public async Task<string> GetJsonFromAlbumViewer(int id)
             Assert.IsNotNull(result,"Not a JSON response");
         }
 
+
+
+        [TestMethod]
+        public async Task ExecuteAsyncMethodWithNoResultTest()
+        {
+            var script = new CSharpScriptExecution();
+
+            // lets not load assembly refs from host app in 6.0 but load explicitly below
+            script.AddDefaultReferencesAndNamespaces();
+
+
+            string code = $@"
+public async Task NoResultConsole(int id)
+{{
+    Console.WriteLine($""Just writing some output...{{id}}"");    
+}}";
+            string result = null;
+            try
+            {
+                 await script.ExecuteMethodAsyncVoid(code, "NoResultConsole", 37);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return;
+            }
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+        }
 
 
         [TestMethod]
