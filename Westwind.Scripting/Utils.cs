@@ -13,7 +13,7 @@ namespace Westwind.Scripting
             const int stringSize = 8;
 
             string str = "abcdefghijkmnopqrstuvwxyz1234567890";
-            StringBuilder stringBuilder = new StringBuilder(stringSize);
+            var stringBuilder = new StringBuilder(stringSize);
             int num1 = 0;
             foreach (byte num2 in Guid.NewGuid().ToByteArray())
             {
@@ -29,7 +29,7 @@ namespace Westwind.Scripting
         {
             if (string.IsNullOrEmpty(text))
                 return text;
-            StringBuilder stringBuilder = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             string[] lines = GetLines(text);
             int totalWidth = 2;
             if (lines.Length > 9999)
