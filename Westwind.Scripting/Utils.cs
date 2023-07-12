@@ -56,7 +56,7 @@ namespace Westwind.Scripting
             s = s.Replace("\r\n", "\n");
             if (maxLines < 1)
                 return s.Split('\n');
-            return ((IEnumerable<string>)s.Split('\n')).Take<string>(maxLines).ToArray<string>();
+            return s.Split('\n').Take(maxLines).ToArray();
         }
         
     }
