@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using System.Runtime.Loader;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -1371,7 +1372,7 @@ namespace Westwind.Scripting
             );
 
             // this library and CodeAnalysis libs
-            AddAssembly(typeof(ReferenceList)); // Scripting Library
+            AddAssembly(typeof(CSharpScriptExecution)); // this scripting Library
         }
 
         /// <summary>
@@ -1782,7 +1783,7 @@ public bool AddAssembly(Type type)
         {
             "System", "System.Text", "System.Reflection", "System.IO", "System.Net", "System.Net.Http",
             "System.Collections", "System.Collections.Generic", "System.Collections.Concurrent",
-            "System.Text.RegularExpressions", "System.Threading.Tasks", "System.Linq"
+            "System.Text.RegularExpressions", "System.Threading.Tasks", "System.Linq", "Westwind.Scripting"
         };
     }
 

@@ -1,0 +1,1 @@
+Current Time: <b>{{ DateTime.Now.ToString("HH:mm:ss") }}</b>

@@ -575,6 +575,18 @@ This is the highlevel execution method that you pass a template and a model to, 
 * `ParseScriptToCode()`  
 This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
 
+Templates expost two special variables:
+
+* **Model**  
+Exposes the model passed when calling the `ExecuteScript()` method or variation. Access with `{{ Model.Property }}` or `{{ Model.MethodToCall("parameter") }}`.
+
+* **Script**  
+Allows the ability to render partial templates from disk and embed them into the current page as well as potentially executing nested script code from rendered content. Call these methods with:
+    * Script.RenderPartial()
+    * Script.RenderPartialAsync()
+    * Script.RenderScript()  <small>*(allows content to run script code)*</small>
+    * Script.RenderScriptAsync() 
+
 ### Automatic Script Processing with ScriptParser
 The `ExecuteScript()` method is the all in one method that parses and executes the script and model passed to it.
 
@@ -656,9 +668,91 @@ Assert.IsNotNull(result, scriptParser.ErrorMessage);
 Console.WriteLine(result);
 ```
 
-This is a bit contrived since this in effect does the same thing that `ExecuteScript()` does implicicitly. However, it can be useful to retrieve the code and use in other situations, such as building a class with several generated template methods rather than compiling and running each template in it's own dedicated assembly.
+This is a bit contrived since this in effect does the same thing that `ExecuteScript()` does implicitly. However, it can be useful to retrieve the code and use in other situations, such as building a class with several generated template methods rather than compiling and running each template in it's own dedicated assembly.
 
 Not a very common use case but it's there if you need it.
+
+### Nested Script Code
+In addition to direct template rendering you can also embed nested template content into the page using the `Script` object which exposed as an in-scope variable. You can use the script object to execute a template from disk or provide a string expression as a template to dynamically execute script in application provided code.
+
+#### RenderPartial
+RenderPartial lets you render an external template from disk by specifying a path to the file.
+
+```csharp
+var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+string script = """
+<div>
+Hello World. Date is: {{ DateTime.Now.ToString() }}
+
+{{ await Script.RenderPartialAsync("./Templates/Time_Partial.csscript") }}
+Done.
+</div>
+""";
+Console.WriteLine(script + "\n---" );
+
+
+var scriptParser = new ScriptParser();
+scriptParser.AddAssembly(typeof(ScriptParserTests));
+
+
+string result = await scriptParser.ExecuteScriptAsync(script, model);
+Console.WriteLine(result);
+Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+
+Assert.IsNotNull(result, scriptParser.ErrorMessage);
+```
+
+The template is just a file with text and script expressions embedded:
+
+```csharp
+Current Time: <b>{{ DateTime.Now.ToString("HH:mm:ss") }}</b>
+```
+
+and if loaded will be rendered in place of the `RenderPartial` call.
+
+When using `ExecuteScript()` and its varients, you can also pass in a `basePath` parameter which allows you specify a root path to resolve via these leading characters:
+
+* `~`
+* `/`
+* `\`
+
+When these start off the passed in path and a `basePath` is provided the root path is replaced in place of these values (ie. `~/sub1/page.csscript` becomes `\temp\templates\sub1\page.csscript`). 
+
+> You need to be consistent with your use of directory slashes using forward **or** backwards slashes but not both in the base path and template paths or you may run into invalid path issues. 
+
+#### RenderScript
+
+```csharp
+var model = new TestModel { 
+    Name = "rick", 
+    Expression="Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" 
+};
+
+string script = """
+<div>
+Hello World. Date is: {{ DateTime.Now.ToString() }}
+<b>{{ Model.Name }}</b>
+
+{{ await Script.RenderScriptAsync(Model.Expression,null) }}
+
+Done.
+</div>
+""";
+Console.WriteLine(script + "\n---");
+
+
+var scriptParser = new ScriptParser();
+scriptParser.AddAssembly(typeof(ScriptParserTests));
+
+
+string result = await scriptParser.ExecuteScriptAsync(script, model);
+
+Console.WriteLine(result);
+Console.WriteLine(scriptParser.Error + " " + scriptParser.ErrorType + " " + scriptParser.ErrorMessage + " " );
+Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+
+Assert.IsNotNull(result, scriptParser.ErrorMessage);
+```
 
 ### ScriptParser Methods and Properties
 

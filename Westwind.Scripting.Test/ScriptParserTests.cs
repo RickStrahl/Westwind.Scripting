@@ -464,11 +464,73 @@ Hello World. Date is: today!
         }
 
 
+        [TestMethod]
+        public async Task BasicPartialTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            string script = """
+<div>
+Hello World. Date is: {{ DateTime.Now.ToString() }}
+
+{{ await Script.RenderPartialAsync("./Templates/Time_Partial.csscript") }}
+Done.
+</div>
+""";
+            Console.WriteLine(script + "\n---" );
+
+
+            var scriptParser = new ScriptParser();
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+
+
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
+            Console.WriteLine(result);
+            Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
+        }
+
+
+        [TestMethod]
+        public async Task BasicRenderScriptTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10), Expression="Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
+            string script = """
+<div>
+Hello World. Date is: {{ DateTime.Now.ToString() }}
+<b>{{ Model.Name }}</b>
+
+{{ await Script.RenderScriptAsync(Model.Expression,null) }}
+
+Done.
+</div>
+""";
+            Console.WriteLine(script + "\n---");
+
+
+            var scriptParser = new ScriptParser();
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+
+
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
+
+            Console.WriteLine(result);
+            Console.WriteLine(scriptParser.Error + " " + scriptParser.ErrorType + " " + scriptParser.ErrorMessage + " " );
+            Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
+        }
+
     }
 
     public class TestModel
     {
         public string  Name { get; set; }
         public DateTime DateTime { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// Test for Nested Expression Parsing
+        /// </summary>
+        public string Expression { get; set; }
     }
 }

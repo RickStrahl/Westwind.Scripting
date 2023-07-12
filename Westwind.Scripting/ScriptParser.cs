@@ -76,8 +76,6 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
-
-
         #region Script Execution
 
         /// <summary>
@@ -96,10 +94,13 @@ namespace Westwind.Scripting
         /// <param name="startDelim">Optional start delimiter for script tags</param>
         /// <param name="endDelim">Optional end delimiter for script tags</param>
         /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
+        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
         public string ExecuteScript(string script, object model,
             CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+            string startDelim = "{{", string endDelim = "}}",
+            string codeIndicator = "%",
+            string basePath = null)
         {
 
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
@@ -110,7 +111,9 @@ namespace Westwind.Scripting
                 return null;
 
             // expose the parameter as Model
-            code = "dynamic Model = parameters[0];\n" + code;
+            code = "dynamic Model = parameters[0];\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = \"" +  basePath + "\"  };\n" +
+                   code;
 
             if (scriptEngine != null)
                 ScriptEngine = scriptEngine;
@@ -138,9 +141,11 @@ namespace Westwind.Scripting
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
         public string ExecuteScript<TModelType>(string script, TModelType model,
             CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{", string endDelim = "}}", string codeIndicator = "%")
+            string startDelim = "{{",
+            string endDelim = "}}",
+            string codeIndicator = "%",
+            string basePath = null)
         {
-
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
@@ -148,11 +153,15 @@ namespace Westwind.Scripting
             if (code == null)
                 return null;
 
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+                   code;
+
             if (scriptEngine != null)
                 ScriptEngine = scriptEngine;
 
             return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }
+
 
         /// <summary>
         /// Executes a script that supports {{ expression }} and {{% code block }} syntax
@@ -179,7 +188,8 @@ namespace Westwind.Scripting
             object model = null,
             CSharpScriptExecution scriptEngine = null,
             string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%")
+            string codeIndicator = "%",
+            string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
@@ -189,7 +199,9 @@ namespace Westwind.Scripting
                 return null;
 
             // expose the parameter as Model
-            code = "dynamic Model = parameters[0];\n" + code;
+            code = "dynamic Model = parameters[0];\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+                   code;
 
             if (scriptEngine != null)
                 ScriptEngine = scriptEngine;
@@ -199,32 +211,13 @@ namespace Westwind.Scripting
             return result;
         }
 
-        /// <summary>
-        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
-        /// and returns a string result. This version allows for `async` code inside of
-        /// the template.
-        ///
-        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
-        /// which allows setting references/namespaces and can capture error information.
-        ///
-        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
-        /// along with the error message and the generated code.
-        /// </summary>
-        /// <param name="script">The template to execute that contains C# script</param>
-        /// <param name="model">A model that can be accessed in the template as `Model`. Model is exposed as `dynamic`
-        /// which allows passing any value without requiring type dependencies at compile time.
-        /// 
-        /// Pass null if you don't need to access values.</param>
-        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
-        /// <param name="startDelim">Optional start delimiter for script tags</param>
-        /// <param name="endDelim">Optional end delimiter for script tags</param>
-        /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
-        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+     
         public async Task<string> ExecuteScriptAsync<TModelType>(string script,
             TModelType model = default,
             CSharpScriptExecution scriptEngine = null,
             string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%")
+            string codeIndicator = "%",
+            string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
@@ -233,11 +226,15 @@ namespace Westwind.Scripting
             if (code == null)
                 return null;
 
-            // expose the parameter as Model
-            //code = "dynamic Model = parameters[0];\n" + code;
+            // Model is passed in the signature so no model here
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+                   code;
 
             if (scriptEngine != null)
                 ScriptEngine = scriptEngine;
+
+            var type = typeof(TModelType);
+
             
             string result = await ScriptEngine.ExecuteCodeAsync<string, TModelType>(code, model) as string;
 
@@ -478,4 +475,3 @@ var writer = new StringWriter();
 
     }
 }
-
