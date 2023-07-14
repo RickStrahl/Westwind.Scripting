@@ -423,12 +423,15 @@ namespace Westwind.Scripting
             // we have to do this separately to avoid 
             if (ThrowExceptions)
             {
-                await (ExecuteMethod(code, methodName, parameters) as Task);
+                if (ExecuteMethod(code, methodName, parameters) is Task task)
+                    await task;
+                return;
             }
 
             try
             {
-                await (ExecuteMethod(code, methodName, parameters) as Task);
+                if (ExecuteMethod(code, methodName, parameters) is Task task)
+                    await task;
             }
             catch (Exception ex)
             {
@@ -458,10 +461,8 @@ namespace Westwind.Scripting
         /// <param name="parameters">any number of variable parameters</param>
         /// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
         /// <returns>result value of the method</returns>
-        public async Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName,
-            params object[] parameters)
+        public async Task<TResult> ExecuteMethodAsync<TResult>(string code, string methodName, params object[] parameters)
         {
-
             if (ThrowExceptions)
             {
                 return await (ExecuteMethod(code, methodName, parameters) as Task<TResult>);
