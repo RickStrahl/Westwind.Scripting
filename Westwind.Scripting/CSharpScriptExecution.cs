@@ -381,12 +381,15 @@ namespace Westwind.Scripting
             // we have to do this separately to avoid 
             if (ThrowExceptions)
             {
-                return await (ExecuteMethod(code, methodName, parameters) as Task<object>);
+                if (ExecuteMethod(code, methodName, parameters) is Task<object> task)
+                    return await task;
             }
 
             try
             {
-                return await (ExecuteMethod(code, methodName, parameters) as Task<object>);
+                if (ExecuteMethod(code, methodName, parameters) is Task<object> task)
+                    return await task;
+
             }
             catch (Exception ex)
             {
@@ -395,6 +398,7 @@ namespace Westwind.Scripting
                 return default;
             }
 
+            return default;
         }
 
         /// <summary>
@@ -465,13 +469,15 @@ namespace Westwind.Scripting
         {
             if (ThrowExceptions)
             {
-                return await (ExecuteMethod(code, methodName, parameters) as Task<TResult>);
+                if (ExecuteMethod(code, methodName, parameters) is Task<TResult> task)
+                    return await task;
             }
             else
             {
                 try
                 {
-                    return await (ExecuteMethod(code, methodName, parameters) as Task<TResult>);
+                    if (ExecuteMethod(code, methodName, parameters) is Task<TResult> task)
+                        return await task;
                 }
                 catch (Exception ex)
                 {
@@ -480,50 +486,52 @@ namespace Westwind.Scripting
                     return default;
                 }
             }
+
+            return default;
         }
 
 
-        /// <summary>
-        /// Executes a complete async method by wrapping it into a class, compiling
-        /// and instantiating the class and calling the method and unwrapping the
-        /// task result. This version doesn't return a value.
-        ///
-        /// Method should include full method header (instance type, return value and parameters)
-        ///
-        /// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
-        ///
-        /// Async Method Note: Keep in mind that
-        /// the method is not cast to that result - it's cast to object so you
-        /// have to unwrap it:
-        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
-        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
-        /// </summary>
-        /// <param name="code">One or more complete methods.</param>
-        /// <param name="methodName">Name of the method to call.</param>
-        /// <param name="parameters">any number of variable parameters</param>
-        /// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
-        /// <returns>result value of the method</returns>
-        public async Task ExecuteMethodAsyncVoid<TResult>(string code, string methodName,
-            params object[] parameters)
-        {
+        ///// <summary>
+        ///// Executes a complete async method by wrapping it into a class, compiling
+        ///// and instantiating the class and calling the method and unwrapping the
+        ///// task result. This version doesn't return a value.
+        /////
+        ///// Method should include full method header (instance type, return value and parameters)
+        /////
+        ///// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        /////
+        ///// Async Method Note: Keep in mind that
+        ///// the method is not cast to that result - it's cast to object so you
+        ///// have to unwrap it:
+        ///// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        ///// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+        ///// </summary>
+        ///// <param name="code">One or more complete methods.</param>
+        ///// <param name="methodName">Name of the method to call.</param>
+        ///// <param name="parameters">any number of variable parameters</param>
+        ///// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
+        ///// <returns>result value of the method</returns>
+        //public async Task ExecuteMethodAsyncVoid<TResult>(string code, string methodName,
+        //    params object[] parameters)
+        //{
 
-            if (ThrowExceptions)
-            {
-                await (ExecuteMethod(code, methodName, parameters) as Task);
-            }
-            else
-            {
-                try
-                {
-                    await (ExecuteMethod(code, methodName, parameters) as Task);
-                }
-                catch (Exception ex)
-                {
-                    SetErrors(ex);
-                    ErrorType = ExecutionErrorTypes.Runtime;
-                }
-            }
-        }
+        //    if (ThrowExceptions)
+        //    {
+        //        await (ExecuteMethod(code, methodName, parameters) as Task);
+        //    }
+        //    else
+        //    {
+        //        try
+        //        {
+        //            await (ExecuteMethod(code, methodName, parameters) as Task);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            SetErrors(ex);
+        //            ErrorType = ExecutionErrorTypes.Runtime;
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Evaluates a single value or expression that returns a value.
