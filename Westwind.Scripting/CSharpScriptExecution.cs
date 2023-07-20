@@ -401,49 +401,6 @@ namespace Westwind.Scripting
             return default;
         }
 
-        /// <summary>
-        /// Executes a complete async method by wrapping it into a class, compiling
-        /// and instantiating the class and calling the method. This method returns
-        /// no value.
-        ///
-        /// Class should include full class header (instance type, return value and parameters)
-        ///
-        /// "public async Task&lt;object&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
-        /// "public async Task HelloWorld(string name) { await Task.Delay(1); Console.WriteLine(name); }"
-        /// 
-        /// Async Method Note: Keep in mind that
-        /// the method is not cast to that result - it's cast to object so you
-        /// have to unwrap it:
-        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
-        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
-        /// </summary>
-        /// <param name="code">One or more complete methods.</param>
-        /// <param name="methodName">Name of the method to call.</param>
-        /// <param name="parameters">any number of variable parameters</param>
-        /// <returns>result value of the method</returns>
-        public async Task ExecuteMethodAsyncVoid(string code, string methodName, params object[] parameters)
-        {
-            // this result will be a task of object (async method called)
-            // we have to do this separately to avoid 
-            if (ThrowExceptions)
-            {
-                if (ExecuteMethod(code, methodName, parameters) is Task task)
-                    await task;
-                return;
-            }
-
-            try
-            {
-                if (ExecuteMethod(code, methodName, parameters) is Task task)
-                    await task;
-            }
-            catch (Exception ex)
-            {
-                SetErrors(ex);
-                ErrorType = ExecutionErrorTypes.Runtime;
-            }
-        }
-
 
         /// <summary>
         /// Executes a complete async method by wrapping it into a class, compiling
@@ -488,6 +445,49 @@ namespace Westwind.Scripting
             }
 
             return default;
+        }
+
+        /// <summary>
+        /// Executes a complete async method by wrapping it into a class, compiling
+        /// and instantiating the class and calling the method. This method returns
+        /// no value.
+        ///
+        /// Class should include full class header (instance type, return value and parameters)
+        ///
+        /// "public async Task&lt;object&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
+        /// "public async Task HelloWorld(string name) { await Task.Delay(1); Console.WriteLine(name); }"
+        /// 
+        /// Async Method Note: Keep in mind that
+        /// the method is not cast to that result - it's cast to object so you
+        /// have to unwrap it:
+        /// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
+        /// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
+        /// </summary>
+        /// <param name="code">One or more complete methods.</param>
+        /// <param name="methodName">Name of the method to call.</param>
+        /// <param name="parameters">any number of variable parameters</param>
+        /// <returns>result value of the method</returns>
+        public async Task ExecuteMethodAsyncVoid(string code, string methodName, params object[] parameters)
+        {
+            // this result will be a task of object (async method called)
+            // we have to do this separately to avoid 
+            if (ThrowExceptions)
+            {
+                if (ExecuteMethod(code, methodName, parameters) is Task task)
+                    await task;
+                return;
+            }
+
+            try
+            {
+                if (ExecuteMethod(code, methodName, parameters) is Task task)
+                    await task;
+            }
+            catch (Exception ex)
+            {
+                SetErrors(ex);
+                ErrorType = ExecutionErrorTypes.Runtime;
+            }
         }
 
 
