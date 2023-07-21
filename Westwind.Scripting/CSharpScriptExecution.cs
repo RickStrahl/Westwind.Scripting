@@ -965,8 +965,6 @@ namespace Westwind.Scripting
 
             var sourceCode = SourceText.From(codeInputStream);
             var tree = SyntaxFactory.ParseSyntaxTree(sourceCode);
-            var code = tree.ToString();
-            return CompileAssembly(code, noLoad);
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
