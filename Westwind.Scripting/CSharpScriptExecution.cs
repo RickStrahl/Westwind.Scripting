@@ -490,48 +490,7 @@ namespace Westwind.Scripting
             }
         }
 
-
-        ///// <summary>
-        ///// Executes a complete async method by wrapping it into a class, compiling
-        ///// and instantiating the class and calling the method and unwrapping the
-        ///// task result. This version doesn't return a value.
-        /////
-        ///// Method should include full method header (instance type, return value and parameters)
-        /////
-        ///// "public async Task&lt;string&gt; HelloWorld(string name) { await Task.Delay(1); return name; }"
-        /////
-        ///// Async Method Note: Keep in mind that
-        ///// the method is not cast to that result - it's cast to object so you
-        ///// have to unwrap it:
-        ///// var objTask = script.ExecuteMethod(asyncCodeMethod); // object result
-        ///// var result = await (objTask as Task&lt;string&gt;);  //  cast and unwrap
-        ///// </summary>
-        ///// <param name="code">One or more complete methods.</param>
-        ///// <param name="methodName">Name of the method to call.</param>
-        ///// <param name="parameters">any number of variable parameters</param>
-        ///// <typeparam name="TResult">The result type (string, object, etc.) of the method</typeparam>
-        ///// <returns>result value of the method</returns>
-        //public async Task ExecuteMethodAsyncVoid<TResult>(string code, string methodName,
-        //    params object[] parameters)
-        //{
-
-        //    if (ThrowExceptions)
-        //    {
-        //        await (ExecuteMethod(code, methodName, parameters) as Task);
-        //    }
-        //    else
-        //    {
-        //        try
-        //        {
-        //            await (ExecuteMethod(code, methodName, parameters) as Task);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            SetErrors(ex);
-        //            ErrorType = ExecutionErrorTypes.Runtime;
-        //        }
-        //    }
-        //}
+        
 
         /// <summary>
         /// Evaluates a single value or expression that returns a value.
@@ -915,10 +874,9 @@ namespace Westwind.Scripting
         public bool CompileAssembly(string source, bool noLoad = false)
         {
             ClearErrors();
-
+            
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
 
-            
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
             
             
@@ -1006,8 +964,9 @@ namespace Westwind.Scripting
             ClearErrors();
 
             var sourceCode = SourceText.From(codeInputStream);
-
             var tree = SyntaxFactory.ParseSyntaxTree(sourceCode);
+            var code = tree.ToString();
+            return CompileAssembly(code, noLoad);
 
             var compilation = CSharpCompilation.Create(GeneratedClassName + ".cs")
                 .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
@@ -1099,6 +1058,7 @@ namespace Westwind.Scripting
         /// 
         /// Must have include parameterless ctor()
         /// </summary>
+        /// <remarks>Does not allow for #r reference inclusion - if you need #r </remarks>
         /// <param name="code">Fully self-contained C# class</param>
         /// <returns>Instance of that class or null</returns>
         public dynamic CompileClass(Stream code)
@@ -1124,6 +1084,8 @@ namespace Westwind.Scripting
         /// <returns>Instance of that class or null</returns>
         public Type CompileClassToType(string code)
         {
+            code = ParseReferencesInCode(code, true);
+
             GeneratedClassCode = code;
 
             if (DisableAssemblyCaching)
@@ -1159,6 +1121,7 @@ namespace Westwind.Scripting
         /// including namespace and using wrapper to compile
         /// from an input stream.
         /// </summary>
+        /// <remarks>Does not parse #r reference inclusion. If you need to use #r pass code as string</remarks>
         /// <param name="codeStream">Fully self-contained C# class</param>
         /// <returns>A type reference to the generated class</returns>
         public Type CompileClassToType(Stream codeStream)
@@ -1583,20 +1546,19 @@ public bool AddAssembly(Type type)
         /// </summary>
         /// <param name="code"></param>
         /// <returns></returns>
-        private string ParseReferencesInCode(string code)
+        private string ParseReferencesInCode(string code, bool referencesOnly = false)
         {
             if (string.IsNullOrEmpty(code)) return code;
 
-            if (!code.Contains("#r ") && !code.Contains("using "))
+            if (!code.Contains("#r ") && ( !referencesOnly && !code.Contains("using ") ) )
                 return code;
-
-
+            
             StringBuilder sb = new StringBuilder();
             var snippetLines = GetLines(code);
 
             foreach (var line in snippetLines)
             {
-                if (line.Trim().Contains("#r "))
+                if (line.Trim().StartsWith("#r "))
                 {
                     if (AllowReferencesInCode)
                     {
@@ -1609,7 +1571,7 @@ public bool AddAssembly(Type type)
                     continue;
                 }
 
-                if (line.Trim().Contains("using ") && !line.Contains("("))
+                if (!referencesOnly && line.Trim().Contains("using ") && !line.Contains("("))
                 {
                     string ns = line.Replace("using ", "").Replace(";", "").Trim();
                     AddNamespace(ns);

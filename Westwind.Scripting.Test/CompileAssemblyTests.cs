@@ -16,14 +16,14 @@ namespace Westwind.Scripting.Test
             var code = @"
 using System;
 
-namespace Testing.Test {
+namespace CompilationTesting {
 
-public class Test
+public class TestClass
 {
-     public string Name {get; set; } = ""John"";
-     public DateTime Time {get; set; } = DateTime.Now;
+    public string Name {get; set; } = ""John"";
+    public DateTime Time {get; set; } = DateTime.Now;
 
-    public Test()
+    public TestClass()
     {
         
     }
@@ -31,9 +31,10 @@ public class Test
     public string HelloWorld(string name = null)
     {
         if (string.IsNullOrEmpty(name))
-           name = Name;
+             name = Name;
 
-        return ""Hello, "" + Name + "". Time is: "" + Time.ToString(""MMM dd, yyyy"");        
+        return ""Hello, "" + Name + "". Time is: "" + Time.ToString(""MMM dd, yyyy"");
+        
     } 
 }
 
@@ -41,7 +42,8 @@ public class Test
 ";
             var script = new CSharpScriptExecution()
             {
-                SaveGeneratedCode = true
+                SaveGeneratedCode = true,
+                AllowReferencesInCode = true
             };
             script.AddDefaultReferencesAndNamespaces();
 
@@ -62,10 +64,65 @@ public class Test
 
             Assert.IsFalse(script.Error, script.ErrorMessage);
             Assert.IsTrue(result.Contains("Time is:"));
-
         }
 
-        [TestMethod]
+   
+    [TestMethod]
+    public void CompileClassWithReferenceAndExecute()
+            {
+                var code = @"
+using System;
+
+// Reference external assembly
+
+#r ReferenceTest.dll
+
+using ReferenceTest;
+
+namespace CompilationTesting {
+
+public class TestClass
+{
+     public TestClass()
+    {
+        
+    }
+
+    public string HelloWorld(string name = null)
+    {
+        // Call referenced Assembly
+        var t = new Test();  
+        return t.HelloWorld(name);       
+    } 
+}
+
+}
+";
+                var script = new CSharpScriptExecution()
+                {
+                    SaveGeneratedCode = true,
+                    AllowReferencesInCode = true
+                };
+                script.AddDefaultReferencesAndNamespaces();
+
+                // dynamic required since host doesn't know about this new type
+                dynamic gen = script.CompileClass(code);
+
+                Assert.IsFalse(script.Error, script.ErrorMessage + "\n" + script.GeneratedClassCodeWithLineNumbers);
+
+                var result = gen.HelloWorld("beautiful people");
+
+                Console.WriteLine($"Result: {result}");
+                Console.WriteLine($"Error ({script.ErrorType}): {script.Error}");
+                Console.WriteLine(script.ErrorMessage);
+                Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+                Assert.IsFalse(script.Error, script.ErrorMessage);
+                Assert.IsTrue(result.Contains("Time is:"));
+
+            }
+
+            [TestMethod]
         public void CompileInvalidClassDefinitionShouldNotThrow()
         {
             var code = @"

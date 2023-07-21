@@ -3,7 +3,7 @@
     <ProjectGuid>{617ACA07-B233-471D-9F9B-A616807E5435}</ProjectGuid>
     <RootNamespace>Westwind.ScriptExecution.Test</RootNamespace>
     <AssemblyName>Westwind.ScriptExecution.Test</AssemblyName>
-    <TargetFrameworks>net70;net60;net472</TargetFrameworks>
+    <TargetFrameworks>net70</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
 
@@ -46,10 +46,16 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.6.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ReferenceTest\ReferenceTest.csproj" />
     <ProjectReference Include="..\Westwind.Scripting\Westwind.Scripting.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="templates\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="ReferenceTest.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
