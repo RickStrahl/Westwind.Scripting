@@ -265,7 +265,7 @@ Namespaces are always parsed if present.
 ##### Assembly References
 Assembly references are **disabled by default** as they are a potential security issue. But you can enable them via the `AllowReferencesInCode` property set to `true`.
 
-Once enabled you can embed references like this:
+Once enabled you can embed references and references in script code like this:
 
 ```cs
 #r MarkdownMonster.exe
@@ -274,9 +274,16 @@ using MarkdownMonser
 var title = mmApp.Configuration.ApplicationName;
 ```
 
+The assembly is reference and any namespaces are moved to the top of the class and removed from the execution code.
+
+
 Assemblies are searched for in the application folder and in the runtime folder.
 
-####
+> #### #r only works with String Scripts/Classes
+> Reference and Usings parsing only works with string code inputs. If you need reference syntax make sure you convert your stream to string first.
+
+> #### #r only for classes, #r and using for Snippets and Methods
+> Class compilation parses only #r references. Method and Code execution - (ie. non-self contained code files) parse both `#r` and `using`.
 
 #### Configuration Properties
 The `CSharpScriptExecution` has only a few configuration options available:
