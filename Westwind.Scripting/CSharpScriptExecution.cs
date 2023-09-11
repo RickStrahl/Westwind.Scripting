@@ -874,8 +874,20 @@ namespace Westwind.Scripting
         public bool CompileAssembly(string source, bool noLoad = false)
         {
             ClearErrors();
-            
-            var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
+
+            var pePath = $@"{Path.GetTempPath()}\{GeneratedClassName}.cs";
+            var pdbPath = Path.ChangeExtension(GeneratedClassName, ".pdb");
+
+            SourceText sourceText = null;
+            if (CompileWithDebug)
+            {
+                File.WriteAllText(pePath, source);
+                var buffer = Encoding.UTF8.GetBytes(source);
+                sourceText = SourceText.From(buffer, buffer.Length, Encoding.UTF8, canBeEmbedded: true);
+            }
+
+
+            var tree = CompileWithDebug ? SyntaxFactory.ParseSyntaxTree(source.Trim(), path: pePath, encoding: Encoding.UTF8) : SyntaxFactory.ParseSyntaxTree(source.Trim());
 
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
             
@@ -893,6 +905,7 @@ namespace Westwind.Scripting
 
             bool isFileAssembly = false;
             Stream codeStream = null;
+            var pdbStream = new MemoryStream();
             if (string.IsNullOrEmpty(OutputAssembly)) 
             {
                 codeStream = new MemoryStream(); // in-memory assembly
@@ -904,15 +917,20 @@ namespace Westwind.Scripting
             }
 
             using (codeStream)
+            using (pdbStream)
             {
                 EmitResult compilationResult = null;
                 if (CompileWithDebug)
                 {
-                    var debugOptions = CompileWithDebug ? DebugInformationFormat.Embedded : DebugInformationFormat.Pdb;
-                    compilationResult = compilation.Emit(codeStream,
-                        options: new EmitOptions(debugInformationFormat: debugOptions ));
+                    var debugOptions = CompileWithDebug ? DebugInformationFormat.PortablePdb : DebugInformationFormat.Pdb;
+
+                    compilationResult = compilation.Emit(
+                        peStream: codeStream,
+                        pdbStream: pdbStream,
+                        embeddedTexts: new List<EmbeddedText> { EmbeddedText.FromSource(pePath, sourceText) },
+                        options: new EmitOptions(debugInformationFormat: debugOptions, pdbFilePath: pdbPath));
                 }
-                else 
+                else
                     compilationResult = compilation.Emit(codeStream);
 
                 // Compilation Error handling
@@ -928,7 +946,7 @@ namespace Westwind.Scripting
                     ErrorMessage = sb.ToString();
 
                     // no exception here during compilation - return the error
-                    SetErrors(new ApplicationException(ErrorMessage),true);  
+                    SetErrors(new ApplicationException(ErrorMessage), true);
                     return false;
                 }
             }
@@ -936,7 +954,10 @@ namespace Westwind.Scripting
             if (!noLoad)
             {
                 if (!isFileAssembly)
-                    Assembly = LoadAssembly(((MemoryStream) codeStream).ToArray());
+                {
+                    if (CompileWithDebug) Assembly = LoadAssembly(((MemoryStream)codeStream).ToArray(), pdbStream.ToArray());
+                    else Assembly = LoadAssembly(((MemoryStream)codeStream).ToArray());
+                }
                 else
                     Assembly = LoadAssemblyFrom(OutputAssembly);
             }
@@ -1729,6 +1750,17 @@ public bool AddAssembly(Type type)
             }
 #endif
             return Assembly.Load(rawAssembly);
+        }
+
+        private Assembly LoadAssembly(byte[] rawAssembly, byte[] rawPdb)
+        {
+#if NETCORE
+            if (AlternateAssemblyLoadContext != null)
+            {
+                return AlternateAssemblyLoadContext.LoadFromStream(new MemoryStream(rawAssembly), new MemoryStream(rawPdb));
+            }
+#endif
+            return Assembly.Load(rawAssembly, rawPdb);
         }
 
         private Assembly LoadAssemblyFrom(string assemblyFile)
