@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.3.3</Version>
-    <TargetFrameworks>net60;net70;net462;netstandard2.0</TargetFrameworks>
+    <Version>1.4</Version>
+    <TargetFrameworks>net6.0;net7.0;net8.0;net462;netstandard2.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
     <Copyright>© West Wind Technologies 2011-2023</Copyright>
@@ -23,7 +23,7 @@
     <PackageIconUrl>http://www.west-wind.com/westwindToolkit/images/WestwindWebToolkit_128x128.png</PackageIconUrl>
     <PackageTags>csharp scripting script roslyn compilation execution evaluate code westwind</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageLicense>LICENSE.md</PackageLicense>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
 
     <PackageProjectUrl>https://github.com/RickStrahl/Westwind.Scripting</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RickStrahl/Westwind.Scripting</RepositoryUrl>
@@ -36,12 +36,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net60'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <DefineConstants>NETCORE;NET60;</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)' == 'net70'">
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net7.0'">
     <DefineConstants>NETCORE;NET70;</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <DefineConstants>NETCORE;NET80;</DefineConstants>
+  </PropertyGroup>
+
+
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net462'">
     <DefineConstants>NETFULL;</DefineConstants>
   </PropertyGroup>
@@ -55,8 +60,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.6.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.6.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.8.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="Microsoft.CSharp" />

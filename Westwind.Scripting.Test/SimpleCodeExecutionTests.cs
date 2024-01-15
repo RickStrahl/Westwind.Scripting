@@ -510,7 +510,7 @@ public async Task NoResultConsole(int id)
 {{
     Console.WriteLine($""Just writing some output...{{id}}"");    
 }}";
-            string result = null;
+        
             try
             {
                  await script.ExecuteMethodAsyncVoid(code, "NoResultConsole", 37);
