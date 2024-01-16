@@ -926,8 +926,12 @@ In .NET Core you can now assign an alternate AssemblyLoadContext to load assembl
 * **CSharpScriptExecution.DisableAssemblyCaching**  
 By default this library caches generated assemblies based on the code that is passed in to execute. The `CSharpScriptExecution.DisableAssemblyCaching` property disables this caching in scenarios where you know code is never re-executed. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
 
+### 1.4
 
-### 1.2
+* **Add .NET 8.0 Target** 
+Added explicit target for .NET 8.0.
+
+### 1.3
 
 * **Add .NET 7.0 Target**  
 Added explicit target for .NET 7.0.
