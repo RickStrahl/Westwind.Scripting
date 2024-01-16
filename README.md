@@ -15,7 +15,7 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* .NET 6.0 (net60), .NET 7.0 (net70)
+* .NET 8.0 (net8.0), .NET 6.0 (net6.0), .NET 7.0 (net7.0)
 * Full .NET Framework (net462)
 * .NET Standard 2.0 (netstandard2.0)
  
