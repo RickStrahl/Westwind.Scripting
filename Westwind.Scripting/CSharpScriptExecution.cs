@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 
@@ -1223,9 +1224,26 @@ namespace Westwind.Scripting
             return code;
         }
 
-#endregion
+        /// <summary>
+        /// Removes all hash-indexes of Assembly Cache
+        /// </summary>
+        /// <returns></returns>
+        public static bool ClearCachedAssemblies()
+        {
+            try
+            {
+                CachedAssemblies.Clear();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
-#region References and Namespaces
+        #endregion
+
+        #region References and Namespaces
 
 
         /// <summary>
