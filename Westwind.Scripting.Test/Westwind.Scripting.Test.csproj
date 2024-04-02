@@ -59,8 +59,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Update="ClassFiles\TestClass.csx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="ReferenceTest.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ClassFiles\" />
   </ItemGroup>
 </Project>

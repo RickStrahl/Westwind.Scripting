@@ -9,6 +9,7 @@ using System.Reflection.Metadata;
 using System.Runtime.Loader;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -52,6 +53,10 @@ namespace Westwind.Scripting
         /// </summary>
         public ReferenceList References { get; } = new ReferenceList();
 
+        /// <summary>
+        /// Dictionary of additional Class-File references that are read and inject into the namespace
+        /// </summary>
+        public Dictionary<string, string> ReferenceClasses { get; } = new Dictionary<string, string>();
 
         /// <summary>
         /// Last generated code for this code snippet with line numbers
@@ -98,6 +103,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// If true parses references in code that are referenced with:
         /// #r assembly.dll
+        /// #c Class-File
         /// </summary>
         public bool AllowReferencesInCode { get; set; } = false;
 
@@ -1183,10 +1189,21 @@ namespace Westwind.Scripting
             sb.AppendLine(classBody);
             sb.AppendLine();
 
+            /*
             sb.AppendLine("} " +
                           Environment.NewLine +
                           "}"); // Class and namespace closed
+            */
 
+            sb.Append("} ").AppendLine(Environment.NewLine);// close class
+
+            foreach (var entry in ReferenceClasses)
+            {
+                sb.Append(entry.Value).AppendLine(Environment.NewLine);
+            }
+
+
+            sb.AppendLine("} ");// close namespace
             if (SaveGeneratedCode)
                 GeneratedClassCode = sb.ToString();
 
@@ -1463,7 +1480,21 @@ public bool AddAssembly(Type type)
                 AddAssembly(file);
         }
 
+        /// <summary>
+        /// Add Code from a ClassFile with Class-Definition inside
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        public void AddReferenceClass(string classname, string classcode)
+        {
+            if (string.IsNullOrEmpty(classcode))
+            {
+                ReferenceClasses.Clear();
+                return;
+            }
 
+            // we override classes of the same name
+            ReferenceClasses[classname] = classcode;
+        }
 
         /// <summary>
         /// Adds a namespace to the referenced namespaces
@@ -1548,7 +1579,7 @@ public bool AddAssembly(Type type)
         {
             if (string.IsNullOrEmpty(code)) return code;
 
-            if (!code.Contains("#r ") && ( !referencesOnly && !code.Contains("using ") ) )
+            if (!code.Contains("#r ") && !code.Contains("#c ") && ( !referencesOnly && !code.Contains("using ") ) )
                 return code;
             
             StringBuilder sb = new StringBuilder();
@@ -1562,6 +1593,57 @@ public bool AddAssembly(Type type)
                     {
                         string assemblyName = line.Replace("#r ", "").Trim();
                         AddAssembly(assemblyName);
+                        sb.AppendLine("// " + line);
+                        continue;
+                    }
+                    sb.AppendLine("// not allowed: " + line);
+                    continue;
+                }
+
+                if (line.Trim().StartsWith("#c "))
+                {
+                    if (AllowReferencesInCode)
+                    {
+                        string scriptClass = line.Replace("#c ", "").Trim();
+                        string scriptClassCode = File.ReadAllText(scriptClass);
+                        var class_lines = GetLines(scriptClassCode);
+                        Regex classline = new Regex(".* class ([a-zA-Z0-9]*) .*", RegexOptions.Compiled);
+                        StringBuilder aNewClass = new StringBuilder();
+                        string cls_name = "?";
+                        bool allUsing = false;// all Using until first Class Definition
+                        foreach (var c_line in class_lines)
+                        {
+                            if (!referencesOnly && !allUsing && c_line.Trim().Contains("using "))
+                            {
+                                string ns = c_line.Replace("using ", "").Replace(";", "").Trim();
+                                AddNamespace(ns);
+                                aNewClass.AppendLine("// " + line);
+                                continue;
+                            }
+                            else
+                            {
+                                Match cls_match = classline.Match(c_line);
+                                if (cls_match.Success)
+                                {
+                                    if (allUsing){ // first class already found 
+                                        AddReferenceClass(cls_name, aNewClass.ToString());
+                                        aNewClass.Clear();
+                                    }
+                                    cls_name = cls_match.Groups[1].Value;
+                                    allUsing = true;
+                                }
+                                aNewClass.AppendLine(c_line);
+
+                            }
+
+                            /* TODO csx should not include a namespace
+                            if (line.Trim().Contains("namespace "))
+                            {
+                                
+                            }
+                            */
+                        }
+                        AddReferenceClass(cls_name, aNewClass.ToString());
                         sb.AppendLine("// " + line);
                         continue;
                     }
