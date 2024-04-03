@@ -1,22 +1,18 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using System.Runtime.Loader;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
-
+using Westwind.Scripting.Cache;
 
 namespace Westwind.Scripting
 {
@@ -39,14 +35,14 @@ namespace Westwind.Scripting
         /// List holds a list of cached assemblies with a hash code for the code executed as
         /// the key.
         /// </summary>
-        protected static ConcurrentDictionary<int, Assembly> CachedAssemblies =
-            new ConcurrentDictionary<int, Assembly>();
+        //protected static ConcurrentDictionary<int, Assembly> CachedAssemblies =
+        //    new ConcurrentDictionary<int, Assembly>();
+        protected static ICache<int, Assembly> CachedAssemblies { get; private set; }
 
         /// <summary>
         /// List of additional namespaces to add to the script
         /// </summary>
         public NamespaceList Namespaces { get; } = new NamespaceList();
-
 
         /// <summary>
         /// List of additional assembly references that are added to the
@@ -193,6 +189,13 @@ namespace Westwind.Scripting
 
 #endregion
 
+        public CSharpScriptExecution() : this(new MemoryAssemblyCache()) { }
+
+        public CSharpScriptExecution(ICache<int, Assembly> cache)
+        {
+            CachedAssemblies = cache;
+        }
+
         /// <summary>
         /// Creates a default Execution Engine which has:
         ///
@@ -268,22 +271,25 @@ namespace Westwind.Scripting
             {
                 int hash = GenerateHashCode(code);
 
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
                     var sb = GenerateClass(code);
                     if (!CompileAssembly(sb.ToString()))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if(CachedAssemblies.TryGet(hash, out var tmp_Assembly))
+                    {
+                        Assembly = tmp_Assembly;
 
-                    // Figure out the class name
-                    var type = Assembly.ExportedTypes.First();
-                    GeneratedClassName = type.Name;
-                    GeneratedNamespace = type.Namespace;
+                        // Figure out the class name
+                        var type = Assembly.ExportedTypes.First();
+                        GeneratedClassName = type.Name;
+                        GeneratedNamespace = type.Namespace;
+                    }
                 }
             }
 
@@ -1102,16 +1108,20 @@ namespace Westwind.Scripting
             {
                 int hash = code.GetHashCode();
 
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
                     if (!CompileAssembly(code))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if(CachedAssemblies.TryGet(hash, out Assembly? tmp_assembly))
+                    {
+                        Assembly = tmp_assembly;
+                    }
+                    
                 }
             }
 
@@ -1139,17 +1149,20 @@ namespace Westwind.Scripting
             else
             {
                 int hash = codeStream.GetHashCode();
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
 
                     if (!CompileAssembly(codeStream))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if (CachedAssemblies.TryGet(hash, out Assembly tmp_assembly))
+                    {
+                        Assembly = tmp_assembly;
+                    }
                 }
 
             }
