@@ -1,4 +1,6 @@
-﻿namespace ReferenceTest
+﻿using System;
+
+namespace ReferenceTest
 {
     public class Test
     {

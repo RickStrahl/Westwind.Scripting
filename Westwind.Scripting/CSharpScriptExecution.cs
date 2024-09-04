@@ -4,10 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Reflection.Metadata;
 using System.Runtime.Loader;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -1222,7 +1220,7 @@ namespace Westwind.Scripting
         {
 
 
-#if NET462
+#if net472
             AddNetFrameworkDefaultReferences();
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
 #endif
