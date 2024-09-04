@@ -134,6 +134,21 @@ namespace Westwind.Scripting
         /// </summary>
         public bool DisableAssemblyCaching { get; set; }
 
+
+        /// <summary>
+        /// Disables caching object instances that are created after CompileClass
+        /// If true you can't execute new code on the instance as the class instance
+        /// is cached. If false the instance is cached and automatically resused.       
+        /// </summary>
+        /// <remarks>
+        /// The ideals use case treats the script execution class as a single code unit
+        /// so each piece of code (snippet, expresion, method or class) is generated
+        /// and treated distinctly and therefore it's recommended to NOT REUSE
+        /// instances for multiple pieces of code.
+        /// </remarks>
+        public bool DisableObjectCaching { get; set; }
+
+
         #region Error Handling Properties
 
         /// <summary>
@@ -182,7 +197,9 @@ namespace Westwind.Scripting
         /// </summary>
         public object ObjectInstance { get; set; }
 
-#endregion
+        
+
+        #endregion
 
         /// <summary>
         /// Creates a default Execution Engine which has:
@@ -1567,7 +1584,7 @@ public bool AddAssembly(Type type)
                     continue;
                 }
 
-                if (!referencesOnly && line.Trim().StartsWith("using ") && line.Trim().EndsWith(";"))
+                if (!referencesOnly && line.Trim().StartsWith("using ") && line.Trim().EndsWith(";")
                 {
                     string ns = line.Replace("using ", "").Replace(";", "").Trim();
                     AddNamespace(ns);
