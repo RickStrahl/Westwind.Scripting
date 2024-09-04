@@ -1584,7 +1584,7 @@ public bool AddAssembly(Type type)
                     continue;
                 }
 
-                if (!referencesOnly && line.Trim().StartsWith("using ") && line.Trim().EndsWith(";")
+                if (!referencesOnly && line.Trim().StartsWith("using ") && line.Trim().EndsWith(";"))
                 {
                     string ns = line.Replace("using ", "").Replace(";", "").Trim();
                     AddNamespace(ns);
