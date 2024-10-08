@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Dynamic;
-using System.IO;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Westwind.Scripting;
 
 namespace Westwind.Scripting.Test
 {

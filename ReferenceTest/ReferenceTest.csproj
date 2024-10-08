@@ -1,12 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net8.0;net6.0;</TargetFrameworks>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>Disable</Nullable>
+    <TargetFrameworks>net8.0;net6.0;net472</TargetFrameworks>    
   </PropertyGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+  <!--<Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="copy $(TargetDir)\ReferenceTest.dll $(SolutionDir)\Westwind.Scripting.Test\ReferenceTest.dll" />
-  </Target>
+  </Target>-->
 </Project>
