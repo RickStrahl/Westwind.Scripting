@@ -117,7 +117,7 @@ namespace Westwind.Scripting
         /// </summary>
         public bool CompileWithDebug { get; set; }
 
-#if NETCORE
+#if NET6_0_OR_GREATER
         /// <summary>
         /// The AssemblyLoadContext the assembly should be loaded in.
         /// If not assigned, assemblies will get loaded by the default Assembly.Load methods
@@ -1241,7 +1241,7 @@ namespace Westwind.Scripting
             AddNetFrameworkDefaultReferences();
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
 #endif
-#if NETCORE
+#if NET6_0_OR_GREATER
             AddNetCoreDefaultReferences();
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
 #endif
@@ -1308,7 +1308,7 @@ namespace Westwind.Scripting
 
             AddAssembly("Microsoft.CSharp.dll"); // dynamic
 
-#if NETCORE
+#if NET6_0_OR_GREATER
             AddAssemblies(
                 "System.Linq.Expressions.dll", // IMPORTANT!
                 "System.Text.RegularExpressions.dll" // IMPORTANT!
@@ -1421,9 +1421,9 @@ public bool AddAssembly(Type type)
 
         if (string.IsNullOrEmpty(type.Assembly.Location))
         {
-#if NETCORE
-            unsafe
-            {
+#if NET6_0_OR_GREATER
+                    unsafe
+                    {
                 bool result = type.Assembly.TryGetRawMetadata(out byte* metaData, out int size);
                 var moduleMetaData = ModuleMetadata.CreateFromMetadata( (nint) metaData, size);
                 var assemblyMetaData = AssemblyMetadata.Create(moduleMetaData);

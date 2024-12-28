@@ -133,6 +133,13 @@ namespace Westwind.Scripting
 
             return filePath;
         }
+
+        /// <summary>
+        /// Encodes a value using Html Encoding by first converting
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public string HtmlEncode(object value) => ScriptParser.HtmlEncode(value);        
     }
 
 }

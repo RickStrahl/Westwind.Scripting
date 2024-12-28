@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -74,6 +75,12 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
+        /// <summary>
+        /// Delimiters used for script parsing
+        /// </summary>
+        public ScriptingDelimiters ScriptingDelimiters { get; set; } = ScriptingDelimiters.Default;
+
+
         #region Script Execution
 
         /// <summary>
@@ -89,28 +96,22 @@ namespace Westwind.Scripting
         /// <param name="script">The template to execute that contains C# script</param>
         /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
         /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
-        /// <param name="startDelim">Optional start delimiter for script tags</param>
-        /// <param name="endDelim">Optional end delimiter for script tags</param>
-        /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
         public string ExecuteScript(string script, object model,
             CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%",
             string basePath = null)
         {
-
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            var code = ParseScriptToCode(script);
             if (code == null)
                 return null;
 
             // expose the parameter as Model
             code = "dynamic Model = parameters[0];\n" +
-                   "ScriptHelper Script = new ScriptHelper() { BasePath = \"" +  basePath + "\"  };\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
                    code;
 
             if (scriptEngine != null)
@@ -118,6 +119,9 @@ namespace Westwind.Scripting
 
             return ScriptEngine.ExecuteCode(code, model) as string;
         }
+
+      
+
 
 
         /// <summary>
@@ -133,21 +137,16 @@ namespace Westwind.Scripting
         /// <param name="script">The template to execute that contains C# script</param>
         /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
         /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
-        /// <param name="startDelim">Optional start delimiter for script tags</param>
-        /// <param name="endDelim">Optional end delimiter for script tags</param>
-        /// <param name="codeIndicator">Optional Code block indicator that indicates raw code to create in the template (ie. `%` which uses `{{% }}`)</param>
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        /// 
         public string ExecuteScript<TModelType>(string script, TModelType model,
-            CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{",
-            string endDelim = "}}",
-            string codeIndicator = "%",
+            CSharpScriptExecution scriptEngine = null,        
             string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            var code = ParseScriptToCode(script);
             if (code == null)
                 return null;
 
@@ -159,6 +158,8 @@ namespace Westwind.Scripting
 
             return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }
+
+       
 
 
         /// <summary>
@@ -185,14 +186,12 @@ namespace Westwind.Scripting
         public async Task<string> ExecuteScriptAsync(string script,
             object model = null,
             CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%",
             string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            var code = ParseScriptToCode(script);
             if (code == null)
                 return null;
 
@@ -213,14 +212,12 @@ namespace Westwind.Scripting
         public async Task<string> ExecuteScriptAsync<TModelType>(string script,
             TModelType model = default,
             CSharpScriptExecution scriptEngine = null,
-            string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%",
             string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script, startDelim, endDelim, codeIndicator);
+            var code = ParseScriptToCode(script);
             if (code == null)
                 return null;
 
@@ -239,6 +236,7 @@ namespace Westwind.Scripting
             return result;
         }
 
+
         /// <summary>
         /// Passes in a block of 'script' code into a string using
         /// code that uses a text writer to output. You can feed the
@@ -247,18 +245,17 @@ namespace Westwind.Scripting
         /// processed text.
         /// </summary>
         /// <param name="scriptText"></param>
-        /// <param name="startDelim">code and expression start delimiter</param>
-        /// <param name="endDelim">code and expression end delimiter</param>
-        /// <param name="codeIndicator">code block indicator that combines the start delim plus this character (ie. default of `%` combines to `{{%`)</param>
         /// <returns></returns>
-        public  string ParseScriptToCode(string scriptText, string startDelim = "{{", string endDelim = "}}",
-            string codeIndicator = "%")
+        public string ParseScriptToCode(string scriptText)
         {
-            var atStart = scriptText.IndexOf(startDelim);
+            if (string.IsNullOrEmpty(scriptText))
+                return scriptText;
+
+            var atStart = scriptText.IndexOf(ScriptingDelimiters.StartDelim,StringComparison.OrdinalIgnoreCase);
 
             // no script in string - just return - this should be handled higher up
             // and is in ExecuteXXXX methods.
-            if (atStart == -1)
+            if (atStart < 0)
                 return "return " + EncodeStringLiteral(scriptText, true) + ";";
 
             var literal = new StringBuilder();
@@ -273,9 +270,11 @@ var writer = new StringWriter();
 ";
                 code.Write(initialCode);
 
+                bool containsDelimEscape = initialCode.Contains("\\{\\{") || initialCode.Contains("\\}\\}");
+
                 while (atStart > -1)
                 {
-                    atEnd = scriptText.IndexOf(endDelim);
+                    atEnd = scriptText.IndexOf(ScriptingDelimiters.EndDelim);
                     if (atEnd == -1)
                     {
                         literal.Append(scriptText); // no end tag - take rest
@@ -284,31 +283,48 @@ var writer = new StringWriter();
 
                     // take text up to the tag
                     literal.Append(scriptText.Substring(0, atStart));
-                    expression = scriptText.Substring(atStart + startDelim.Length, atEnd - atStart - endDelim.Length);
+                    expression = scriptText.Substring(atStart + ScriptingDelimiters.StartDelim.Length, atEnd - atStart - ScriptingDelimiters.EndDelim.Length);
 
                     // first we have to write out any left over literal
                     if (literal.Length > 0)
-                    {
+                    {                        
+                        string literalText = containsDelimEscape ?
+                            literal.ToString().Replace("\\{\\{", "{{").Replace("\\}\\}", "}}") :
+                            literal.ToString();
+
                         // output the code
                         code.WriteLine(
-                            $"writer.Write({EncodeStringLiteral(literal.ToString(), true)});");
+                            $"writer.Write({EncodeStringLiteral(literalText, true)});");
                         literal.Clear();
                     }
 
-                    if (expression.StartsWith(codeIndicator))
+                    if (expression.StartsWith(ScriptingDelimiters.CodeBlockIndicator))
                     {
                         // this should just be raw code - write out as is
                         expression = expression.Substring(1);
-                        code.WriteLine(expression); // as is
+                        code.WriteLine(expression); // as is - it's plain code
                         // process Command (new line
+                    }
+                    else if (expression.StartsWith(ScriptingDelimiters.HtmlEncodingIndicator))
+                    {
+                        expression = expression.Substring(1).Trim();
+                        code.WriteLine($"writer.Write( ScriptParser.HtmlEncode({expression}) );");
+                    }
+                    else if (expression.StartsWith(ScriptingDelimiters.RawTextEncodingIndicator))
+                    {
+                        expression = expression.Substring(1).Trim();
+                        code.WriteLine($"writer.Write( {expression} );");
                     }
                     else
                     {
-                        code.WriteLine($"writer.Write( {expression} );");
+                        if (ScriptingDelimiters.HtmlEncodeExpressionsByDefault)                                                 
+                            code.WriteLine($"writer.Write( ScriptParser.HtmlEncode({expression}) );");                                                    
+                        else
+                            code.WriteLine($"writer.Write( {expression} );");
                     }
 
                     // text that is left 
-                    scriptText = scriptText.Substring(atEnd + endDelim.Length);
+                    scriptText = scriptText.Substring(atEnd + ScriptingDelimiters.EndDelim.Length);
 
                     // look for the next bit
                     atStart = scriptText.IndexOf("{{");
@@ -322,10 +338,12 @@ var writer = new StringWriter();
 
                 code.WriteLine("return writer.ToString();");
 
-                return code.ToString();
+                return code.ToString();                                                
             }
         }
 
+
+       
 
 
         #endregion
@@ -471,5 +489,65 @@ var writer = new StringWriter();
             return sb.ToString();
         }
 
+
+        /// <summary>
+        /// Encodes a value using Html Encoding by first converting
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static string HtmlEncode(object value)
+        {
+            if (value == null)
+                return null;
+
+            return System.Net.WebUtility.HtmlEncode(value.ToString());
+        }
+    }
+
+
+    /// <summary>
+    /// Class that encapsulates the delimiters used for script parsing
+    /// </summary>
+    public class ScriptingDelimiters
+    {
+        public ScriptingDelimiters()
+        {
+        }
+
+        /// <summary>
+        /// Start delimiter for expressions and script tags
+        /// </summary>
+        public string StartDelim { get; set; } = "{{";
+
+        /// <summary>
+        /// End delimiter for expressions and script tags
+        /// </summary>
+        public string EndDelim { get; set; } = "}}";
+
+        /// <summary>
+        /// Indicator for code blocks inside of StartDelim (ie. {{% code }} for code blocks)
+        /// </summary>
+        public string CodeBlockIndicator { get; set; } = "%";
+
+        /// <summary>
+        /// If true all expressions except the Raw Html indicator are Html Encoded
+        /// </summary>
+        public bool HtmlEncodeExpressionsByDefault { get; set; }
+
+        /// <summary>
+        /// Indicator for expressions to be explicitly HtmlEncoded
+        /// </summary>
+        public string HtmlEncodingIndicator { get; set; } = ":";
+
+        /// <summary>
+        /// Indicator for expressions to be explicitly NOT encoded and just returned as is regardless of HtmlEncodeByDefault
+        /// </summary>
+        public string RawTextEncodingIndicator { get; set; } = "@";
+    
+
+        /// <summary>
+        /// A default instance of the delimiters
+        /// </summary>
+        public static ScriptingDelimiters Default { get; } = new ScriptingDelimiters();
     }
 }

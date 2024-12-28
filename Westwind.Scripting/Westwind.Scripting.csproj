@@ -6,6 +6,7 @@
     <Company>West Wind Technologies</Company>
     <Copyright>© West Wind Technologies 2011-2025</Copyright>
     <Product>Westwind.ScriptExecution</Product>
+    <LangVersion>latest</LangVersion>
     <Description>
       Small library to dynamically compile and execute C# source code from string input at runtime.
 

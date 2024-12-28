@@ -279,10 +279,35 @@ And we're done with this!
             string script = @"
 Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
-{{% for(int x=1; x<3; x++) { }}
-{{ x }}. Hello World
+{{% for(int x=1; x<3; x++) { }} {{ x }}. Hello World
 {{% } }}
 
+DONE!
+";
+            Console.WriteLine(script + "\n\n");
+
+            var scriptParser = new ScriptParser();            
+            var code = scriptParser.ParseScriptToCode(script);
+
+            Assert.IsNotNull(code, "Code should not be null or empty");
+
+            Console.WriteLine(code);
+
+            var result = scriptParser.ExecuteScript(script, null);
+            
+            Console.WriteLine(result);
+
+            Console.WriteLine("---\n" + scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+        }
+
+        [TestMethod]
+        public void DoubleBracketsInTextParserTest()
+        {
+            string script = @"
+Hello World this should not be treated as an expression \{\{ not-expression \}\}.
+Time is {{ DateTime.Now }}.
 DONE!
 ";
             Console.WriteLine(script + "\n\n");
@@ -293,6 +318,57 @@ DONE!
             Assert.IsNotNull(code, "Code should not be null or empty");
 
             Console.WriteLine(code);
+
+            var result = scriptParser.ExecuteScript(script, null);
+
+            Console.WriteLine(result);
+
+            Console.WriteLine("---\n" + scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+        }
+
+
+        [TestMethod]
+        public void DefaultHtmlEncodedExpressionsParserTest()
+        {
+            string script = @"
+{{%
+string text = ""This is some \""text\"" that should be encoded & formatted."";
+writer.Write(Script.HtmlEncode(""This & that written out from script""));
+}}
+
+Here is some encoded text:
+
+---
+{{ text }}
+---
+
+This text should **not** be encoded:
+
+{{@ text }}
+
+DONE!
+";
+            Console.WriteLine("Script Code\n---\n" + script + "\n\n");
+
+            var scriptParser = new ScriptParser();
+            scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
+
+            var code = scriptParser.ParseScriptToCode(script);
+
+            Assert.IsNotNull(code, "Code should not be null or empty");
+
+           var result = scriptParser.ExecuteScript(script, null);
+
+            Console.WriteLine("Script Output\n--\n" + result);
+
+            Console.WriteLine("ParseScript Output\n---\n" + code + "\n---\n");
+            
+
+            Console.WriteLine("Generated Class Code\n---\n" + scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
         }
 
         [TestMethod]
@@ -301,10 +377,15 @@ DONE!
             string script = @"
 Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
-{{% for(int x=1; x<3; x++) { }}
-{{ x }}. Hello World {{% } }}
-And we're done with this!
+{{:""Hello & World! "".Trim() }}
+
+{{ this.ToString() }}
 ";
+
+//{{% for(int x=1; x<3; x++) { }}
+//{{ x }}. Hello World {{% } }}
+//And we're done with this!
+//";
 
             Console.WriteLine(script + "\n\n");
 
@@ -317,8 +398,13 @@ And we're done with this!
 
             // Explicit let Script Engine Execute code
             var result = scriptParser.ScriptEngine.ExecuteCode(code);
+            
+
+            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
 
             Console.WriteLine(result);
+
+            Console.WriteLine("---\n" + scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
         }
 
 
