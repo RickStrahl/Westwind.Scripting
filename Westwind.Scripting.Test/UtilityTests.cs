@@ -75,7 +75,7 @@ Console.WriteLine(""Retrieving..."");
 
         }
 
-#if NETCORE
+#if NET6_0_OR_GREATER
         [TestMethod]
         public void UseAlternateAssemblyLoadContext_LoadsAssembliesInAlternateContextTest()
         {
