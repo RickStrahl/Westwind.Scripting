@@ -15,13 +15,17 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* .NET 8.0 (net8.0), .NET 6.0 (net6.0), .NET 7.0 (net7.0)
-* Full .NET Framework (net462)
+* .NET 9.0 (net9.0), .NET 8.0 (net8.0)
+* Full .NET Framework (net472)
 * .NET Standard 2.0 (netstandard2.0)
+
+
  
 For more detailed information and a discussion of the concepts and code that runs this library, you can also check out this introductory blog post:
 
 * [Runtime Code Compilation Revisited for Roslyn](https://weblog.west-wind.com/posts/2022/Jun/07/Runtime-CSharp-Code-Compilation-Revisited-for-Roslyn)
+
+* [Change Log](Changelog.md)
 
 ## Features
 * Easy C# code compilation and execution for:

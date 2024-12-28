@@ -4,7 +4,7 @@
 
 * **ScriptParser: New ScriptingDelimiters Property to replace passed Parameters**  
 The script parser has a new property that contains all the scripting parameters, to simplify script delimiters and not forcing to pass it into each of the execute methods. This change removes all the optional delimiter parameters on the various `ExecuteXXX()` methods. There's a `ScriptingDelimtiers.Default` property.  
-*This is a breaking change*{style="color: red; font-weight: bold"}
+*This is a breaking change*
 
 * **ScriptParser: Allow escaping of `{{` and `}}` with `\{\{` and `\}\}`**  
 The script parser now allows to escapte `{{` and `}}` should they occur in your text. Since these are script delimiters they would otherwise not be usable.
