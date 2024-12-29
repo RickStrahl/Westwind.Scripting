@@ -1,7 +1,9 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 
@@ -30,7 +32,7 @@ namespace Westwind.Scripting
     /// Uses the `.ScriptEngine` property for execution and provides
     /// error information there.
     /// </summary>
-    public class ScriptParser 
+    public class ScriptParser
     {
         /// <summary>
         /// Script Engine used if none is passed in
@@ -105,7 +107,8 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script);
+            var scriptContext = new ScriptContext(script);
+            var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
 
@@ -120,8 +123,130 @@ namespace Westwind.Scripting
             return ScriptEngine.ExecuteCode(code, model) as string;
         }
 
-      
 
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public string ExecuteScriptFile(string scriptFile, object model,
+            CSharpScriptExecution scriptEngine = null,
+            string basePath = null)
+        {
+
+            if (!File.Exists(scriptFile))
+            {
+                ScriptEngine.Error = true;
+                ScriptEngine.ErrorMessage = "Script file not found: " + scriptFile;
+                return null;
+            }
+
+            var script = File.ReadAllText(scriptFile);
+
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+                return script;
+
+            if (string.IsNullOrEmpty(basePath))
+                basePath = Path.GetDirectoryName(scriptFile);
+
+            basePath = Utils.NormalizePath(basePath);
+
+            // Check for and run Layout page if present  {{ Layout = "LayoutPage.hb" }}
+            string code = ParseLayoutPage(script, basePath);
+            if (code != null)
+                script = code;
+
+            var scriptContext = new ScriptContext(script);
+            code = ParseScriptToCode(scriptContext);
+            if (code == null)
+                return null;
+
+
+            basePath = ScriptParser.EncodeStringLiteral(basePath);
+
+            string title = ExtractPageVariable("Script.Title", script);
+
+            // expose the parameter as Model
+            code = "dynamic Model = parameters[0];\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = " + basePath + "  };\n" +                   
+                   "Script.Title = \"" + title + "\";\n" +
+                   code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+
+            return ScriptEngine.ExecuteCode(code, model) as string;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scriptPageText"></param>
+        /// <param name="basePath"></param>
+        /// <returns></returns>
+        public string ParseLayoutPage(string scriptPageText, string basePath)
+        {
+            if (string.IsNullOrEmpty(scriptPageText))
+                return null;
+
+            if (!scriptPageText.Contains("Script.Layout=") && !scriptPageText.Contains("Script.Layout ="))
+                return null;
+
+            try
+            {
+                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText);
+                if (layoutFile == null)
+                    return null; // ignore no layout
+                
+                if (!File.Exists(layoutFile))
+                {
+                    layoutFile = Path.Combine(basePath, layoutFile);
+                    if (!File.Exists(layoutFile))
+                        throw new InvalidEnumArgumentException("Page not found: " + layoutFile);
+
+                }
+                var layoutText = File.ReadAllText(layoutFile);
+                if (string.IsNullOrEmpty(layoutText))
+                    throw new InvalidEnumArgumentException("Couddn't read file content.");
+
+                layoutText = layoutText.Replace("{{ RenderContent() }}", scriptPageText);
+
+                return layoutText;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidEnumArgumentException("Couldn't load Layout page. " +  ex.Message);
+           
+            }
+        }
+
+
+        /// <summary>
+        /// Extracts a variable like Scripts.Title = "Title of code"
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="scriptText"></param>
+        /// <returns></returns>
+        private string ExtractPageVariable(string key, string scriptText = null)
+        {
+            var matches = Regex.Match(scriptText, key + @"\s?=\s?""(.*?)""", RegexOptions.Multiline);
+            if (!matches.Success || matches.Groups.Count < 2)
+                return null;
+
+            return matches.Groups[1].Value;
+        }
 
 
         /// <summary>
@@ -140,13 +265,14 @@ namespace Westwind.Scripting
         /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
         /// 
         public string ExecuteScript<TModelType>(string script, TModelType model,
-            CSharpScriptExecution scriptEngine = null,        
+            CSharpScriptExecution scriptEngine = null,
             string basePath = null)
         {
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script);
+            var scriptContext = new ScriptContext(script);
+            var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
 
@@ -159,7 +285,7 @@ namespace Westwind.Scripting
             return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }
 
-       
+
 
 
         /// <summary>
@@ -191,7 +317,8 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script);
+            var scriptContext = new ScriptContext(script);
+            var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
 
@@ -208,7 +335,7 @@ namespace Westwind.Scripting
             return result;
         }
 
-     
+
         public async Task<string> ExecuteScriptAsync<TModelType>(string script,
             TModelType model = default,
             CSharpScriptExecution scriptEngine = null,
@@ -217,7 +344,8 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var code = ParseScriptToCode(script);
+            var scriptContext = new ScriptContext(script);            
+            var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
 
@@ -230,11 +358,12 @@ namespace Westwind.Scripting
 
             var type = typeof(TModelType);
 
-            
+
             string result = await ScriptEngine.ExecuteCodeAsync<string, TModelType>(code, model) as string;
 
             return result;
         }
+
 
 
         /// <summary>
@@ -244,14 +373,21 @@ namespace Westwind.Scripting
         /// parse the script into an output string that includes the
         /// processed text.
         /// </summary>
-        /// <param name="scriptText"></param>
+        /// <param name="scriptContext">
+        /// Script context that is filled in
+        /// process of parsing the script.
+        /// </param>
         /// <returns></returns>
-        public string ParseScriptToCode(string scriptText)
+        public string ParseScriptToCode(ScriptContext scriptContext)
         {
+            if (scriptContext == null)
+                return null;
+
+            var scriptText = scriptContext.ScriptText;
             if (string.IsNullOrEmpty(scriptText))
                 return scriptText;
 
-            var atStart = scriptText.IndexOf(ScriptingDelimiters.StartDelim,StringComparison.OrdinalIgnoreCase);
+            var atStart = scriptText.IndexOf(ScriptingDelimiters.StartDelim, StringComparison.OrdinalIgnoreCase);
 
             // no script in string - just return - this should be handled higher up
             // and is in ExecuteXXXX methods.
@@ -287,7 +423,7 @@ var writer = new StringWriter();
 
                     // first we have to write out any left over literal
                     if (literal.Length > 0)
-                    {                        
+                    {
                         string literalText = containsDelimEscape ?
                             literal.ToString().Replace("\\{\\{", "{{").Replace("\\}\\}", "}}") :
                             literal.ToString();
@@ -317,8 +453,8 @@ var writer = new StringWriter();
                     }
                     else
                     {
-                        if (ScriptingDelimiters.HtmlEncodeExpressionsByDefault)                                                 
-                            code.WriteLine($"writer.Write( ScriptParser.HtmlEncode({expression}) );");                                                    
+                        if (ScriptingDelimiters.HtmlEncodeExpressionsByDefault)
+                            code.WriteLine($"writer.Write( ScriptParser.HtmlEncode({expression}) );");
                         else
                             code.WriteLine($"writer.Write( {expression} );");
                     }
@@ -338,12 +474,35 @@ var writer = new StringWriter();
 
                 code.WriteLine("return writer.ToString();");
 
-                return code.ToString();                                                
+                return code.ToString();
             }
+
+        
         }
 
 
-       
+
+        /// <summary>
+        /// Passes in a block of 'script' code into a string using
+        /// code that uses a text writer to output. You can feed the
+        /// output from this method in `ExecuteCode()` or similar to
+        /// parse the script into an output string that includes the
+        /// processed text.
+        /// </summary>
+        /// <param name="scriptText">
+        /// Script context that is filled in
+        /// process of parsing the script.
+        /// </param>
+        /// <returns></returns>
+        public string ParseScriptToCode(string scriptText )
+        {
+            return ParseScriptToCode(new ScriptContext(scriptText));
+        }
+
+
+
+
+
 
 
         #endregion
@@ -365,7 +524,7 @@ var writer = new StringWriter();
             string[] namespaces = null,
             Type[] referenceTypes = null)
         {
-            var exec = new CSharpScriptExecution() {SaveGeneratedCode = true};
+            var exec = new CSharpScriptExecution() { SaveGeneratedCode = true };
             exec.AddDefaultReferencesAndNamespaces();
 
             if (references != null && references.Length > 0)
@@ -469,7 +628,7 @@ var writer = new StringWriter();
                         sb.Append("\\t");
                         break;
                     default:
-                        int i = (int) c;
+                        int i = (int)c;
                         if (i < 32)
                         {
                             sb.AppendFormat("\\u{0:X04}", i);
@@ -543,11 +702,27 @@ var writer = new StringWriter();
         /// Indicator for expressions to be explicitly NOT encoded and just returned as is regardless of HtmlEncodeByDefault
         /// </summary>
         public string RawTextEncodingIndicator { get; set; } = "@";
-    
+
 
         /// <summary>
         /// A default instance of the delimiters
         /// </summary>
         public static ScriptingDelimiters Default { get; } = new ScriptingDelimiters();
+    }
+
+    public class ScriptContext
+    {
+        public ScriptContext(string scriptText)
+        {
+            ScriptText = scriptText;
+        }
+
+        public string ScriptText { get; set; }
+
+        public object Model { get; set; }
+
+        public string Layout { get; set; }
+
+        public string Title { get; set; }
     }
 }

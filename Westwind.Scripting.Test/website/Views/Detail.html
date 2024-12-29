@@ -1,0 +1,16 @@
+{{%
+    Script.Layout = "Layout.html";
+    Script.Title = "My Great Detail with Layout Page";
+}}
+<div>
+    <!-- dynamic type cast from an Anonymous type: THIS FAILS! -->
+    <h1>Welcome back, {{ Model.Name }}</h1>
+
+    <!-- Using Reflection to access Anonymous type: THIS WORKS! -->
+    <h1>Welcome back {{ Script.GetProperty(Model, "Name") }}</h1>
+
+    <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
+
+    {{Script.Title}}
+</div>
+
