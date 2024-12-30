@@ -22,6 +22,15 @@
     {{Script.Title}}
 </div>
 
+{{ Script.Section("Headers") }}
+<style>
+    body {
+        background-color: lightblue;
+    }
+    {{ DateTime.Now }}
+</style>
+{{ Script.EndSection("Headers") }}
+
 {{ Script.Section("Scripts") }}
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 {{ Script.EndSection("Scripts") }} 

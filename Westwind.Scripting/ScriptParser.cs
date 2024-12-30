@@ -238,7 +238,7 @@ namespace Westwind.Scripting
             }
         }
 
-        static Regex sectionLocationRegEx = new Regex(@"{{ Script.Section\(""(.*?)""\) }}.*?{{ Script.EndSection\("".*?""\) }}");
+        static Regex sectionLocationRegEx = new Regex(@"({{ Script.Section\(""(.*?)""\) }}).*?({{ Script.EndSection\("".*?""\) }})", RegexOptions.Singleline | RegexOptions.Multiline);
         static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
 
         
@@ -256,30 +256,21 @@ namespace Westwind.Scripting
             string script = scriptContext.Script;
             string scriptLeft = string.Empty;
             bool hasChanges = false;
-            int idx;
-            while(true)
+
+            
+            var matches = sectionLocationRegEx.Matches(script);
+            if (matches.Count < 1)
+                return;
+
+            foreach(Match match in matches)
             {
-                idx = script.IndexOf(startSectionStart);
-                if (idx < 0)
-                    break;
+                // Groups: 1 - start delim, 2 - section name, 3 - end delim
+                string sectionName = match.Groups[2].Value;
+                string section = match.Value;
 
-                scriptLeft = script.Substring(idx);
-                idx = scriptLeft.IndexOf(sectionEnd);
-                if(idx < 0)
-                    break;
-
-                string sectionName = scriptLeft.Substring(startSectionStart.Length, idx - startSectionStart.Length);
-
-                string start = scriptLeft.Substring(0, idx + sectionEnd.Length);
-                string end = endsection + sectionName + sectionEnd;
-
-                var section = StringUtils.ExtractString(script, start, end, returnDelimiters: true);
-                if (section == null)
-                    break;
-
-
-                // strip the section delimiters
-                scriptContext.Sections[sectionName] = StringUtils.ExtractString(section, start, end).TrimStart(new []{ '\n', '\r' });
+                // get just the content of the section
+                string sectionContent = StringUtils.ExtractString(section, match.Groups[1].Value, match.Groups[3].Value)?.TrimStart(new[] { '\n', '\r' });
+                scriptContext.Sections[sectionName] = sectionContent;
 
                 script = script.Replace(section, string.Empty);
 
@@ -296,7 +287,7 @@ namespace Westwind.Scripting
             }
 
             // find sections not referenced and remove            
-            var matches = renderSectionRegex.Matches(script);
+             matches = renderSectionRegex.Matches(script);
             foreach(Match match in matches)
             {
                 script = script.Replace(match.Value, string.Empty);
