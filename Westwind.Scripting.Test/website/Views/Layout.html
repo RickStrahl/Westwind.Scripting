@@ -3,15 +3,20 @@
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <title>{{ Script.Title }}</title>
+   
+        {{ Script.RenderSection("Header") }}
     </head>
     <body>
         <header>This is a Site header</header>
         
-        {{ RenderContent() }}
+        {{ Script.RenderContent() }}
 
         <footer>
             <hr/>
             Site Footer here &copy; {{ DateTime.Now.Year}}
         </footer>
+
+
+        {{ Script.RenderSection("Scripts") }}
     </body>
 </html>

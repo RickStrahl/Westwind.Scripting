@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Reflection.Metadata;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -227,7 +228,7 @@ namespace Westwind.Scripting
                 if (string.IsNullOrEmpty(layoutText))
                     throw new InvalidEnumArgumentException("Couddn't read file content.");
 
-                layoutText = layoutText.Replace("{{ RenderContent() }}", scriptPageText);
+                layoutText = layoutText.Replace("{{ Script.RenderContent() }}", scriptPageText);
 
                 context.Script = layoutText;                
             }
@@ -237,10 +238,74 @@ namespace Westwind.Scripting
             }
         }
 
+        static Regex sectionLocationRegEx = new Regex(@"{{ Script.Section\(""(.*?)""\) }}.*?{{ Script.EndSection\("".*?""\) }}");
+        static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
+
+        
 
         public void ParseSections(ScriptFileContext scriptContext)
         {
-            return;
+            const string startSectionStart = "{{ Script.Section(\"";
+            const string sectionEnd = "\") }}";
+            const string endsection = "{{ Script.EndSection(\"";
+       
+
+            if (string.IsNullOrEmpty(scriptContext.Script) || !scriptContext.Script.Contains(startSectionStart))
+                return;
+
+            string script = scriptContext.Script;
+            string scriptLeft = string.Empty;
+            bool hasChanges = false;
+            int idx;
+            while(true)
+            {
+                idx = script.IndexOf(startSectionStart);
+                if (idx < 0)
+                    break;
+
+                scriptLeft = script.Substring(idx);
+                idx = scriptLeft.IndexOf(sectionEnd);
+                if(idx < 0)
+                    break;
+
+                string sectionName = scriptLeft.Substring(startSectionStart.Length, idx - startSectionStart.Length);
+
+                string start = scriptLeft.Substring(0, idx + sectionEnd.Length);
+                string end = endsection + sectionName + sectionEnd;
+
+                var section = StringUtils.ExtractString(script, start, end, returnDelimiters: true);
+                if (section == null)
+                    break;
+
+
+                // strip the section delimiters
+                scriptContext.Sections[sectionName] = StringUtils.ExtractString(section, start, end).TrimStart(new []{ '\n', '\r' });
+
+                script = script.Replace(section, string.Empty);
+
+                hasChanges = true;
+            }
+
+
+            // replace the sections
+            foreach(var section in scriptContext.Sections)
+            {
+                string sectionName = section.Key;
+                string find = "{{ Script.RenderSection(\"" + sectionName + "\") }}";      
+                script = script.Replace(find,section.Value);
+            }
+
+            // find sections not referenced and remove            
+            var matches = renderSectionRegex.Matches(script);
+            foreach(Match match in matches)
+            {
+                script = script.Replace(match.Value, string.Empty);
+            }
+
+                
+
+            if (hasChanges)
+                scriptContext.Script = script;
         }
 
         /// <summary>
@@ -420,11 +485,17 @@ var writer = new StringWriter();
 
                 while (atStart > -1)
                 {
-                    atEnd = scriptText.IndexOf(ScriptingDelimiters.EndDelim);
+                    atEnd = scriptText.IndexOf(ScriptingDelimiters.EndDelim);                    
                     if (atEnd == -1)
                     {
                         literal.Append(scriptText); // no end tag - take rest
                         break;
+                    }
+                    if (atEnd < atStart)
+                    {
+                        ScriptEngine.Error = true;
+                        ScriptEngine.ErrorMessage = "Scripting Error: }} bracket nesting error.";
+                        return null;
                     }
 
                     // take text up to the tag

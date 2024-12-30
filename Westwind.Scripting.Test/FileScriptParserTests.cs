@@ -20,7 +20,6 @@ namespace Westwind.Scripting.Test
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(result, scriptParser.ErrorMessage);
-
         }
 
         [TestMethod]
