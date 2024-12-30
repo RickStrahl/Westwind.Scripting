@@ -9,8 +9,20 @@
     <!-- Using Reflection to access Anonymous type: THIS WORKS! -->
     <h1>Welcome back {{ Script.GetProperty(Model, "Name") }}</h1>
 
+
+    {{ Script.RenderPartial("Partial.html", Model) }}
+
     <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
 
+    <hr />
+
+    {{ Script.RenderPartial("Partial.html", Model) }}
+
+    
     {{Script.Title}}
 </div>
 
+{{ Script.Section("Scripts") }}
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
+{{ Script.EndSection("Scripts") }} 

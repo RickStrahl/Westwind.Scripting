@@ -57,6 +57,9 @@
     <None Update="website\Views\Layout.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="website\Views\Partial.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="website\Views\SelfContained.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

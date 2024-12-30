@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Reflection.Metadata;
@@ -107,7 +108,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var scriptContext = new ScriptContext(script);
+            var scriptContext = new ScriptFileContext(script);
             var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
@@ -161,13 +162,13 @@ namespace Westwind.Scripting
 
             basePath = Utils.NormalizePath(basePath);
 
-            // Check for and run Layout page if present  {{ Layout = "LayoutPage.hb" }}
-            string code = ParseLayoutPage(script, basePath);
-            if (code != null)
-                script = code;
+            var scriptContext = new ScriptFileContext(script, basePath);            
 
-            var scriptContext = new ScriptContext(script);
-            code = ParseScriptToCode(scriptContext);
+            ParseLayoutPage(scriptContext);
+            ParseSections(scriptContext);
+
+
+            var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
 
@@ -190,25 +191,30 @@ namespace Westwind.Scripting
         }
 
 
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="scriptPageText"></param>
         /// <param name="basePath"></param>
-        /// <returns></returns>
-        public string ParseLayoutPage(string scriptPageText, string basePath)
+        /// <returns>True - Layout page processed  - No Layout found</returns>
+        public void ParseLayoutPage(ScriptFileContext context)
+        
         {
+            string scriptPageText = context.Script;
+            string basePath = context.BasePath;
+
             if (string.IsNullOrEmpty(scriptPageText))
-                return null;
+                return;
 
             if (!scriptPageText.Contains("Script.Layout=") && !scriptPageText.Contains("Script.Layout ="))
-                return null;
+                return;
 
             try
             {
                 var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText);
                 if (layoutFile == null)
-                    return null; // ignore no layout
+                    return; // ignore no layout
                 
                 if (!File.Exists(layoutFile))
                 {
@@ -223,15 +229,19 @@ namespace Westwind.Scripting
 
                 layoutText = layoutText.Replace("{{ RenderContent() }}", scriptPageText);
 
-                return layoutText;
+                context.Script = layoutText;                
             }
             catch (ArgumentException ex)
             {
-                throw new InvalidEnumArgumentException("Couldn't load Layout page. " +  ex.Message);
-           
+                throw new InvalidEnumArgumentException("Couldn't load Layout page. " +  ex.Message);           
             }
         }
 
+
+        public void ParseSections(ScriptFileContext scriptContext)
+        {
+            return;
+        }
 
         /// <summary>
         /// Extracts a variable like Scripts.Title = "Title of code"
@@ -271,7 +281,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var scriptContext = new ScriptContext(script);
+            var scriptContext = new ScriptFileContext(script);
             var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
@@ -317,7 +327,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var scriptContext = new ScriptContext(script);
+            var scriptContext = new ScriptFileContext(script);
             var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
@@ -344,7 +354,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
                 return script;
 
-            var scriptContext = new ScriptContext(script);            
+            var scriptContext = new ScriptFileContext(script);            
             var code = ParseScriptToCode(scriptContext);
             if (code == null)
                 return null;
@@ -378,12 +388,12 @@ namespace Westwind.Scripting
         /// process of parsing the script.
         /// </param>
         /// <returns></returns>
-        public string ParseScriptToCode(ScriptContext scriptContext)
+        public string ParseScriptToCode(ScriptFileContext scriptContext)
         {
             if (scriptContext == null)
                 return null;
 
-            var scriptText = scriptContext.ScriptText;
+            var scriptText = scriptContext.Script;
             if (string.IsNullOrEmpty(scriptText))
                 return scriptText;
 
@@ -496,7 +506,7 @@ var writer = new StringWriter();
         /// <returns></returns>
         public string ParseScriptToCode(string scriptText )
         {
-            return ParseScriptToCode(new ScriptContext(scriptText));
+            return ParseScriptToCode(new ScriptFileContext(scriptText));
         }
 
 
@@ -710,19 +720,55 @@ var writer = new StringWriter();
         public static ScriptingDelimiters Default { get; } = new ScriptingDelimiters();
     }
 
-    public class ScriptContext
-    {
-        public ScriptContext(string scriptText)
+
+    /// <summary>
+    /// Context object used for File based script parsing. The main purpose
+    /// of this context is to pass data through so that Layout and Sections
+    /// and partials can be processed reliably.
+    /// </summary>
+    public class ScriptFileContext
+    {        
+        public ScriptFileContext(string scriptText, string basePath = null )
         {
-            ScriptText = scriptText;
+            Script = scriptText;
+            BasePath = basePath;
         }
 
-        public string ScriptText { get; set; }
+        /// <summary>
+        /// The base path used for / and ~/ resolution
+        /// If not specified the document's path (for files)
+        /// or the current directory (for strings) is used
+        /// </summary>
+        public string BasePath { get; set; }
 
+        /// <summary>
+        /// The actual script code that's passed and updated
+        /// through out the request processing process
+        /// </summary>
+        public string Script { get; set; }
+
+
+        /// <summary>
+        /// The model that will be passed to the execution code
+        /// </summary>
         public object Model { get; set; }
 
+        /// <summary>
+        /// The layout page if any to use for this script. Path is relative
+        /// the detail page.
+        /// </summary>
         public string Layout { get; set; }
 
+        /// <summary>
+        /// The title of the page 
+        /// </summary>
         public string Title { get; set; }
+
+
+        /// <summary>
+        /// Dictionary of sections that are captured and passed through
+        /// </summary>
+        internal Dictionary<string, string> Sections { get; set; } = new();
+        
     }
 }

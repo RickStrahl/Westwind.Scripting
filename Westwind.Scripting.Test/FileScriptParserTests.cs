@@ -27,12 +27,15 @@ namespace Westwind.Scripting.Test
         public void LayoutFileScriptTest()
         {
             var scriptParser = new ScriptParser();
-            var result = scriptParser.ExecuteScriptFile("website/Views/Detail.html", new TestModel { Name = "Rick" });
+            
+            var result = scriptParser.ExecuteScriptFile("website/Views/Detail.html", new TestModel { Name = "Rick" },
+                basePath: "website/Views/");
 
             Console.WriteLine(result);
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(result, scriptParser.ErrorMessage);
+
 
         }
     }

@@ -1,6 +1,8 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -44,6 +46,13 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public string RenderPartial(string scriptPath, object model = null)
         {
+            if (!File.Exists(scriptPath))
+            {
+                scriptPath = Path.Combine(BasePath, scriptPath);
+                if (!File.Exists(scriptPath))
+                    throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
+            }
+
             var script = File.ReadAllText(scriptPath);
             string result = _parser.ExecuteScript(script, model);
             if (_parser.Error)
@@ -77,9 +86,17 @@ namespace Westwind.Scripting
         /// Used in a Layout Page to indicate where the content should be rendered
         /// </summary>
         public void RenderContent()
-        {
+        {  }
 
-        }
+
+        public void RenderSection(string sectionName)
+        { }
+
+        public string Section(string sectionName)
+        { return string.Empty; }
+
+        public string EndSection(string sectionName)
+        { return string.Empty;  }
 
         /// <summary>
         /// Renders a string of script to effectively allow recursive
