@@ -126,178 +126,6 @@ namespace Westwind.Scripting
         }
 
 
-        /// <summary>
-        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
-        /// and returns a string result.
-        ///
-        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
-        /// which allows setting references/namespaces and can capture error information.
-        ///
-        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
-        /// along with the error message and the generated code.
-        /// </summary>
-        /// <param name="script">The template to execute that contains C# script</param>
-        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
-        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
-        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
-        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
-        public string ExecuteScriptFile(string scriptFile, object model,
-            CSharpScriptExecution scriptEngine = null,
-            string basePath = null)
-        {
-
-            if (!File.Exists(scriptFile))
-            {
-                ScriptEngine.Error = true;
-                ScriptEngine.ErrorMessage = "Script file not found: " + scriptFile;
-                return null;
-            }
-
-            var script = File.ReadAllText(scriptFile);
-
-            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
-                return script;
-
-            if (string.IsNullOrEmpty(basePath))
-                basePath = Path.GetDirectoryName(scriptFile);
-
-            basePath = Utils.NormalizePath(basePath);
-
-            var scriptContext = new ScriptFileContext(script, basePath);            
-
-            ParseLayoutPage(scriptContext);
-            ParseSections(scriptContext);
-
-
-            var code = ParseScriptToCode(scriptContext);
-            if (code == null)
-                return null;
-
-
-            basePath = ScriptParser.EncodeStringLiteral(basePath);
-
-            string title = ExtractPageVariable("Script.Title", script);
-
-            // expose the parameter as Model
-            code = "dynamic Model = parameters[0];\n" +
-                   "ScriptHelper Script = new ScriptHelper() { BasePath = " + basePath + "  };\n" +                   
-                   "Script.Title = \"" + title + "\";\n" +
-                   code;
-
-            if (scriptEngine != null)
-                ScriptEngine = scriptEngine;
-
-
-            return ScriptEngine.ExecuteCode(code, model) as string;
-        }
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="scriptPageText"></param>
-        /// <param name="basePath"></param>
-        /// <returns>True - Layout page processed  - No Layout found</returns>
-        public void ParseLayoutPage(ScriptFileContext context)
-        
-        {
-            string scriptPageText = context.Script;
-            string basePath = context.BasePath;
-
-            if (string.IsNullOrEmpty(scriptPageText))
-                return;
-
-            if (!scriptPageText.Contains("Script.Layout=") && !scriptPageText.Contains("Script.Layout ="))
-                return;
-
-            try
-            {
-                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText);
-                if (layoutFile == null)
-                    return; // ignore no layout
-                
-                if (!File.Exists(layoutFile))
-                {
-                    layoutFile = Path.Combine(basePath, layoutFile);
-                    if (!File.Exists(layoutFile))
-                        throw new InvalidEnumArgumentException("Page not found: " + layoutFile);
-
-                }
-                var layoutText = File.ReadAllText(layoutFile);
-                if (string.IsNullOrEmpty(layoutText))
-                    throw new InvalidEnumArgumentException("Couddn't read file content.");
-
-                layoutText = layoutText.Replace("{{ Script.RenderContent() }}", scriptPageText);
-
-                context.Script = layoutText;                
-            }
-            catch (ArgumentException ex)
-            {
-                throw new InvalidEnumArgumentException("Couldn't load Layout page. " +  ex.Message);           
-            }
-        }
-
-        static Regex sectionLocationRegEx = new Regex(@"({{ Script.Section\(""(.*?)""\) }}).*?({{ Script.EndSection\("".*?""\) }})", RegexOptions.Singleline | RegexOptions.Multiline);
-        static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
-
-        
-
-        public void ParseSections(ScriptFileContext scriptContext)
-        {
-            const string startSectionStart = "{{ Script.Section(\"";
-            const string sectionEnd = "\") }}";
-            const string endsection = "{{ Script.EndSection(\"";
-       
-
-            if (string.IsNullOrEmpty(scriptContext.Script) || !scriptContext.Script.Contains(startSectionStart))
-                return;
-
-            string script = scriptContext.Script;
-            string scriptLeft = string.Empty;
-            bool hasChanges = false;
-
-            
-            var matches = sectionLocationRegEx.Matches(script);
-            if (matches.Count < 1)
-                return;
-
-            foreach(Match match in matches)
-            {
-                // Groups: 1 - start delim, 2 - section name, 3 - end delim
-                string sectionName = match.Groups[2].Value;
-                string section = match.Value;
-
-                // get just the content of the section
-                string sectionContent = StringUtils.ExtractString(section, match.Groups[1].Value, match.Groups[3].Value)?.TrimStart(new[] { '\n', '\r' });
-                scriptContext.Sections[sectionName] = sectionContent;
-
-                script = script.Replace(section, string.Empty);
-
-                hasChanges = true;
-            }
-
-
-            // replace the sections
-            foreach(var section in scriptContext.Sections)
-            {
-                string sectionName = section.Key;
-                string find = "{{ Script.RenderSection(\"" + sectionName + "\") }}";      
-                script = script.Replace(find,section.Value);
-            }
-
-            // find sections not referenced and remove            
-             matches = renderSectionRegex.Matches(script);
-            foreach(Match match in matches)
-            {
-                script = script.Replace(match.Value, string.Empty);
-            }
-
-                
-
-            if (hasChanges)
-                scriptContext.Script = script;
-        }
 
         /// <summary>
         /// Extracts a variable like Scripts.Title = "Title of code"
@@ -429,6 +257,242 @@ namespace Westwind.Scripting
 
             return result;
         }
+
+        #region File Script Execution (Layouts, Sections, Partials)
+
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public string ExecuteScriptFile(string scriptFile, object model,
+            CSharpScriptExecution scriptEngine = null,
+            string basePath = null)
+        {           
+            var scriptContext = new ScriptFileContext(null)
+            {
+                ScriptFile = scriptFile,
+                Model = model,
+                BasePath = basePath
+            };
+
+            if (!FileScriptParsing(scriptContext))
+                return null;
+
+            var code = ParseScriptToCode(scriptContext);
+            if (code == null)
+                return null;
+
+            // expose the parameter as Model
+            code = "dynamic Model = parameters[0];\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
+                   "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+            return ScriptEngine.ExecuteCode(code, model) as string;
+        }
+
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
+        /// <returns>expanded template string or null on error. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public async Task<string> ExecuteScriptFileAsync(string scriptFile, object model,
+            CSharpScriptExecution scriptEngine = null,
+            string basePath = null)
+        {
+
+            var scriptContext = new ScriptFileContext(null)
+            {
+                ScriptFile = scriptFile,
+                Model = model,
+                BasePath = basePath
+            };
+
+            if (!FileScriptParsing(scriptContext))
+                return null;
+
+            var code = ParseScriptToCode(scriptContext);
+            if (code == null)
+                return null;
+
+            // expose the parameter as Model
+            code = "dynamic Model = parameters[0];\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
+                   "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+            return await ScriptEngine.ExecuteCodeAsync(code, model) as string;
+        }
+
+        /// <summary>
+        /// This parses the script file and extracts layout and section information
+        /// and updates the `Script` property
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public bool FileScriptParsing(ScriptFileContext context)
+        {
+            if (string.IsNullOrEmpty(context.BasePath))
+                context.BasePath = Path.GetDirectoryName(context.ScriptFile);
+
+
+            var script = File.ReadAllText(context.ScriptFile);
+            context.Script = script;
+
+            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+            {                
+                return true;
+            }
+
+            string basePath = context.BasePath;
+            if (string.IsNullOrEmpty(context.BasePath))
+                basePath = Path.GetDirectoryName(context.ScriptFile);
+            basePath = Utils.NormalizePath(basePath);
+
+            context.BasePath = basePath;
+            
+            context.Title = ExtractPageVariable("Script.Title", script);            
+            ParseLayoutPage(context);
+            ParseSections(context);
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="scriptPageText"></param>
+        /// <param name="basePath"></param>
+        /// <returns>True - Layout page processed  - No Layout found</returns>
+        public void ParseLayoutPage(ScriptFileContext context)
+
+        {
+            string scriptPageText = context.Script;
+            string basePath = context.BasePath;
+
+            if (string.IsNullOrEmpty(scriptPageText))
+                return;
+
+            if (!scriptPageText.Contains("Script.Layout=") && !scriptPageText.Contains("Script.Layout ="))
+                return;
+
+            try
+            {
+                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText);
+                if (layoutFile == null)
+                    return; // ignore no layout
+
+                if (!File.Exists(layoutFile))
+                {
+                    layoutFile = Path.Combine(basePath, layoutFile);
+                    if (!File.Exists(layoutFile))
+                        throw new InvalidEnumArgumentException("Page not found: " + layoutFile);
+
+                }
+                var layoutText = File.ReadAllText(layoutFile);
+                if (string.IsNullOrEmpty(layoutText))
+                    throw new InvalidEnumArgumentException("Couddn't read file content.");
+
+                layoutText = layoutText.Replace("{{ Script.RenderContent() }}", scriptPageText);
+
+                context.Script = layoutText;
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidEnumArgumentException("Couldn't load Layout page. " + ex.Message);
+            }
+        }
+
+        static Regex sectionLocationRegEx = new Regex(@"({{ Script.Section\(""(.*?)""\) }}).*?({{ Script.EndSection\("".*?""\) }})", RegexOptions.Singleline | RegexOptions.Multiline);
+        static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
+
+
+
+        public void ParseSections(ScriptFileContext scriptContext)
+        {
+            const string startSectionStart = "{{ Script.Section(\"";
+            const string sectionEnd = "\") }}";
+            const string endsection = "{{ Script.EndSection(\"";
+
+
+            if (string.IsNullOrEmpty(scriptContext.Script) || !scriptContext.Script.Contains(startSectionStart))
+                return;
+
+            string script = scriptContext.Script;
+            string scriptLeft = string.Empty;
+            bool hasChanges = false;
+
+
+            var matches = sectionLocationRegEx.Matches(script);
+            if (matches.Count < 1)
+                return;
+
+            foreach (Match match in matches)
+            {
+                // Groups: 1 - start delim, 2 - section name, 3 - end delim
+                string sectionName = match.Groups[2].Value;
+                string section = match.Value;
+
+                // get just the content of the section
+                string sectionContent = StringUtils.ExtractString(section, match.Groups[1].Value, match.Groups[3].Value)?.TrimStart(new[] { '\n', '\r' });
+                scriptContext.Sections[sectionName] = sectionContent;
+
+                script = script.Replace(section, string.Empty);
+
+                hasChanges = true;
+            }
+
+
+            // replace the sections
+            foreach (var section in scriptContext.Sections)
+            {
+                string sectionName = section.Key;
+                string find = "{{ Script.RenderSection(\"" + sectionName + "\") }}";
+                script = script.Replace(find, section.Value);
+            }
+
+            // find sections not referenced and remove            
+            matches = renderSectionRegex.Matches(script);
+            foreach (Match match in matches)
+            {
+                script = script.Replace(match.Value, string.Empty);
+            }
+
+
+
+            if (hasChanges)
+                scriptContext.Script = script;
+        }
+        #endregion
+
+
 
 
 
@@ -818,11 +882,13 @@ var writer = new StringWriter();
         /// <summary>
         /// The layout page if any to use for this script. Path is relative
         /// the detail page.
+        ///
+        /// Provided so compilation works not used in code.
         /// </summary>
         public string Layout { get; set; }
 
         /// <summary>
-        /// The title of the page 
+        /// The title of the page        
         /// </summary>
         public string Title { get; set; }
 
@@ -831,6 +897,10 @@ var writer = new StringWriter();
         /// Dictionary of sections that are captured and passed through
         /// </summary>
         internal Dictionary<string, string> Sections { get; set; } = new();
-        
+
+        /// <summary>
+        /// The top level script that is being processing
+        /// </summary>
+        public string ScriptFile { get; set; }
     }
 }

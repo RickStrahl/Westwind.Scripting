@@ -6,18 +6,33 @@
     <!-- dynamic type cast from an Anonymous type: THIS FAILS! -->
     <h1>Welcome back, {{ Model.Name }}</h1>
 
-    <!-- Using Reflection to access Anonymous type: THIS WORKS! -->
-    <h1>Welcome back {{ Script.GetProperty(Model, "Name") }}</h1>
-
-
     {{ Script.RenderPartial("Partial.html", Model) }}
 
     <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
 
     <hr />
 
-    {{ Script.RenderPartial("Partial.html", Model) }}
+    {{% for(var i = 1; i <= 5; i++) {  
+        // any C# code
+        Model.Name = "Name " + i;
+    }}            
+        <div>
+        {{ Script.RenderPartial("Partial.html", Model) }}
+        </div>
 
+    {{% } }}
+    
+   
+    {{ Add(8,10)}}    
+
+
+    {{%
+        int Add(int a, int b)
+        {
+           return a + b;
+       }
+       writer.WriteLine(Add(5, 10));        
+   }} 
 
     {{Script.Title}}
 </div>
