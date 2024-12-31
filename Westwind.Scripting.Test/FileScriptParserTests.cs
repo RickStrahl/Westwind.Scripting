@@ -26,7 +26,8 @@ namespace Westwind.Scripting.Test
         public void LayoutFileScriptTest()
         {
             var scriptParser = new ScriptParser();
-            
+            scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
+
             var result = scriptParser.ExecuteScriptFile("website/Views/Detail.html",
                                 new TestModel { Name = "Rick" },
                                 basePath: "website/Views/");

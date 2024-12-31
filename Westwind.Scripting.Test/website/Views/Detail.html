@@ -10,6 +10,7 @@
 
     <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
 
+{{@    
     <hr />
 
     {{% for(var i = 1; i <= 5; i++) {  
@@ -19,13 +20,14 @@
         <div>
         {{ Script.RenderPartial("Partial.html", Model) }}
         </div>
-
     {{% } }}
-    
+@}}    
    
     {{ Add(8,10)}}    
 
 
+
+    
     {{%
         int Add(int a, int b)
         {
@@ -35,6 +37,22 @@
    }} 
 
     {{Script.Title}}
+
+    {{%
+        var text = "This is & text requires \"escaping\".";
+    }}
+
+    Encoded:  
+    {{: text }}
+
+    Unencoded: 
+    {{! text }}
+
+    default (depends on ScriptDelimiters.HtmlEncodeExpressionsByDefault):
+    {{ text }}
+
+    
+
 </div>
 
 {{ Script.Section("Headers") }}

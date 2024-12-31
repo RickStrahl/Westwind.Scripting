@@ -363,10 +363,9 @@ namespace Westwind.Scripting
                 context.BasePath = Path.GetDirectoryName(context.ScriptFile);
 
 
-            var script = File.ReadAllText(context.ScriptFile);
-            context.Script = script;
-
-            if (string.IsNullOrEmpty(script) || !script.Contains("{{"))
+            context.Script = File.ReadAllText(context.ScriptFile);
+            
+            if (string.IsNullOrEmpty(context.Script) || !context.Script.Contains("{{"))
             {                
                 return true;
             }
@@ -376,9 +375,9 @@ namespace Westwind.Scripting
                 basePath = Path.GetDirectoryName(context.ScriptFile);
             basePath = Utils.NormalizePath(basePath);
 
-            context.BasePath = basePath;
-            
-            context.Title = ExtractPageVariable("Script.Title", script);            
+            context.BasePath = basePath;          
+            context.Title = ExtractPageVariable("Script.Title", context.Script);
+
             ParseLayoutPage(context);
             ParseSections(context);
 
@@ -419,6 +418,9 @@ namespace Westwind.Scripting
                 var layoutText = File.ReadAllText(layoutFile);
                 if (string.IsNullOrEmpty(layoutText))
                     throw new InvalidEnumArgumentException("Couddn't read file content.");
+
+
+                layoutText = StripComments(layoutText);
 
                 layoutText = layoutText.Replace("{{ Script.RenderContent() }}", scriptPageText);
 
@@ -490,9 +492,26 @@ namespace Westwind.Scripting
             if (hasChanges)
                 scriptContext.Script = script;
         }
+
+        /// <summary>
+        /// Strips {{@  commented block @}} from script
+        /// </summary>
+        /// <param name="script"></param>
+        /// <returns></returns>
+        private string StripComments(string script)
+        {
+            var pattern = @"{{" + ScriptingDelimiters.CommentEncodingCharacter + ".*?" + ScriptingDelimiters.CommentEncodingCharacter + "}}";            
+            var matches = Regex.Matches(script, pattern, RegexOptions.Multiline | RegexOptions.Singleline);
+            foreach (Match match in matches)
+            {
+                string expression = match.Value;
+                if (!string.IsNullOrEmpty(expression))
+                   script = script.Replace(expression, string.Empty);
+            }
+
+            return script;
+        }
         #endregion
-
-
 
 
 
@@ -524,6 +543,10 @@ namespace Westwind.Scripting
             if (atStart < 0)
                 return "return " + EncodeStringLiteral(scriptText, true) + ";";
 
+            // remove comment blocks {{@
+            scriptText = StripComments(scriptText);
+
+
             var literal = new StringBuilder();
             using (var code = new StringWriter())
             {
@@ -537,6 +560,7 @@ var writer = new StringWriter();
                 code.Write(initialCode);
 
                 bool containsDelimEscape = initialCode.Contains("\\{\\{") || initialCode.Contains("\\}\\}");
+
 
                 while (atStart > -1)
                 {
@@ -586,7 +610,7 @@ var writer = new StringWriter();
                     {
                         expression = expression.Substring(1).Trim();
                         code.WriteLine($"writer.Write( {expression} );");
-                    }
+                    }                    
                     else
                     {
                         if (ScriptingDelimiters.HtmlEncodeExpressionsByDefault)
@@ -609,6 +633,7 @@ var writer = new StringWriter();
                 }
 
                 code.WriteLine("return writer.ToString();");
+
 
                 return code.ToString();
             }
@@ -837,7 +862,12 @@ var writer = new StringWriter();
         /// <summary>
         /// Indicator for expressions to be explicitly NOT encoded and just returned as is regardless of HtmlEncodeByDefault
         /// </summary>
-        public string RawTextEncodingIndicator { get; set; } = "@";
+        public string RawTextEncodingIndicator { get; set; } = "!";
+
+        /// <summary>
+        /// Used to indicate a block of code should be commented {{ }}
+        /// </summary>
+        public string CommentEncodingCharacter { get; set; } = "@";
 
 
         /// <summary>
