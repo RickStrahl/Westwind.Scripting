@@ -26,17 +26,17 @@ The scripting engine supports:
 
 There are two categories of processing:
 
-* **String Template Processing**  
+* **[String Template Script Processing](#string-template-script-execution-scriptparser)**  
 String processing involves providing a template as a string and evaluating that string and executing the result code to expand the embedded expressions. String templates tend to be self contained in a single document, although you can use `{{ Script.RenderPartial() }}` to point at a file on disk and embed it's template content into the base template. 
 
-* **File Script Processing**  
+* **[File Script Processing](#westwindscripting-scripts-and-template-processing)**  
 File based processing in essence works the same as string template processing, but with files you can take advantage of Layout pages that act as a master template into which detail/content pages are embedded. This is useful for Web output which often uses site branding or base site chrome into which specific content is rendered. File scripts can specify `{{ Script.Layout = "Master.html" }}` and can embed `{{ Script.Section("Headers") }}` that allow injecting the script into the Layout page via `{{ Script.RenderSection("Headers") }}`.
 
 In short file based templates are useful for Web site based content, while template scripts tend to be more common text and code generation tasks.
 
 
 
-## Template Script Execution: ScriptParser
+## String Template Script Execution: ScriptParser
 Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser`class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
 
 There are also several special script operators:
@@ -65,7 +65,7 @@ This is the highlevel execution method that you pass a template and a model to, 
 * `ParseScriptToCode()`  
 This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
 
-Templates expost two special variables:
+Templates expose two special variables:
 
 * **Model**  
 Exposes the model passed when calling the `ExecuteScript()` method or variation. Access with `{{ Model.Property }}` or `{{ Model.MethodToCall("parameter") }}`.
