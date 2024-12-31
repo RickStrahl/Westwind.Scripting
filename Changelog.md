@@ -9,8 +9,16 @@ The script parser has a new property that contains all the scripting parameters,
 * **ScriptParser: Allow escaping of `{{` and `}}` with `\{\{` and `\}\}`**  
 The script parser now allows to escapte `{{` and `}}` should they occur in your text. Since these are script delimiters they would otherwise not be usable.
 
-* **ScriptParser: Added `{{: expression }}` Syntax for HtmlEncoding**  
+* **Html Encoding for script expressions {{: }} and raw {{! }}**  
+Script expressions can now force Html Encoding with `{{: expr }}`. Alternately to explicitly force raw output you can use `{{! expr }}`. Defaults is now determined via a new ScriptDelimiters structure, including a new `HtmlEncodeExpressionsByDefault` property which when `true` encodes expressions. The default is `false` (ie. no default Html encoding).
+
+* **Script Comments with {{@ content @}}**  
+You can now comment content and code with `{{@ any content @}}`. Content can span multiple lines and is processed before any other processing in the document occurs.    
+*Note that comments require both a start and `@` which is different than the other delimiters which only require a start character.*
+
+* **ScriptParser: Added `{{! expression }}` Syntax for Raw Output**  
 To help with usage in HTML scenarios you can now use `{{: }}` to explicitly add HtmlEncoding to expression tags. Script **code** can now also use `ScriptParser.HtmlEncode(value)` to explicitly encode values written out in code.
+
 
 ### 1.2.7
 
