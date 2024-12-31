@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace Westwind.Scripting
 {
@@ -79,13 +80,23 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
+        public bool SaveGeneratedClassCode
+        {
+            get => ScriptEngine is { SaveGeneratedCode: true };
+            set
+            {
+                if (ScriptEngine != null)
+                    ScriptEngine.SaveGeneratedCode = value;
+            }
+        }
+
         /// <summary>
         /// Delimiters used for script parsing
         /// </summary>
         public ScriptingDelimiters ScriptingDelimiters { get; set; } = ScriptingDelimiters.Default;
 
 
-        #region Script Execution
+        #region String Script Execution
 
         /// <summary>
         /// Executes a script that supports {{ expression }} and {{% code block }} syntax
@@ -257,6 +268,7 @@ namespace Westwind.Scripting
 
             return result;
         }
+        #endregion
 
         #region File Script Execution (Layouts, Sections, Partials)
 
@@ -319,6 +331,51 @@ namespace Westwind.Scripting
         /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
         /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
         /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        public string ExecuteScriptFile<TModelType>(string scriptFile, TModelType model,
+            CSharpScriptExecution scriptEngine = null,
+            string basePath = null)
+        {
+            var scriptContext = new ScriptFileContext(null)
+            {
+                ScriptFile = scriptFile,
+                Model = model,
+                BasePath = basePath
+            };
+
+            if (!FileScriptParsing(scriptContext))
+                return null;
+
+            var code = ParseScriptToCode(scriptContext);
+            if (code == null)
+                return null;
+
+            // expose the parameter as Model
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
+                   "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+            ScriptEngine.AddAssembly(typeof(TModelType));
+            return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
+        }
+
+        /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <param name="basepath">Optional basePath/root for the script and related partials so ~/ or / can be resolved</param>
         /// <returns>expanded template string or null on error. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
         public async Task<string> ExecuteScriptFileAsync(string scriptFile, object model,
             CSharpScriptExecution scriptEngine = null,
@@ -352,12 +409,59 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
+        /// Executes a script that supports {{ expression }} and {{% code block }} syntax
+        /// and returns a string result.
+        ///
+        /// You can optionally pass in a pre-configured `CSharpScriptExecution` instance
+        /// which allows setting references/namespaces and can capture error information.
+        ///
+        /// Function returns `null` on error and `scriptEngine.Error` is set to `true`
+        /// along with the error message and the generated code.
+        /// </summary>
+        /// <param name="script">The template to execute that contains C# script</param>
+        /// <param name="model">A model that can be accessed in the template as `Model`. Pass null if you don't need to access values.</param>
+        /// <param name="scriptEngine">Optional CSharpScriptEngine so you can customize configuration and capture result errors</param>
+        /// <returns>expanded template or null. On null check `scriptEngine.Error` and `scriptEngine.ErrorMessage`</returns>
+        /// 
+        public async Task<string> ExecuteScriptFileAsync<TModelType>(string scriptFile, TModelType model,
+            CSharpScriptExecution scriptEngine = null,
+            string basePath = null)
+        {
+            var scriptContext = new ScriptFileContext(null)
+            {
+                ScriptFile = scriptFile,
+                Model = model,
+                BasePath = basePath
+            };
+
+            if (!FileScriptParsing(scriptContext))
+                return null;
+
+            var code = ParseScriptToCode(scriptContext);
+            if (code == null)
+                return null;
+
+            // expose the parameter as Model
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
+                   "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   code;
+
+            if (scriptEngine != null)
+                ScriptEngine = scriptEngine;
+
+            ScriptEngine.AddAssembly(model.GetType());
+            return await ScriptEngine.ExecuteCodeAsync<string, TModelType>(code, model) as string;
+        }
+        
+
+
+        /// <summary>
         /// This parses the script file and extracts layout and section information
         /// and updates the `Script` property
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
-        public bool FileScriptParsing(ScriptFileContext context)
+        protected bool FileScriptParsing(ScriptFileContext context)
         {
             if (string.IsNullOrEmpty(context.BasePath))
                 context.BasePath = Path.GetDirectoryName(context.ScriptFile);
@@ -384,16 +488,28 @@ namespace Westwind.Scripting
             return true;
         }
 
+        // Extracts a section from a Content page: {{ Script.Section("name") }} ... {{ Script.EndSection("name") }}
+        static Regex sectionLocationRegEx = new Regex(@"({{ Script.Section\(""(.*?)""\) }}).*?({{ Script.EndSection\("".*?""\) }})", RegexOptions.Singleline | RegexOptions.Multiline);
+
+        // Extract section insertion point in Layout page: {{ Script.RenderSection("name") }}
+        static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
+
         /// <summary>
-        /// 
+        /// This is a helper function that ooks at the content page and retrieves the ScriptLayout directive,
+        /// and then tries to the load the layout template.
+        ///
+        /// The code then looks for the content page and merges the content page into
+        /// layout template producing a single script that is assigned to context.Script.
+        ///
+        /// If Layout lookup fails the existing context.Script (ie. the content page) is
+        /// returned.
         /// </summary>
         /// <param name="scriptPageText"></param>
         /// <param name="basePath"></param>
         /// <returns>True - Layout page processed  - No Layout found</returns>
-        public void ParseLayoutPage(ScriptFileContext context)
-
+        protected void ParseLayoutPage(ScriptFileContext context)
         {
-            string scriptPageText = context.Script;
+            string scriptPageText = context.Script; // content page
             string basePath = context.BasePath;
 
             if (string.IsNullOrEmpty(scriptPageText))
@@ -432,12 +548,13 @@ namespace Westwind.Scripting
             }
         }
 
-        static Regex sectionLocationRegEx = new Regex(@"({{ Script.Section\(""(.*?)""\) }}).*?({{ Script.EndSection\("".*?""\) }})", RegexOptions.Singleline | RegexOptions.Multiline);
-        static Regex renderSectionRegex = new Regex(@"{{ Script.RenderSection\("".*?""\) }}");
-
-
-
-        public void ParseSections(ScriptFileContext scriptContext)
+        /// <summary>
+        /// Parses out sections from the content page and assigns them into the
+        /// ScriptContext.Sections dictionary to be later expanded into the layout
+        /// page.
+        /// </summary>
+        /// <param name="scriptContext"></param>
+        protected void ParseSections(ScriptFileContext scriptContext)
         {
             const string startSectionStart = "{{ Script.Section(\"";
             const string sectionEnd = "\") }}";
@@ -466,13 +583,13 @@ namespace Westwind.Scripting
                 string sectionContent = StringUtils.ExtractString(section, match.Groups[1].Value, match.Groups[3].Value)?.TrimStart(new[] { '\n', '\r' });
                 scriptContext.Sections[sectionName] = sectionContent;
 
+                // remove the section from Content page
                 script = script.Replace(section, string.Empty);
 
                 hasChanges = true;
             }
 
-
-            // replace the sections
+            // replace the Layout RenderSection() 
             foreach (var section in scriptContext.Sections)
             {
                 string sectionName = section.Key;
@@ -480,25 +597,24 @@ namespace Westwind.Scripting
                 script = script.Replace(find, section.Value);
             }
 
-            // find sections not referenced and remove            
+            // find sections NOT REFERENCED and remove            
             matches = renderSectionRegex.Matches(script);
             foreach (Match match in matches)
             {
                 script = script.Replace(match.Value, string.Empty);
             }
 
-
-
             if (hasChanges)
                 scriptContext.Script = script;
         }
 
+        
         /// <summary>
         /// Strips {{@  commented block @}} from script
         /// </summary>
         /// <param name="script"></param>
         /// <returns></returns>
-        private string StripComments(string script)
+        protected string StripComments(string script)
         {
             var pattern = @"{{" + ScriptingDelimiters.CommentEncodingCharacter + ".*?" + ScriptingDelimiters.CommentEncodingCharacter + "}}";            
             var matches = Regex.Matches(script, pattern, RegexOptions.Multiline | RegexOptions.Singleline);
@@ -506,17 +622,19 @@ namespace Westwind.Scripting
             {
                 string expression = match.Value;
                 if (!string.IsNullOrEmpty(expression))
-                   script = script.Replace(expression, string.Empty);
+                    script = script.Replace(expression, string.Empty);
             }
 
             return script;
         }
+
         #endregion
 
 
+        #region Script To Code Parsing
 
         /// <summary>
-        /// Passes in a block of 'script' code into a string using
+        /// Passes in a block of finalized 'script' code into a string using
         /// code that uses a text writer to output. You can feed the
         /// output from this method in `ExecuteCode()` or similar to
         /// parse the script into an output string that includes the
@@ -660,16 +778,10 @@ using( var writer = new ScriptWriter())
         {
             return ParseScriptToCode(new ScriptFileContext(scriptText));
         }
-
-
-
-
-
-
-
         #endregion
 
-        #region Script Engine
+
+        #region Script Engine Forwarding
 
         /// <summary>
         /// Creates an instance of a script engine with default configuration settings
@@ -686,6 +798,8 @@ using( var writer = new ScriptWriter())
             string[] namespaces = null,
             Type[] referenceTypes = null)
         {
+
+            // We want to save the generated code for debugging and error information
             var exec = new CSharpScriptExecution() { SaveGeneratedCode = true };
             exec.AddDefaultReferencesAndNamespaces();
 
@@ -745,6 +859,7 @@ using( var writer = new ScriptWriter())
 
         #endregion
 
+        #region Helpers
 
         /// <summary>
         /// Encodes a string to be represented as a C# style string literal. 
@@ -823,6 +938,8 @@ using( var writer = new ScriptWriter())
 
             return System.Net.WebUtility.HtmlEncode(value.ToString());
         }
+
+        #endregion
     }
 
 

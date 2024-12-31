@@ -1,27 +1,37 @@
 # Westwind.Scripting: Scripts and Template Processing
 
-This library includes a scripting engine that allows you to execute string or file based templates and expanded embedd C# expressions and codeblocks that can be embedded using Handlebar-like syntax.
+This library includes a scripting engine that allows you to execute string or file based templates and expanded embeded C# expressions and code blocks that can be embedded using Handlebars-like syntax.
 
 The scripting engine supports:
 
 * String based template execution
 * File based script execution with optional Layout/Section support
-* Support for Partials loaded from disk
-* Support for Layout Pages and Sections (for file scripts)
-* Expressions and Codeblocks use raw C# syntax
-* Using familiar Handlebars syntax:
+* Support for Partials loaded from disk (both string and file)
+* Support for Layout Pages and Sections (for file only)
+* Expressions and code blocks use raw C# syntax
+* Familiar Handlebars syntax with C# code:
     * `{{ C# expression }}`
     * `{{% code block }}`    
        commands can be split across multiple lines, and any other content 
        block - literal text or expressions
-    * `{{: encode Expression }}`
+    * `{{: html encoded Expression }}`
     * `{{! raw expression }}`
     * `{{@ commented block @}}`
-* Code blocks can be structured using compound statements (for, while, if, using { } etc.)
-* Templates compile to C# code at runtime
+* Code blocks can be build compound statements (for, while, if, using { } etc.)
+* Script compiles to C# code at runtime
 * Compiled code is very efficient
-* Using a single ScriptParser instance allows caching compiled output
-* Support for Web based execution and features (ie. optional automatic Html Encoding)
+* ScriptParser instance caches compiled output
+
+`ScriptParser` is built ontop of the CSharpScriptExecution` class which is used for compilation and script execution. The parser class adds the ability to parse the Handlebars-style scripts into C# code that is then executed by the script engine. 
+
+The parser has an internal `ScriptEngine` member, which allows full access to the script compilation and execution so you can add assemblies, get detailed error information, set compiler options etc.
+
+```cs
+var script = new ScriptParser();
+script.AddAssembly(typeof(this));
+script.ScriptEngine.Generate
+
+
 
 
 There are two categories of processing:

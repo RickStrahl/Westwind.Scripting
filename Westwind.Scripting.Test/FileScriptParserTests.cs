@@ -52,6 +52,21 @@ namespace Westwind.Scripting.Test
 
             Assert.IsNotNull(result, scriptParser.ErrorMessage);
         }
+
+        [TestMethod]
+        public async Task LayoutFileAsyncTypedModelScriptTest()
+        {
+            var scriptParser = new ScriptParser();
+
+            var result = await scriptParser.ExecuteScriptFileAsync<TestModel>("website/Views/Detail.html",
+                new TestModel { Name = "Rick" },
+                basePath: "website/Views/");
+
+            Console.WriteLine(result);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
+        }
     }
 }
 

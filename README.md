@@ -42,7 +42,10 @@ For more detailed information and a discussion of the concepts and code that run
 	* Detailed compiler error messages
 	* Access to compiled output w/ line numbers
 * Roslyn Warmup 
-* Template Scripting Engine using Handlebars-like with C# syntax
+* [Template Scripting Engine using Handlebars-like C# syntax](ScriptAndTemplates.md)
+    * Script Execution from strings
+    * Script Execution from files
+    * Support for Partials, Layout and Sections
 
 ### CSharpScriptExecution: C# Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
