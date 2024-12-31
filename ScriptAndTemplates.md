@@ -60,7 +60,7 @@ You can embed C# expressions and code blocks to expand dynamic content that is g
 This class has two operational methods:
 
 * `ExecuteScript()`  
-This is the highlevel execution method that you pass a template and a model to, and it processes the template, expanding the data and returns a string of the merged output.
+This is the high level execution method that you pass a template and a model to, and it processes the template, expanding the data and returns a string of the merged output.
 
 * `ParseScriptToCode()`  
 This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
