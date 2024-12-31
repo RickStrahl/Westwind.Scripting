@@ -580,7 +580,8 @@ Template script execution allows you to transform a block of text with embedded 
 There are also several special script operators:
 
 * `{{:` - force Html Encoding
-* `{{@` - force Raw Output regardless of settings
+* `{{!` - force Raw Output regardless of settings
+* `{{@  commented text @}}` - commented text
 
 > #### Delimiter Customization
 > Script delimeters and options can be customized via the `ScriptParser.ScriptingDelimiters` property that allow you can create custom delimiters, to support alternate script tag schemes (classic `<%= %>` for example).
