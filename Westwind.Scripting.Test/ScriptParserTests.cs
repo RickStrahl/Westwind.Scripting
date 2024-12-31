@@ -346,7 +346,7 @@ Here is some encoded text:
 
 This text should **not** be encoded:
 
-{{@ text }}
+{{! text }}
 
 DONE!
 ";

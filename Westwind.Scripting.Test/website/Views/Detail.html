@@ -1,7 +1,11 @@
+{{ Script.Section("StartDocument") }}
 {{%
+    // This code will execute at the top of the Layout page
     Script.Layout = "Layout.html";
-    Script.Title = "My Great Detail with Layout Page";
+    string title = "My Great Detail with Layout Page";
+    Script.Title = title;
 }}
+{{ Script.EndSection("StartDocument") }}
 <div>
     <!-- dynamic type cast from an Anonymous type: THIS FAILS! -->
     <h1>Welcome back, {{ Model.Name }}</h1>
