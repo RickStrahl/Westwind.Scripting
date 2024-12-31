@@ -557,10 +557,7 @@ namespace Westwind.Scripting
         protected void ParseSections(ScriptFileContext scriptContext)
         {
             const string startSectionStart = "{{ Script.Section(\"";
-            const string sectionEnd = "\") }}";
-            const string endsection = "{{ Script.EndSection(\"";
-
-
+    
             if (string.IsNullOrEmpty(scriptContext.Script) || !scriptContext.Script.Contains(startSectionStart))
                 return;
 

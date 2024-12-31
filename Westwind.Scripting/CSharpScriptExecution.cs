@@ -1237,7 +1237,7 @@ namespace Westwind.Scripting
         {
 
 
-#if net472
+#if NETFRAMEWORK
             AddNetFrameworkDefaultReferences();
             AddAssembly(typeof(Microsoft.CSharp.RuntimeBinder.RuntimeBinderException));
 #endif
@@ -1737,7 +1737,7 @@ public bool AddAssembly(Type type)
 
         private Assembly LoadAssembly(byte[] rawAssembly)
         {
-#if NETCORE
+#if NET6_0_OR_GREATER
             if (AlternateAssemblyLoadContext != null)
             {
                 return AlternateAssemblyLoadContext.LoadFromStream(new MemoryStream(rawAssembly));
@@ -1748,7 +1748,8 @@ public bool AddAssembly(Type type)
 
         private Assembly LoadAssemblyFrom(string assemblyFile)
         {
-#if NETCORE
+
+#if NET6_0_OR_GREATER
             if (AlternateAssemblyLoadContext != null)
             {
                 return AlternateAssemblyLoadContext.LoadFromAssemblyPath(assemblyFile);
@@ -1757,7 +1758,7 @@ public bool AddAssembly(Type type)
             return Assembly.LoadFrom(assemblyFile);
         }
 
-        #endregion
+#endregion
 
 
         /// <summary>

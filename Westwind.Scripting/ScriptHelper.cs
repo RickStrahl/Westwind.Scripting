@@ -293,7 +293,7 @@ namespace Westwind.Scripting
 
         public void Clear() => Writer.GetStringBuilder().Clear();
 
-        public string ToString()
+        public override string ToString()
         {
             return Writer.ToString();
         }
