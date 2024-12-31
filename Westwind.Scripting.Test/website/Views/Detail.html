@@ -14,10 +14,8 @@
 
     <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
 
-{{@    
-    <hr />
-
-    {{% for(var i = 1; i <= 5; i++) {  
+    {{% 
+        for(var i = 1; i <= 5; i++) {  
         // any C# code
         Model.Name = "Name " + i;
     }}            
@@ -25,23 +23,18 @@
         {{ Script.RenderPartial("Partial.html", Model) }}
         </div>
     {{% } }}
-@}}    
-   
+
     {{ Add(8,10)}}    
-
-
-
     
     {{%
+        // Example of an inline function
         int Add(int a, int b)
         {
            return a + b;
        }
        writer.WriteLine(Add(5, 10));        
-   }} 
-
-    {{Script.Title}}
-
+    }} 
+  
     {{%
         var text = "This is & text requires \"escaping\".";
     }}
@@ -55,8 +48,13 @@
     default (depends on ScriptDelimiters.HtmlEncodeExpressionsByDefault):
     {{ text }}
 
-    
-
+    {{%
+        // write from within code blocks
+        writer.WriteLine("Hello world, " + Model.Name);  // unencoded
+        
+        // write with HtmlEncoding
+        writer.WriteHtmlEncoded( $"this text is basic {Model.Name}, but \"encoded\".\n" );
+    }}
 </div>
 
 {{ Script.Section("Headers") }}
@@ -64,7 +62,9 @@
     body {
         background-color: lightblue;
     }
-    {{ DateTime.Now }}
+    <script> 
+        var viewMode = { Name:"{{ Model.Name }}" };
+    </script>
 </style>
 {{ Script.EndSection("Headers") }}
 

@@ -263,7 +263,7 @@ namespace Westwind.Scripting
     }
 
 
-    public class ScriptWriter
+    public class ScriptWriter : IDisposable
     {
         public ScriptWriter()
         {
@@ -279,7 +279,15 @@ namespace Westwind.Scripting
 
         public void Write(string text) => Writer.Write(text);
 
+        public void Write(object text) => Writer.WriteLine(text?.ToString());
+
         public void WriteLine(string text) => Writer.WriteLine(text);
+
+        public void WriteLine(object text) => Writer.WriteLine(text?.ToString());
+
+        public void WriteHtmlEncoded(string text) => Writer.Write(ScriptParser.HtmlEncode(text));
+
+        public void WriteHtmlEncoded(object text) => Write(ScriptParser.HtmlEncode(text?.ToString()));
 
         public void Flush() => Writer.Flush();
 
@@ -289,5 +297,7 @@ namespace Westwind.Scripting
         {
             return Writer.ToString();
         }
+
+        public void Dispose() => Writer?.Dispose();
     }
 }

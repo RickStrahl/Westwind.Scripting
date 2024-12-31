@@ -553,11 +553,12 @@ namespace Westwind.Scripting
                 var atEnd = -1;
                 string expression = null;
 
+                
                 string initialCode = @"
-var writer = new StringWriter();
-
+using( var writer = new ScriptWriter())
+{
 ";
-                code.Write(initialCode);
+                code.Write(initialCode);                
 
                 bool containsDelimEscape = initialCode.Contains("\\{\\{") || initialCode.Contains("\\}\\}");
 
@@ -632,7 +633,7 @@ var writer = new StringWriter();
                     }
                 }
 
-                code.WriteLine("return writer.ToString();");
+                code.WriteLine("return writer.ToString();\n\n}");
 
 
                 return code.ToString();
