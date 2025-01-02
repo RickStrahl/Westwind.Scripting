@@ -1,0 +1,23 @@
+{{ Script.RenderSection("StartDocument") }}
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>{{ Script.Title }}</title>
+   
+        {{ Script.RenderSection("Headers") }}
+    </head>
+    <body>
+        <header>This is a Site header</header>
+        
+        {{ Script.RenderContent() }}
+
+        <footer>
+            <hr/>
+            Site Footer here &copy; {{ DateTime.Now.Year}}
+        </footer>
+
+
+        {{ Script.RenderSection("Scripts") }}
+    </body>
+</html>

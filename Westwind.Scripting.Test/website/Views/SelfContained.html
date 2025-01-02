@@ -1,0 +1,20 @@
+{{%
+  Script.Title = "Self Contained Page";
+}}
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>{{ Script.Title }}</title>
+</head>
+<body>
+  <h1>This is a self contained page!</h1>
+
+  <p>Hello, {{ Model.Name }}</p>
+
+  <p>This page is self contained and doesn't require any external resources to render.</p>
+
+  {{ DateTime.Now.ToString("d") }}
+</body>
+</html>

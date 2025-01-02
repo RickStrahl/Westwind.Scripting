@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -56,6 +57,30 @@ namespace Westwind.Scripting
                 return s.Split('\n');
             return s.Split('\n').Take(maxLines).ToArray();
         }
-        
+
+
+        /// <summary>
+        /// Normalizes a file path to the operating system default
+        /// slashes.
+        /// </summary>
+        /// <param name="path"></param>
+        public static string NormalizePath(string path)
+        {
+            //return Path.GetFullPath(path); // this always turns into a full OS path
+
+            if (string.IsNullOrEmpty(path))
+                return path;
+
+            char slash = Path.DirectorySeparatorChar;
+            path = path.Replace('/', slash).Replace('\\', slash);
+            string doubleSlash = string.Concat(slash, slash);
+            if (path.StartsWith(doubleSlash))
+                return string.Concat(doubleSlash, path.TrimStart(slash).Replace(doubleSlash, slash.ToString()));
+            else
+                return path.Replace(doubleSlash, slash.ToString());
+        }
+
+
+       
     }
 }

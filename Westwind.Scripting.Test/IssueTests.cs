@@ -10,7 +10,7 @@ namespace Westwind.Scripting.Test
     public class IssueTests
     {
         [TestMethod]
-        public async Task ReplaceWordUsing_31Test()
+        public void ReplaceWordUsing_31Test()
         {
             var script = new CSharpScriptExecution()
             {

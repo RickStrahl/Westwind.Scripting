@@ -75,7 +75,7 @@ Console.WriteLine(""Retrieving..."");
 
         }
 
-#if NETCORE
+#if NET6_0_OR_GREATER
         [TestMethod]
         public void UseAlternateAssemblyLoadContext_LoadsAssembliesInAlternateContextTest()
         {
@@ -113,12 +113,13 @@ return a + b;";
 
             for (int i = 0; i < 10; i++)
             {
-                var exec = new CSharpScriptExecution() { SaveGeneratedCode = false };
+                var exec = new CSharpScriptExecution() { SaveGeneratedCode = true };
                 exec.AddDefaultReferencesAndNamespaces();
                 exec.AlternateAssemblyLoadContext = myContext;
                 exec.DisableAssemblyCaching = true;
 
                 var result = exec.ExecuteCode<int>(codeBlock, i);
+                Console.WriteLine(exec.ErrorMessage);
                 System.Console.WriteLine(result.ToString());
             }
 

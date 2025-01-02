@@ -1,0 +1,73 @@
+{{ Script.Section("StartDocument") }}
+{{%
+    // This code will execute at the top of the Layout page
+    Script.Layout = "Layout.html";
+    string title = "My Great Detail with Layout Page";
+    Script.Title = title;
+}}
+{{ Script.EndSection("StartDocument") }}
+<div>
+    <!-- dynamic type cast from an Anonymous type: THIS FAILS! -->
+    <h1>Welcome back, {{ Model.Name }}</h1>
+
+    {{ Script.RenderPartial("Partial.html", Model) }}
+
+    <p>This is the detail page content {{ DateTime.Now.ToString("t") }}</p>
+
+    {{% 
+        for(var i = 1; i <= 5; i++) {  
+        // any C# code
+        Model.Name = "Name " + i;
+    }}            
+        <div>
+        {{ Script.RenderPartial("Partial.html", Model) }}
+        </div>
+    {{% } }}
+
+    {{ Add(8,10)}}    
+    
+    {{%
+        // Example of an inline function
+        int Add(int a, int b)
+        {
+           return a + b;
+       }
+       writer.WriteLine(Add(5, 10));        
+    }} 
+  
+    {{%
+        var text = "This is & text requires \"escaping\".";
+    }}
+
+    Encoded:  
+    {{: text }}
+
+    Unencoded: 
+    {{! text }}
+
+    default (depends on ScriptDelimiters.HtmlEncodeExpressionsByDefault):
+    {{ text }}
+
+    {{%
+        // write from within code blocks
+        writer.WriteLine("Hello world, " + Model.Name);  // unencoded
+        
+        // write with HtmlEncoding
+        writer.WriteHtmlEncoded( $"this text is basic {Model.Name}, but \"encoded\".\n" );
+    }}
+</div>
+
+{{ Script.Section("Headers") }}
+<style>
+    body {
+        background-color: lightblue;
+    }
+    <script> 
+        var viewMode = { Name:"{{ Model.Name }}" };
+    </script>
+</style>
+{{ Script.EndSection("Headers") }}
+
+{{ Script.Section("Scripts") }}
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+{{ Script.EndSection("Scripts") }} 

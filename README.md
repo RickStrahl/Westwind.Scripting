@@ -1,11 +1,13 @@
 # Westwind CSharp Scripting
 
-**Dynamically compile and execute CSharp code at runtime**
+**Dynamically compile and execute C# code at runtime, as well as a light weight, Handlebar style C# template script engine**
 
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
-This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class and lightweight, self contained C# script templates via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code }}`) script templates.
+This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class.
+
+There's also a lightweight, self contained C# script template engine via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code-block }}`) script templates. Unlike other script engines, this engine uses plain C# syntax for expressions and code block execution.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -15,13 +17,16 @@ Install-Package Westwind.Scripting
 
 It supports the following targets:
 
-* .NET 8.0 (net8.0), .NET 6.0 (net6.0), .NET 7.0 (net7.0)
-* Full .NET Framework (net462)
+* .NET 9.0 (net9.0), .NET 8.0 (net8.0)
+* Full .NET Framework (net472)
 * .NET Standard 2.0 (netstandard2.0)
- 
+
+
 For more detailed information and a discussion of the concepts and code that runs this library, you can also check out this introductory blog post:
 
 * [Runtime Code Compilation Revisited for Roslyn](https://weblog.west-wind.com/posts/2022/Jun/07/Runtime-CSharp-Code-Compilation-Revisited-for-Roslyn)
+
+* [Change Log](Changelog.md)
 
 ## Features
 * Easy C# code compilation and execution for:
@@ -37,7 +42,10 @@ For more detailed information and a discussion of the concepts and code that run
 	* Detailed compiler error messages
 	* Access to compiled output w/ line numbers
 * Roslyn Warmup 
-* Template Scripting Engine using Handlebars-like with C# syntax
+* [Template Scripting Engine using Handlebars-like C# syntax](ScriptAndTemplates.md)
+    * Script Execution from strings
+    * Script Execution from files
+    * Support for Partials, Layout and Sections
 
 ### CSharpScriptExecution: C# Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
@@ -569,287 +577,12 @@ Performance using these cached instances will be an order of magnitude faster th
 
 If speed is important this is the most efficient approach.
 
-## Template Script Execution: ScriptParser
-Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser`class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
+## Template Script Execution with Script Parser
+Template and Script Execution is documented in a separate document:
 
-You can embed C# expressions and code blocks to expand dynamic content that is generated at runtime. This class works by taking a template and turning it into executing code that produces a string output result.
+* [Basic Template Script Execution](ScriptAndTemplates.md)
+* [Extended File based Script Execution](ScriptTemplates.md) 
 
-This class has two operational methods:
-
-* `ExecuteScript()`  
-This is the highlevel execution method that you pass a template and a model to, and it processes the template, expanding the data and returns a string of the merged output.
-
-* `ParseScriptToCode()`  
-This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
-
-Templates expost two special variables:
-
-* **Model**  
-Exposes the model passed when calling the `ExecuteScript()` method or variation. Access with `{{ Model.Property }}` or `{{ Model.MethodToCall("parameter") }}`.
-
-* **Script**  
-Allows the ability to render partial templates from disk and embed them into the current page as well as potentially executing nested script code from rendered content. Call these methods with:
-    * Script.RenderPartial()
-    * Script.RenderPartialAsync()
-    * Script.RenderScript()  <small>*(allows content to run script code)*</small>
-    * Script.RenderScriptAsync() 
-
-### Automatic Script Processing with ScriptParser
-The `ExecuteScript()` method is the all in one method that parses and executes the script and model passed to it.
-
-Here's how this works:
-
-```cs
-var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
-
-string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
-}}
-{{ x }}. Hello World {{Model.Name}}
-{{% } }}
-
-And we're done with this!
-";
-
-var scriptParser = new ScriptParser();
-
-// add dependencies - sets on .ScriptEngine instance
-scriptParser.AddAssembly(typeof(ScriptParserTests));
-scriptParser.AddNamespace("Westwind.Scripting.Test");
-
-// Execute the script
-string result = scriptParser.ExecuteScript(script, model);
-
-Console.WriteLine(result);
-
-Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
-Console.WriteLine(scriptParser.ErrorType);  // if there's an error
-Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
-```
-
-Notice that `ScriptParser()` mirrors most of the `CSharpScriptExecution` properties and methods. Behind the scenes there is a `ScriptEngine` property that holds the actual `CSharpScriptExecution` instance that will be used when the template is executed. You can optionally override the `ScriptEngine` instance although that should be rare.
-
-
-### Manual Parsing
-If you want direct access to the parsed code you can use `ParseScriptToCode()` to parse a template into C# code and return it as a string. We can then manually execute the code or create a custom execution strategy such as combining multiple templates into a single class.
-
-Here's the basic functionality to parse a template and then **manually** execute as a method:
-
-```csharp
-var model = new TestModel {Name = "rick", DateTime = DateTime.Now.AddDays(-10)};
-
-string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
-}}
-{{ x }}. Hello World {{Model.Name}}
-{{% } }}
-
-And we're done with this!
-";
-
-
-var scriptParser = new ScriptParser();
-
-// Parse template into source code
-var code = scriptParser.ParseScriptToCode(script);
-
-Assert.IsNotNull(code, "Code should not be null or empty");
-
-Console.WriteLine(code);
-
-// ScriptEngine is a pre-configured CSharpScriptExecution instance
-scriptParser.AddAssembly(typeof(ScriptParserTests));
-scriptParser.AddNamespace("Westwind.Scripting.Test");
-
-var method = @"public string HelloWorldScript(TestModel Model) { " +
-             code + "}";
-
-// Execute using the internal CSharpScriptExecution instance
-var result = scriptParser.ScriptEngine.ExecuteMethod(method, "HelloWorldScript", model);
-
-Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
-Assert.IsNotNull(result, scriptParser.ErrorMessage);
-
-Console.WriteLine(result);
-```
-
-This is a bit contrived since this in effect does the same thing that `ExecuteScript()` does implicitly. However, it can be useful to retrieve the code and use in other situations, such as building a class with several generated template methods rather than compiling and running each template in it's own dedicated assembly.
-
-Not a very common use case but it's there if you need it.
-
-### Nested Script Code
-In addition to direct template rendering you can also embed nested template content into the page using the `Script` object which exposed as an in-scope variable. You can use the script object to execute a template from disk or provide a string expression as a template to dynamically execute script in application provided code.
-
-#### RenderPartial
-RenderPartial lets you render an external template from disk by specifying a path to the file.
-
-```csharp
-var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
-string script = """
-<div>
-Hello World. Date is: {{ DateTime.Now.ToString() }}
-
-{{ await Script.RenderPartialAsync("./Templates/Time_Partial.csscript") }}
-Done.
-</div>
-""";
-Console.WriteLine(script + "\n---" );
-
-
-var scriptParser = new ScriptParser();
-scriptParser.AddAssembly(typeof(ScriptParserTests));
-
-
-string result = await scriptParser.ExecuteScriptAsync(script, model);
-Console.WriteLine(result);
-Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
-
-Assert.IsNotNull(result, scriptParser.ErrorMessage);
-```
-
-The template is just a file with text and script expressions embedded:
-
-```csharp
-Current Time: <b>{{ DateTime.Now.ToString("HH:mm:ss") }}</b>
-```
-
-and if loaded will be rendered in place of the `RenderPartial` call.
-
-When using `ExecuteScript()` and its varients, you can also pass in a `basePath` parameter which allows you specify a root path to resolve via these leading characters:
-
-* `~`
-* `/`
-* `\`
-
-When these start off the passed in path and a `basePath` is provided the root path is replaced in place of these values (ie. `~/sub1/page.csscript` becomes `\temp\templates\sub1\page.csscript`). 
-
-> You need to be consistent with your use of directory slashes using forward **or** backwards slashes but not both in the base path and template paths or you may run into invalid path issues. 
-
-#### RenderScript
-
-```csharp
-var model = new TestModel { 
-    Name = "rick", 
-    Expression="Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" 
-};
-
-string script = """
-<div>
-Hello World. Date is: {{ DateTime.Now.ToString() }}
-<b>{{ Model.Name }}</b>
-
-{{ await Script.RenderScriptAsync(Model.Expression,null) }}
-
-Done.
-</div>
-""";
-Console.WriteLine(script + "\n---");
-
-
-var scriptParser = new ScriptParser();
-scriptParser.AddAssembly(typeof(ScriptParserTests));
-
-
-string result = await scriptParser.ExecuteScriptAsync(script, model);
-
-Console.WriteLine(result);
-Console.WriteLine(scriptParser.Error + " " + scriptParser.ErrorType + " " + scriptParser.ErrorMessage + " " );
-Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
-
-Assert.IsNotNull(result, scriptParser.ErrorMessage);
-```
-
-### ScriptParser Methods and Properties
-
-**Main Execution** 
-
-* `ExecuteScript()`
-* `ExecuteScriptAsync()`
-
-**Script Parsing** 
-
-* `ParseScriptToCode()`
-
-**C# Script Engine Configuration and Access**
-
-* `ScriptEngine` 
-* `AddAssembly()`
-* `AddAssemblies()`
-* `AddNamespace()`
-* `AddNamespaces()`
-
-The `ScriptEngine` property is initialized using default settings which use:
-
-* `AddDefaultReferencesAndNamespaces()`
-* `SaveGeneratedCode = true`
-
-You can optionally replace `ScriptParser` instance with a custom instance that is configured exactly as you like:
-
-```cs
-var scriptParser = new ScriptParser();
-
-var exec = new CSharpScriptExection();
-exec.AddLoadedReferences();
-
-scriptParser.ScriptEngine = exec;
-
-string result = scriptParser.ExecuteScript(template, model);
-```
-
-**Error and Debug Properties**
-
-* `ErrorMessage`
-* `ErrorType`
-* `GeneratedClassCode`
-* `GeneratedClassCodeWithLineNumbers`
-
-> The various `Addxxxx()` methods and error properties are directly forwarded from the `ScriptEngine` instance as readonly properties.
-
-### Some Template Usage Examples
-An example usage is for the [Markdown Monster Editor](https://markdownmonster.west-wind.com/) which uses this library to provide text snippet expansion into Markdown (or other) documents.
-
-A simple usage scenario might be to expand a DateTime stamp into a document as a snippet via a hotkey or explicitly
-
-```markdown
----
-- created on {{ DateTime.Now.ToString("MMM dd, yyyy") }}
-```
-
-You can also use this to expand logic. For example, this is for a custom HTML expansion in a Markdown document by wrapping an existing selection into the template markup:
-
-```markdown
-### Breaking Changes
-
-<div class="alert alert-warning">
-{{ await Model.ActiveEditor.GetSelection() }}
-</div>
-```
-
-Here's an example that uses script to retrieves some information from the Web parses out a version number and embeds a string with the version number into the document:
-
-```markdown
-{{%
-var url = "https://west-wind.com/files/MarkdownMonster_version.xml";
-
-var wc = new WebClient();
-string xml = wc.DownloadString(url);
-string version =  StringUtils.ExtractString(xml,"<Version>","</Version>");
-}}
-# Markdown Monster v{{version}}
-```
-
-This is a bit contrived but you can iterate over a list of open documents and display them in the template output:
-
-```markdown
-**Open Editor Documents**
-
-{{% foreach(var doc in Model.OpenDocuments) { }}
-* {{ doc.Filename }}
-{{% } }}
-
-```
 
 ## Usage Notes
 Code snippets, methods and evaluations as well as templates are compiled into assemblies which are then loaded into the host process. Each script or snippet by default creates a new assembly.
@@ -909,85 +642,6 @@ _ = RoslynLifetimeManager.WarmupRoslyn();
 If you are running code repetitively, you should avoid using the various `ExecuteXXX()` methods and instead use `CompileClass()` to create a type instance, then re-use that type instance for execution. Although this library caches assemblies for the exact same code and doesn't recompile it, `ExecuteXXX()` methods still have to load an instance of the type each time which adds a bit of overhead.
 
 It's much more efficient using `CompileClass()` to create a type instance, and then calling a method on it. Better yet, cache the `MethodInfo` to execute or create a delegate that can be reused for the specific method.
-
-
-## Change Log
-
-### 1.2.7
-
-* **CSharpScriptExecution.ExecuteMethodAsyncVoid for Async Void Methods**  
-Due to the way tasks are handled in .NET it's not possible to cast a  void `Task` to a `Task<T>` result. For this reason separate methods are needed for the two versions of `ExecuteMethodAsync()` and `ExecuteMethodAsync<TResult>()` as `ExecuteMethodAsyncVoid()` and `ExecuteMethodAsyncVoid<TResult>()` respectively. Use these methods if you explicitly don't want to return a value.
-
-### 1.2.5
-
-* **Add CSharpScriptExecution.AlternateAssemblyLoadContext which allows for Assembly Unloading**  
-In .NET Core you can now assign an alternate AssemblyLoadContext to load assemblies into via the `AlternateAssemblyLoadContext`, which allows for unloading of assemblies. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
-
-* **CSharpScriptExecution.DisableAssemblyCaching**  
-By default this library caches generated assemblies based on the code that is passed in to execute. The `CSharpScriptExecution.DisableAssemblyCaching` property disables this caching in scenarios where you know code is never re-executed. [PR #19](https://github.com/RickStrahl/Westwind.Scripting/pull/19)
-
-### 1.4
-
-* **Add .NET 8.0 Target** 
-Added explicit target for .NET 8.0.
-
-### 1.3
-
-* **Add .NET 7.0 Target**  
-Added explicit target for .NET 7.0.
-
-* **Updated Roslyn Libraries with support for C# 11**  
-Updated to latest Roslyn compiler libraries that support C# 11 syntax.
-
-### 1.1
-
-* **Breaking Change: ScriptParser  Refactor to non-static Class**  
-The original implementation of ScriptParser relied on several `static` methods to make it very easy to access and use. In this release ScriptParser is now a class that has be instantiated.
-
-* **ScriptParser includes ScriptEngine Property**  
-The Script execution engine is now an auto-initialized property on the ScriptParser class. You can customize this instance or replace it with a custom instance.
-
-* **ScriptParser Simplification for ScriptEngine Access**  
-Rather than requiring configuration directly on the `ScriptEngine` instance for dependencies and errors, the relevant properties have been forwarded to the `ScriptParser` class. You can now use `AddAssembly()`/`AddNameSpace()` and the various `Error`, `ErrorMessage` etc. properties directly on the `ScriptParser` instance which makes the code cleaner and exposes the relevant features only.
-
-
-### 1.0.10
-
-* **Add Stream Inputs for Class Compilation**  
-The various `CompileClass()` methods now take stream inputs to allow directly reading from files or memory streams.
-
-* **Clean up Default References and Namespaces for .NET Core**  
-Modified the default reference imports to create a minimal but somewhat functional baseline that allows running a variety of code running against common BCL/FCL functionality.
-
-### 1.0
-
-* **Switch to Roslyn CodeAnalysis APIs**  
-Switched from CodeDom compilation to Roslyn CodeAnalysis compilation which improves compiler startup, compilation performance and provides more detailed compilation information on errors.
-
-* **Add Support for Async Execution**  
-You can now use various `xxxAsync()` overloads to execute methods as `Task` based operations that can be `await`ed and can use `await` inside of scripts.
-
-* **Add ScriptParser for C# Template Scripting**  
-Added a very lightweight scripting engine that uses *Handlebars* style syntax for processing C# expressions and code blocks. Look at the `ScriptParser` class.
-
-#### BREAKING CHANGES FOR v1.0
-This version is a breaking change due to the changeover to the Roslyn APIs. While the APIs have stayed mostly the same, some of the dependent types have changed. Runtime requirements are also different with different libraries that are installed differently than the CodeDom dependencies. You may have to explicitly cleanup old application folders.
-
-### Version 0.4.5
-
-* **Last CodeDom Version**
-This version is the last version that works with CodeDom and that is fixed to .NET Framework. All later versions support .NET Framework and .NET Core. 
-
-### **Version 0.3**  
-
-* **Updated to latest Microsoft CodeDom libraries**  
-Updated to the latest Microsoft CodeDom compilation libraries which streamline the compiler process for Roslyn compilation with latest language features.
-
-* **Remove support to pre .NET 4.72**  
-In order to keep the runtime dependencies down switched the library target to `net472` which is .NET Standard compliant and so pulls in a much smaller set of dependencies. This is potentially a breaking change for older .NET applications, which will have to stick with the `0.2.x` versions.
-
-* **Switch Projects to SDK Projects**  
-Switched from classic .NET projects to the new simpler .NET SDK project format for the library and test projects.
 
 ## License
 This library is published under **MIT license** terms.
