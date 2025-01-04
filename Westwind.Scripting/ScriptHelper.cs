@@ -33,7 +33,9 @@ namespace Westwind.Scripting
         /// Optional Page Title - useful in HTML Pages that use Layout to
         /// pass the title to the Layout page
         /// </summary>
-        public string Title { get; set; } 
+        public string Title { get; set; }
+
+        public bool IsPreview { get; set;  }
 
 
         ScriptParser _parser = new ScriptParser();
