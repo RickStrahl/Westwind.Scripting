@@ -26,7 +26,7 @@ DONE!
             var result = scriptParser.ExecuteScript(script, null);
 
             Console.WriteLine(result);
-            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCode);
+            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(script, "Code should not be null or empty");
 
