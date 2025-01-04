@@ -279,7 +279,7 @@ namespace Westwind.Scripting
 
         public void Write(string text) => Writer.Write(text);
 
-        public void Write(object text) => Writer.WriteLine(text?.ToString());
+        public void Write(object text) => Writer.Write(text?.ToString());
 
         public void WriteLine(string text) => Writer.WriteLine(text);
 
