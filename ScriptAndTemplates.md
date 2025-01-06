@@ -506,7 +506,7 @@ The next block shows how to create and call an inline method with a code block a
 ### Html Encoding
 If you're generating Web output for display in a browser you likely want to encode most text written out from expressions as Html Encoded strings to minimize cross-script attacks from script code in potentially user facing text and just for proper display in Html.
 
-By default expressions are not Html Encoded. You can explicitly force individual expressions to be Html encoded with:
+**By default expressions are not Html Encoded**. You can explicitly force individual expressions to be Html encoded with `{{: expr }}` syntax:
 
 ```csharp
 string script = @"Hello World, {{: Model.Name}}";
@@ -515,9 +515,8 @@ string script = @"Hello World, {{: Model.Name}}";
 // Hello World, Rick &amp; Dale
 ```
 
-Alternately you can automatically encode all `{{ expr }}` using `HtmlEncodeExpressionsByDefault` and then alternately explicitly force raw text with `{{! expr }}`
+Alternately you can automatically encode all `{{ expr }}` using `HtmlEncodeExpressionsByDefault=true` and then alternately explicitly force raw text with `{{! expr }}`
  
-
 ```csharp
 var scriptParser = new ScriptParser();
 
@@ -550,6 +549,17 @@ Hello World, Rick &amp; Dale
 Hello unencoded World, Rick & Dale
 ```
 
+Note that functions that you call that want to embed raw html when auto encoding is on by using the `IRawString` interface. 
+
+You can use `{{! expr }}` or  `{{ RawString.Raw(value) }}` to return a raw string. `RawString.Raw()` returns `IRawString` and if you call methods that want to explicitly return raw HTML they can return an `IRrawString` instance:
+
+```cs
+public IRawString CallMe() 
+{
+    return new RawString("Call me");   
+}
+```
+
 Here's another example that demonstrates HTML encoding:
 
 ```html
@@ -562,6 +572,10 @@ Encoded:
 
 Unencoded: 
 {{! text }}
+{{ RawString.Raw(text) }}
+{{ new RawString(text) }}
+
+
 
 default (depends on ScriptDelimiters.HtmlEncodeExpressionsByDefault):
 {{ text }}
@@ -581,7 +595,10 @@ The raw HTML output generated is:
 Encoded:  
 This is &amp; text requires &quot;escaping&quot;.
 
+
 Unencoded: 
+This is & text requires "escaping".
+This is & text requires "escaping".
 This is & text requires "escaping".
 
 default (depends on ScriptDelimiters.HtmlEncodeExpressionsByDefault):
