@@ -950,10 +950,19 @@ namespace Westwind.Scripting
 
             if (!noLoad)
             {
+                Assembly = null;
+
                 if (!isFileAssembly)
                     Assembly = LoadAssembly(((MemoryStream) codeStream).ToArray());
                 else
                     Assembly = LoadAssemblyFrom(OutputAssembly);
+
+                if (Assembly == null)
+                {
+                    ErrorType = ExecutionErrorTypes.Compilation;
+                    ErrorMessage = "Couldn't load compiled assembly.";
+                    return false;
+                }
             }
 
             return true;

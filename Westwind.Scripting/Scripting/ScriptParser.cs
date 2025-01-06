@@ -519,7 +519,7 @@ namespace Westwind.Scripting
 
             try
             {
-                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText);
+                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText)?.Replace("\\\\","\\");
                 if (layoutFile == null)
                     return; // ignore no layout
 

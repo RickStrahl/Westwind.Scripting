@@ -607,6 +607,62 @@ Done.
         }
 
 
+        /// <summary>
+        /// Ensure that multiple runs of the same script parser instance
+        /// will update when new script is passed to the same instance even
+        /// while cached if code/script has been modified (ie. live script scenario)
+        /// </summary>
+        /// <returns></returns>
+        [TestMethod]
+        public async Task ScriptModificationMultiRunTest()
+        {
+            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
+            string script = """
+                            <div>
+                            Hello World. Date is: {{ DateTime.Now.ToString() }}
+                            <b>{{ Model.Name }}</b>
+
+                            {{ await Script.RenderScriptAsync(Model.Expression,null) }}
+
+                            Done.
+                            </div>
+                            """;
+            Console.WriteLine(script + "\n---");
+
+
+            var scriptParser = new ScriptParser();
+            scriptParser.AddAssembly(typeof(ScriptParserTests));
+
+            string result = await scriptParser.ExecuteScriptAsync(script, model);
+
+            Console.WriteLine(result + "\n----\n\n");
+
+            script = """
+                            <h1>MODIFIED!</h1>
+                            <div>
+                            Hello World. Date is: {{ DateTime.Now.ToString() }}
+                            <b>{{ Model.Name }}</b>
+
+                            {{ await Script.RenderScriptAsync(Model.Expression,null) }}
+
+                            Done.
+                            </div>
+                            """;
+            Console.WriteLine(script + "\n---");
+
+
+            result = await scriptParser.ExecuteScriptAsync(script, model);
+
+            Console.WriteLine(result);
+
+
+            Console.WriteLine(scriptParser.Error + " " + scriptParser.ErrorType + " " + scriptParser.ErrorMessage + " ");
+            Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsNotNull(result, scriptParser.ErrorMessage);
+            
+            Assert.IsTrue(result.Contains("MODIFIED!"));
+        }
 
     }
 
