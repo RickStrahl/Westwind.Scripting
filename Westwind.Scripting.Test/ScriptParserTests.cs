@@ -349,6 +349,7 @@ This text should **not** be encoded:
 {{! text }}
 {{ RawString.Raw(text) }}
 {{ new RawString(text) }}
+{{: RawString.Raw(text) }}    // This won't encode regardless of the override
 
 DONE!
 ";
