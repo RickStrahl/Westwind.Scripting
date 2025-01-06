@@ -506,7 +506,51 @@ The next block shows how to create and call an inline method with a code block a
 ### Html Encoding
 If you're generating Web output for display in a browser you likely want to encode most text written out from expressions as Html Encoded strings to minimize cross-script attacks from script code in potentially user facing text and just for proper display in Html.
 
-The following code block demonstrates:
+By default expressions are not Html Encoded. You can explicitly force individual expressions to be Html encoded with:
+
+```csharp
+string script = @"Hello World, {{: Model.Name}}";
+
+// Executed script produces
+// Hello World, Rick &amp; Dale
+```
+
+Alternately you can automatically encode all `{{ expr }}` using `HtmlEncodeExpressionsByDefault` and then alternately explicitly force raw text with `{{! expr }}`
+ 
+
+```csharp
+var scriptParser = new ScriptParser();
+
+// Automatically encode any {{ expr }} 
+scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
+```
+
+```csharp
+var model = new TestModel { Name = "Rick & Dale"};
+string script = @"
+Hello World, {{ Model.Name}}
+
+Hello unencoded World {{! Model.Name }}
+";
+
+var scriptParser = new ScriptParser();
+scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
+  
+scriptParser.AddAssembly(typeof(ScriptParserTests));
+scriptParser.AddNamespace("Westwind.Scripting.Test");
+
+string result = scriptParser.ExecuteScript(script, model);
+```
+
+If you execute this you should get the following text with the first value encode by default expression, and the second unencoded by way of the raw override.
+
+```text
+Hello World, Rick &amp; Dale
+
+Hello unencoded World, Rick & Dale
+```
+
+Here's another example that demonstrates HTML encoding:
 
 ```html
 {{%
