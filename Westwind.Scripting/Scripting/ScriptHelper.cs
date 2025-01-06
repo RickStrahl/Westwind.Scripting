@@ -40,6 +40,7 @@ namespace Westwind.Scripting
 
         ScriptParser _parser = new ScriptParser();
 
+
         /// <summary>
         /// Renders a partial file into the template
         /// </summary>
@@ -264,7 +265,9 @@ namespace Westwind.Scripting
 
     }
 
-
+    /// <summary>
+    /// String Writer Abstraction
+    /// </summary>
     public class ScriptWriter : IDisposable
     {
         public ScriptWriter()
@@ -283,13 +286,13 @@ namespace Westwind.Scripting
 
         public void Write(object text) => Writer.Write(text?.ToString());
 
+        public void WriteHtmlEncoded(string text) => Writer.Write(ScriptParser.HtmlEncode(text));
+        public void WriteHtmlEncoded(IRawString text) => Writer.Write(text.Value);  // write without encoding
+        public void WriteHtmlEncoded(object text) => Writer.Write(ScriptParser.HtmlEncode(text?.ToString()));        
+
         public void WriteLine(string text) => Writer.WriteLine(text);
 
         public void WriteLine(object text) => Writer.WriteLine(text?.ToString());
-
-        public void WriteHtmlEncoded(string text) => Writer.Write(ScriptParser.HtmlEncode(text));
-
-        public void WriteHtmlEncoded(object text) => Write(ScriptParser.HtmlEncode(text?.ToString()));
 
         public void Flush() => Writer.Flush();
 
@@ -302,4 +305,11 @@ namespace Westwind.Scripting
 
         public void Dispose() => Writer?.Dispose();
     }
+}
+
+
+public interface IRawString
+{
+    public string Value { get; set; }
+
 }

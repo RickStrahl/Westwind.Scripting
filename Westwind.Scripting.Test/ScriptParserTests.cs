@@ -149,13 +149,13 @@ And we're done with this!
         [TestMethod]
         public void ExecuteScriptWithModelWithReferenceTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "Rick & Dale", DateTime = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
-{{ x }}. Hello World {{Model.Name}}
+{{ x }}. Hello World {{ RawString.Raw(Model.Name) }}
 {{% } }}
 
 And we're done with this!
@@ -168,6 +168,7 @@ And we're done with this!
             // so we can add custom
 
             var scriptParser = new ScriptParser();
+            scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
 
             // add dependencies
             scriptParser.AddAssembly(typeof(ScriptParserTests));
