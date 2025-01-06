@@ -142,7 +142,6 @@ And we're done with this!
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
-
         }
 
 
@@ -155,7 +154,7 @@ And we're done with this!
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
-{{ x }}. Hello World {{ RawString.Raw(Model.Name) }}
+{{ x }}. Hello World {{ Model.Name }}
 {{% } }}
 
 And we're done with this!
@@ -348,6 +347,8 @@ Here is some encoded text:
 This text should **not** be encoded:
 
 {{! text }}
+{{ RawString.Raw(text) }}
+{{ new RawString(text) }}
 
 DONE!
 ";

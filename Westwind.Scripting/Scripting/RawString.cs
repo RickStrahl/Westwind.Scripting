@@ -10,12 +10,17 @@ namespace Westwind.Scripting
     /// </summary>
     public interface IRawString
     {
-        public string Value { get; set; }
-
+        string Value { get; set; }
     }
 
     public class RawString : IRawString
     {
+        /// <summary>
+        /// The raw string. You can also use ToString()
+        /// to retrieve this.
+        /// </summary>
+        public string Value { get; set; }
+
         public RawString(string value)
         {
             Value = value;
@@ -35,7 +40,6 @@ namespace Westwind.Scripting
             return Value;
         }
 
-        public string Value { get; set; }
 
         /// <summary>
         /// Returns a raw string (same as new RawString() but

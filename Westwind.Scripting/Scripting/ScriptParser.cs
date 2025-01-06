@@ -925,7 +925,7 @@ using( var writer = new ScriptWriter())
         /// <summary>
         /// Encodes a value using Html Encoding by first converting
         /// </summary>
-        /// <param name="value"Any object - encodes .ToString()</param>
+        /// <param name="value">Any object - encodes .ToString()</param>
         /// <returns></returns>
         public static string HtmlEncode(object value)
         {
@@ -933,6 +933,12 @@ using( var writer = new ScriptWriter())
                 return null;
 
             return System.Net.WebUtility.HtmlEncode(value.ToString());
+        }
+
+
+        public static string HtmlEncode(IRawString raw)
+        {
+            return raw.Value;  // no encoding
         }
 
         /// <summary>
