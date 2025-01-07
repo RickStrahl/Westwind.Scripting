@@ -194,10 +194,28 @@ namespace Westwind.Scripting
         /// <summary>
         /// Internal reference to the generated type that
         /// is to be invoked
+        ///
+        /// Can also be used to cache an object instance
+        /// using ReuseObjectInstance, which is useful
+        /// if you work with a single object/method
+        /// that is repeatedly called and never changes.
         /// </summary>
         public object ObjectInstance { get; set; }
 
-        
+
+        /// <summary>
+        /// If true reuses the ObjectInstance fromt he previous
+        /// operation (if set) instead of creating a new instance.
+        ///
+        /// Use if you pre-generate a single instance and call one
+        /// or more methods/scripts repeatedly without changing the code.
+        ///
+        /// For most use cases leave this setting at false.
+        ///
+        /// IMPORTANT: If you change code either explicitly clear the
+        /// object reference or set this value to false.
+        /// </summary>
+        public bool ReuseObjectInstance { get; set; }
 
         #endregion
 
@@ -278,6 +296,7 @@ namespace Westwind.Scripting
 
                 if (!CachedAssemblies.ContainsKey(hash))
                 {
+                    GeneratedClassName = "_" + Utils.GenerateUniqueId();                    
                     var sb = GenerateClass(code);
                     if (!CompileAssembly(sb.ToString()))
                         return null;
@@ -838,6 +857,7 @@ namespace Westwind.Scripting
             return ExecuteMethodAsync<TResult>(code, "ExecuteMethod", parameters);
         }
 
+
         #endregion
 
         #region Execute Script
@@ -889,7 +909,9 @@ namespace Westwind.Scripting
         public bool CompileAssembly(string source, bool noLoad = false)
         {
             ClearErrors();
-            
+
+            System.Diagnostics.Debug.WriteLine("Source code to compile:\n" + source);
+
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
 
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
@@ -1653,15 +1675,17 @@ public bool AddAssembly(Type type)
         }
 
 
-#endregion
+        #endregion
 
-#region Reflection Helpers
-
+        #region Reflection Helpers
 
         /// <summary>
         /// Helper method to invoke a method on an object using Reflection
         /// </summary>
-        /// <param name="instance">An object instance. null uses ObjectInstance property if set.</param>
+        /// <param name="instance">An object instance. null uses ObjectInstance property if set.
+        ///
+        /// Pass `null` to use a previously set ObjectInstance.        
+        /// </param>
         /// <param name="method">The method name as a string</param>
         /// <param name="parameters">a variable list of parameters to pass</param>
         /// <exception cref="ArgumentNullException">Throws if the instance is null</exception>
@@ -1681,6 +1705,7 @@ public bool AddAssembly(Type type)
                 return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
             } 
 
+            
             try
             {
                 return instance.GetType().InvokeMember(method, BindingFlags.InvokeMethod, null, instance, parameters);
@@ -1694,13 +1719,15 @@ public bool AddAssembly(Type type)
             return null;
         }
 
-        
+
+
         /// <summary>
         /// Creates an instance of the object specified
         /// by the GeneratedNamespace and GeneratedClassName
         /// in the currently active, compiled assembly
         ///
         /// Sets the ObjectInstance member which is returned
+        /// and which can possibly be reused.
         /// </summary>
         /// <param name="force">If true force to create a new instance regardless whether an instance is already loaded</param>
         /// <returns>Instance of the class or null on error</returns>
@@ -1708,8 +1735,11 @@ public bool AddAssembly(Type type)
         {
             ClearErrors();
 
-            if (ObjectInstance != null && !force)
-                return ObjectInstance;
+            if (ReuseObjectInstance)
+            {
+                if (ObjectInstance != null && !force)
+                    return ObjectInstance;
+            }
 
             try
             {
@@ -1723,6 +1753,8 @@ public bool AddAssembly(Type type)
 
             return null;
         }
+
+        
 
         /// <summary>
         /// Generates a hashcode for a block of code
