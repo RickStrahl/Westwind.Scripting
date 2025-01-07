@@ -1,6 +1,6 @@
 # Westwind.Scripting: Scripts and Template Processing
 
-This library includes a scripting engine that allows you to execute string or file based templates and expanded embeded C# expressions and code blocks that can be embedded using Handlebars-like syntax.
+This library includes a scripting engine that allows you to execute string or file based templates and expanded embedded C# expressions and code blocks that can be embedded using Handlebars-like syntax.
 
 The scripting engine supports:
 
@@ -522,9 +522,7 @@ var scriptParser = new ScriptParser();
 
 // Automatically encode any {{ expr }} 
 scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
-```
 
-```csharp
 var model = new TestModel { Name = "Rick & Dale"};
 string script = @"
 Hello World, {{ Model.Name}}
@@ -551,7 +549,7 @@ Hello unencoded World, Rick & Dale
 
 Note that functions that you call that want to embed raw html when auto encoding is on by using the `IRawString` interface. 
 
-You can use `{{! expr }}` or  `{{ RawString.Raw(value) }}` to return a raw string. `RawString.Raw()` returns `IRawString` and if you call methods that want to explicitly return raw HTML they can return an `IRrawString` instance:
+You can use `{{! expr }}` or `{{ Script.Raw(value) }}` to return a raw string. `Script.Raw()` (and also `new RawString(value)` and `RawString.Raw(value)`) return `IRawString` and if you call methods that want to explicitly return raw HTML they can return an `IRrawString` instance:
 
 ```cs
 public IRawString CallMe() 
@@ -572,6 +570,7 @@ Encoded:
 
 Unencoded: 
 {{! text }}
+{{ Script.Raw(text) }}
 {{ RawString.Raw(text) }}
 {{ new RawString(text) }}
 
@@ -597,6 +596,7 @@ This is &amp; text requires &quot;escaping&quot;.
 
 
 Unencoded: 
+This is & text requires "escaping".
 This is & text requires "escaping".
 This is & text requires "escaping".
 This is & text requires "escaping".

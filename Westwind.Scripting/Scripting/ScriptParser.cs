@@ -53,6 +53,12 @@ namespace Westwind.Scripting
         private CSharpScriptExecution _scriptEngine;
 
         /// <summary>
+        /// Allows you to inject additional code into the generated method
+        /// that executes the script.
+        /// </summary>
+        public string AdditionalMethodHeaderCode { get; set; }
+
+        /// <summary>
         /// Determines whether the was a compile time or runtime error
         /// </summary>
         public bool Error => ScriptEngine?.Error ?? false;
@@ -180,7 +186,8 @@ namespace Westwind.Scripting
             if (code == null)
                 return null;
 
-            code = "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + ScriptParser.EncodeStringLiteral( basePath ) + " };\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -228,7 +235,8 @@ namespace Westwind.Scripting
 
             // expose the parameter as Model
             code = "dynamic Model = parameters[0];\n" +
-                   "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+                   "ScriptHelper Script = new ScriptHelper() { BasePath = " + ScriptParser.EncodeStringLiteral(basePath) + " };\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -254,7 +262,7 @@ namespace Westwind.Scripting
                 return null;
 
             // Model is passed in the signature so no model here
-            code = "ScriptHelper Script = new ScriptHelper() { BasePath = \"" + basePath + "\"  };\n" +
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + ScriptParser.EncodeStringLiteral(basePath) + " };\n" +
                    code;
 
             if (scriptEngine != null)
@@ -308,6 +316,7 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" +
                    "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -352,6 +361,7 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -399,6 +409,7 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" +
                    "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -443,6 +454,7 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   AdditionalMethodHeaderCode + "\n" +
                    code;
 
             if (scriptEngine != null)
@@ -747,7 +759,7 @@ using( var writer = new ScriptWriter())
                     }
                 }
 
-                code.WriteLine("return writer.ToString();\n\n}");
+                code.WriteLine("return writer.ToString();\n\n} // using ScriptWriter");
 
 
                 return code.ToString();
@@ -755,7 +767,6 @@ using( var writer = new ScriptWriter())
 
         
         }
-
 
 
         /// <summary>

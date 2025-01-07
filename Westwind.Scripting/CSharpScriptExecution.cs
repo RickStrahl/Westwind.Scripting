@@ -149,6 +149,13 @@ namespace Westwind.Scripting
         public bool DisableObjectCaching { get; set; }
 
 
+        /// <summary>
+        /// Optional code injections at various points in the code generation
+        /// </summary>
+        public CodeInjection CodeInjection { get; } = new();
+
+
+
         #region Error Handling Properties
 
         /// <summary>
@@ -1808,6 +1815,13 @@ public bool AddAssembly(Type type)
             "System.Collections", "System.Collections.Generic", "System.Collections.Concurrent",
             "System.Text.RegularExpressions", "System.Threading.Tasks", "System.Linq", "Westwind.Scripting"
         };
+    }
+
+    public class CodeInjection
+    {
+        public string ClassHeader { get; set; }
+
+        public string MethodHeader { get; set;  }
     }
 
     public enum ExecutionErrorTypes

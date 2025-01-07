@@ -2,7 +2,6 @@
 using System.ComponentModel;
 using System.IO;
 using System.Reflection;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -160,6 +159,22 @@ namespace Westwind.Scripting
             return File.ReadAllText(filePath);
         }
 
+        /// <summary>
+        /// Returns a raw string that is Html Encoded even
+        /// if encoding by default is enabled or an explicit
+        /// {{: }} block is used.
+        /// </summary>
+        /// <returns></returns>
+        public RawString Raw(string value) => new RawString(value);
+
+        /// <summary>
+        /// Returns a raw string that is Html Encoded even
+        /// if encoding by default is enabled or an explicit
+        /// {{: }} block is used.
+        /// </summary>
+        public RawString Raw(object value) => new RawString(value);
+
+
         private string FixBasePath(string filePath)
         {
             if (!string.IsNullOrEmpty(BasePath))
@@ -263,8 +278,10 @@ namespace Westwind.Scripting
 
         #endregion
 
-    }
 
+
+    }
+    
     /// <summary>
     /// String Writer Abstraction
     /// </summary>

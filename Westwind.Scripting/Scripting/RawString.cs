@@ -21,16 +21,21 @@ namespace Westwind.Scripting
         /// </summary>
         public string Value { get; set; }
 
+        public static RawString Empty => new RawString(string.Empty);
+
+
+        public RawString()
+        { }
+
         public RawString(string value)
         {
             Value = value;
         }
 
+
         public RawString(object value)
         {
-            if (value == null)
-                Value = null;
-            else
+            if (value is not null)
                 Value = value.ToString();
         }
 
