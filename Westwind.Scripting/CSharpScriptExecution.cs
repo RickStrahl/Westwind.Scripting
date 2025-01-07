@@ -910,10 +910,7 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            System.Diagnostics.Debug.WriteLine("Source code to compile:\n" + source);
-
             var tree = SyntaxFactory.ParseSyntaxTree(source.Trim());
-
             var optimizationLevel = CompileWithDebug ? OptimizationLevel.Debug : OptimizationLevel.Release;
             
             
