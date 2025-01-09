@@ -11,8 +11,8 @@ There's also a lightweight, self contained C# script template engine via the `Sc
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
-```text
-Install-Package Westwind.Scripting
+```ps
+dotnet add package Westwind.Scripting
 ```
 
 It supports the following targets:

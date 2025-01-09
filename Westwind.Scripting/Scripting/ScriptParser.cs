@@ -942,6 +942,8 @@ using( var writer = new ScriptWriter())
         {
             if (value == null)
                 return null;
+            if (value is IRawString)
+                return value.ToString();
 
             return System.Net.WebUtility.HtmlEncode(value.ToString());
         }
