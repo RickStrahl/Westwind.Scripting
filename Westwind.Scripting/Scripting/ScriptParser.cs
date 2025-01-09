@@ -949,7 +949,7 @@ using( var writer = new ScriptWriter())
 
         public static string HtmlEncode(IRawString raw)
         {
-            return raw.Value;  // no encoding
+            return raw.ToString();  // no encoding
         }
 
         /// <summary>

@@ -304,7 +304,7 @@ namespace Westwind.Scripting
         public void Write(object text) => Writer.Write(text?.ToString());
 
         public void WriteHtmlEncoded(string text) => Writer.Write( ScriptParser.HtmlEncode(text) );
-        public void WriteHtmlEncoded(IRawString text) => Writer.Write(text.Value);  // write without encoding
+        public void WriteHtmlEncoded(IRawString text) => Writer.Write(text.ToString());  // write without encoding
         public void WriteHtmlEncoded(object text) => Writer.Write( ScriptParser.HtmlEncode(text?.ToString()) );        
 
         public void WriteLine(string text) => Writer.WriteLine(text);

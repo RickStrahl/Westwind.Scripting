@@ -10,19 +10,22 @@ namespace Westwind.Scripting
     /// </summary>
     public interface IRawString
     {
-        string Value { get; set; }
+        string ToString();
     }
 
+    /// <summary>
+    /// String container that indicates that this string
+    /// should never be Html Encoded.
+    /// </summary>
     public class RawString : IRawString
     {
         /// <summary>
-        /// The raw string. You can also use ToString()
-        /// to retrieve this.
+        /// The raw string value that's been assigned.
+        /// Alternately retrieve with .ToString()
         /// </summary>
-        public string Value { get; set; }
+        private string Value { get; set; }
 
         public static RawString Empty => new RawString(string.Empty);
-
 
         public RawString()
         { }
@@ -32,7 +35,6 @@ namespace Westwind.Scripting
             Value = value;
         }
 
-
         public RawString(object value)
         {
             if (value is not null)
@@ -41,7 +43,7 @@ namespace Westwind.Scripting
 
 
         public override string ToString()
-        {            
+        {
             return Value;
         }
 
@@ -54,10 +56,16 @@ namespace Westwind.Scripting
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
+        public static RawString Raw(string value) => new RawString(value);
 
-        public static IRawString Raw(string value)
-        {
-            return new RawString(value);
-        }
+        /// <summary>
+        /// Returns a raw string (same as new RawString() but
+        /// easier to use in code  {{ RawString.Raw() }}
+        ///
+        /// Functions can return IRawString to 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static RawString Raw(object value) => new RawString(value);
     }
 }
