@@ -1,6 +1,6 @@
 # Westwind CSharp Scripting
 
-**Dynamically compile and execute C# code at runtime, as well as a light weight, Handlebar style C# template script engine**
+**Dynamically compile and execute C# code at runtime, as well as a light weight, Handlebars style C# template script engine**
 
 [![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
