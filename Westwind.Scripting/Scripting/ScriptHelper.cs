@@ -325,8 +325,3 @@ namespace Westwind.Scripting
 }
 
 
-public interface IRawString
-{
-    public string Value { get; set; }
-
-}

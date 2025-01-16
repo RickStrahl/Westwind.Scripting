@@ -1021,5 +1021,11 @@ using( var writer = new ScriptWriter())
         /// A default instance of the delimiters
         /// </summary>
         public static ScriptingDelimiters Default { get; } = new ScriptingDelimiters();
+
+
+        public string ErrorResult(string message)
+        {
+            return StartDelim + "ERROR: " + message + " " + EndDelim;
+        }
     }
 }
