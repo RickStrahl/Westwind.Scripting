@@ -7,7 +7,7 @@
 
 This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class.
 
-There's also a lightweight, self contained C# script template engine via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code-block }}`) script templates. Unlike other script engines, this engine uses plain C# syntax for expressions and code block execution.
+There's also a lightweight, self contained C# [script template engine](ScriptAndTemplates.md) via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code-block }}`) script templates. Unlike other script engines, this engine uses plain C# syntax for expressions and code block execution.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
