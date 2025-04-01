@@ -1,12 +1,13 @@
 # Westwind.Scripting: Scripts and Template Processing
 
-This library includes a scripting engine that allows you to execute string or file based templates and expanded embedded C# expressions and code blocks that can be embedded using Handlebars-like syntax.
+The `Westwind.Scripting` library includes a Template Scripting engine that allows you to execute string or file based templates and expanded embedded C# expressions and code blocks that can be embedded using Handlebars-like syntax.
 
 The scripting engine supports:
 
 * String based template execution
-* File based script execution with optional Layout/Section support
-* Support for Partials loaded from disk (both string and file)
+* File based script execution 
+* Support for Layout and Section directives (file scripts only)
+* Support for Partials loaded from disk (both string and file scripts)
 * Support for Layout Pages and Sections (for file only)
 * Expressions and code blocks use raw C# syntax
 * Familiar Handlebars syntax with C# code:
@@ -34,8 +35,7 @@ String processing involves providing a template as a string and evaluating that 
 * **[File Script Processing](#westwindscripting-scripts-and-template-processing)**  
 File based processing in essence works the same as string template processing, but with files you can take advantage of Layout pages that act as a master template into which detail/content pages are embedded. This is useful for Web output which often uses site branding or base site chrome into which specific content is rendered. File scripts can specify `{{ Script.Layout = "Master.html" }}` and can embed `{{ Script.Section("Headers") }}` that allow injecting the script into the Layout page via `{{ Script.RenderSection("Headers") }}`.
 
-In short file based templates are useful for Web site based content, while template scripts tend to be more useful for common text and code generation tasks.
-
+In short file based templates are useful for multi-page Web site content, while template scripts tend to be more useful for common text and code generation tasks.
 
 ## String Template Script Execution: ScriptParser
 Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser` class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
@@ -47,21 +47,21 @@ There are also several special script operators:
 * `{{@  commented text @}}` - commented text
 
 > #### Delimiter Customization
-> Script delimeters and options can be customized via the `ScriptParser.ScriptingDelimiters` property that allow you can create custom delimiters, to support alternate script tag schemes (classic `<%= %>` for example).
+> Script delimiters and options can be customized via the `ScriptParser.ScriptingDelimiters` property that allow you can create custom delimiters, to support alternate script tag schemes (classic `<%= %>` for example).
 >
 > #### Default Html Encoding
 > Since Html output generation is very common, there's also an option to HtmlEncode Expression output  by default by setting:
 > ```cs
 > ScriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true`
 > ```
-> This causes all `{{ expression }}` output to be Html encoded and you can use `{{@ expression }}` to explicitly force output to raw string/html output. The default for this setting is `false`.
+> This causes all `{{ expression }}` output to be Html encoded and you can use `{{! expression }}` to explicitly force output to raw string/html output. The default for this setting is `false`.
 
 You can embed C# expressions and code blocks to expand dynamic content that is generated at runtime. This class works by taking a template and turning it into executing code that produces a string output result.
 
 This class has two operational methods:
 
 * `ExecuteScript()`  
-This is the high level execution method that you pass a template and a model to, and it processes the template, expanding the data and returns a string of the merged output.
+This is the high level execution method that you pass a template and a model to, and it processes the template, expanding the data and returns a string of the merged output. There a number of variations for running Async and providing strongly typed models via Generics.
 
 * `ParseScriptToCode()`  
 This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
@@ -281,7 +281,6 @@ var scriptParser = new ScriptParser();
 
 var exec = new CSharpScriptExection();
 exec.AddLoadedReferences();
-
 scriptParser.ScriptEngine = exec;
 
 string result = scriptParser.ExecuteScript(template, model);
