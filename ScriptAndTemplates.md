@@ -17,22 +17,14 @@ The scripting engine supports:
     * `{{: html encoded Expression }}`
     * `{{! raw expression }}`
     * `{{@ commented block @}}`
-* Code blocks can be build compound statements (for, while, if, using { } etc.)
-* Script compiles to C# code at runtime
-* Compiled code is very efficient
+* Code blocks can be use structured statements (for, while, if, using { } etc.)
+* Script compiles to plain C# code at runtime
+* Compiled code is very efficient 
 * ScriptParser instance caches compiled output
 
-`ScriptParser` is built ontop of the CSharpScriptExecution` class which is used for compilation and script execution. The parser class adds the ability to parse the Handlebars-style scripts into C# code that is then executed by the script engine. 
+`ScriptParser` is built on top of the `CSharpScriptExecution` class which is used for compilation and script execution. The parser class adds the ability to parse the Handlebars-style scripts into C# code that is then executed by the script engine. 
 
-The parser has an internal `ScriptEngine` member, which allows full access to the script compilation and execution so you can add assemblies, get detailed error information, set compiler options etc.
-
-```cs
-var script = new ScriptParser();
-script.AddAssembly(typeof(this));
-script.ScriptEngine.Generate
-
-
-
+The parser has an internal `ScriptEngine` member, which allows full control over the script compilation and execution so you can add assemblies, get detailed error information, set compiler options etc.
 
 There are two categories of processing:
 
@@ -42,12 +34,11 @@ String processing involves providing a template as a string and evaluating that 
 * **[File Script Processing](#westwindscripting-scripts-and-template-processing)**  
 File based processing in essence works the same as string template processing, but with files you can take advantage of Layout pages that act as a master template into which detail/content pages are embedded. This is useful for Web output which often uses site branding or base site chrome into which specific content is rendered. File scripts can specify `{{ Script.Layout = "Master.html" }}` and can embed `{{ Script.Section("Headers") }}` that allow injecting the script into the Layout page via `{{ Script.RenderSection("Headers") }}`.
 
-In short file based templates are useful for Web site based content, while template scripts tend to be more common text and code generation tasks.
-
+In short file based templates are useful for Web site based content, while template scripts tend to be more useful for common text and code generation tasks.
 
 
 ## String Template Script Execution: ScriptParser
-Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser`class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
+Template script execution allows you to transform a block of text with embedded C# expressions to make the text dynamic by using the `ScriptParser` class. It uses HandleBars like syntax with `{{ }}` expressions and `{{%  }}` code statements that allow for structured operations like `if` blocks or `for`/`while` loops.
 
 There are also several special script operators:
 
@@ -75,7 +66,7 @@ This is the high level execution method that you pass a template and a model to,
 * `ParseScriptToCode()`  
 This method takes a template and parses it into a block of C# code that can be executed to produce a string result of merged content. This is a lower level method that can be used to customize how the code is eventually executed. For example, you might want to combine multiple snippets into a single class via multiple methods rather than executing individually.
 
-Templates expose two special variables:
+Templates expose **two special variables**:
 
 * **Model**  
 Exposes the model passed when calling the `ExecuteScript()` method or variation. Access with `{{ Model.Property }}` or `{{ Model.MethodToCall("parameter") }}`.
@@ -123,9 +114,11 @@ Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
 
 Notice that `ScriptParser()` mirrors most of the `CSharpScriptExecution` properties and methods. Behind the scenes there is a `ScriptEngine` property that holds the actual `CSharpScriptExecution` instance that will be used when the template is executed. You can optionally override the `ScriptEngine` instance although that should be rare.
 
+The above code uses `ExecuteScript()` which uses a `dynamic` model. You can also use the `ExecuteScript<TModelType>()` overload to explicitly specify strongly typed model which slightly improves performance and gets around some edge cases where `dynamic` can fail (some null value scenarios typically).
+
 
 ### Manual Parsing
-If you want direct access to the parsed code you can use `ParseScriptToCode()` to parse a template into C# code and return it as a string. We can then manually execute the code or create a custom execution strategy such as combining multiple templates into a single class.
+If you want direct access to the parsed code you can use `ParseScriptToCode()` to parse a template into C# code and return it as a string. We can then manually execute the code or create a custom execution strategy such as combining multiple templates into a single class or to inject additional code into the generated code.
 
 Here's the basic functionality to parse a template and then **manually** execute as a method:
 
@@ -141,7 +134,6 @@ Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
 
 And we're done with this!
 ";
-
 
 var scriptParser = new ScriptParser();
 
@@ -210,7 +202,7 @@ Current Time: <b>{{ DateTime.Now.ToString("HH:mm:ss") }}</b>
 
 and if loaded will be rendered in place of the `RenderPartial` call.
 
-When using `ExecuteScript()` and its varients, you can also pass in a `basePath` parameter which allows you specify a root path to resolve via these leading characters:
+When using `ExecuteScript()` and its variants, you can also pass in a `basePath` parameter which allows you specify a root path to resolve via these leading characters:
 
 * `~`
 * `/`
@@ -221,6 +213,7 @@ When these start off the passed in path and a `basePath` is provided the root pa
 > You need to be consistent with your use of directory slashes using forward **or** backwards slashes but not both in the base path and template paths or you may run into invalid path issues. 
 
 #### RenderScript
+There's also a string version of RenderPartial that uses a string as input for you script.
 
 ```csharp
 var model = new TestModel { 
@@ -254,7 +247,10 @@ Console.WriteLine(scriptParser.GeneratedClassCodeWithLineNumbers);
 Assert.IsNotNull(result, scriptParser.ErrorMessage);
 ```
 
+Partials - both file and string - are treated as separate scripts so they are compiled and cached in the same ways as top level scripts are. Even a one liner string template is turned into a separate script assembly.
+
 ### ScriptParser Methods and Properties
+Here's a run down of the key members of the Script Parser:
 
 **Main Execution** 
 
