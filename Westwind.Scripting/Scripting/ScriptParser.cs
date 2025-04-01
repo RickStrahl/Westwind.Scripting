@@ -689,6 +689,7 @@ using( var writer = new ScriptWriter())
                 bool containsDelimEscape = initialCode.Contains("\\{\\{") || initialCode.Contains("\\}\\}");
 
 
+                bool isCodeBlock = false;
                 while (atStart > -1)
                 {
                     atEnd = scriptText.IndexOf(ScriptingDelimiters.EndDelim);                    
@@ -725,8 +726,9 @@ using( var writer = new ScriptWriter())
                     {
                         // this should just be raw code - write out as is
                         expression = expression.Substring(1);
-                        code.WriteLine(expression); // as is - it's plain code
+                        code.WriteLine(expression); // as is - it's plain code - no /n because the literal takes care of it
                         // process Command (new line
+                        isCodeBlock = true;
                     }
                     else if (expression.StartsWith(ScriptingDelimiters.HtmlEncodingIndicator))
                     {
@@ -749,6 +751,15 @@ using( var writer = new ScriptWriter())
                     // text that is left 
                     scriptText = scriptText.Substring(atEnd + ScriptingDelimiters.EndDelim.Length);
 
+                    if(isCodeBlock)
+                    {
+                        // strip off any linebreaks following the code block
+                        if (scriptText.StartsWith("\n"))
+                            scriptText = scriptText.Substring(1);
+                        else if(scriptText.StartsWith("\r\n"))
+                            scriptText = scriptText.Substring(2);
+                    }
+
                     // look for the next bit
                     atStart = scriptText.IndexOf("{{");
                     if (atStart < 0)
@@ -757,6 +768,8 @@ using( var writer = new ScriptWriter())
                         code.WriteLine(
                             $"writer.Write({EncodeStringLiteral(scriptText, true)});");
                     }
+
+                    isCodeBlock = false;
                 }
 
                 code.WriteLine("return writer.ToString();\n\n} // using ScriptWriter");
