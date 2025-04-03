@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Westwind.Utilities;
 
 namespace Westwind.Scripting.Test
 {
@@ -12,6 +13,7 @@ namespace Westwind.Scripting.Test
         public void ExecuteScriptNoModelTest()
         {
             string script = @"
+
 Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
 
 {{% for(int x=1; x<3; x++) { }}
@@ -29,8 +31,6 @@ DONE!
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
 
             Assert.IsNotNull(script, "Code should not be null or empty");
-
-
         }
 
         /// <summary>
@@ -48,22 +48,23 @@ DONE!
             var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
-{{% for(int x=1; x<3; x++) {
+{{%
+    using Westwind.Utilities;
 }}
-{{ x }}. Hello World {{Model.Name}}
+Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
+
+{{% for(int x=1; x<3; x++) { }}
+{{ x }}. {{ StringUtils.Replicate(""Hello World "",2) }}
 {{% } }}
 
 And we're done with this!
 ";
             // Optional - build customized script engine
             // so we can add custom
-
+            
             var scriptParser = new ScriptParser();
-
-            // add dependencies
-            scriptParser.AddAssembly(typeof(ScriptParserTests));
-            scriptParser.AddNamespace("Westwind.Scripting.Test");
+            scriptParser.AddAssembly(typeof(Westwind.Utilities.StringUtils));
+            // scriptParser.AddNamespace("Westwind.Utilities");  // done in code
 
             // Execute
             string result = scriptParser.ExecuteScript(script, model);
@@ -72,6 +73,7 @@ And we're done with this!
 
             Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
             Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+            
         }
 
         /// <summary>
@@ -103,6 +105,7 @@ And we're done with this!
             var scriptParser = new ScriptParser();
             scriptParser.AddAssembly(typeof(ScriptParserTests));
             scriptParser.AddNamespace("Westwind.Scripting.Test");
+            
 
             string result = await scriptParser.ExecuteScriptAsync(script, model);
 
@@ -287,6 +290,7 @@ DONE!
             Console.WriteLine(script + "\n\n");
 
             var scriptParser = new ScriptParser();
+            scriptParser.ScriptingDelimiters.HtmlEncodeExpressionsByDefault = true;
             var code = scriptParser.ParseScriptToCode(script);
 
             Assert.IsNotNull(code, "Code should not be null or empty");

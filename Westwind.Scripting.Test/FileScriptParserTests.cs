@@ -43,6 +43,7 @@ namespace Westwind.Scripting.Test
         public async Task LayoutFileAsyncScriptTest()
         {
             var scriptParser = new ScriptParser();
+         
 
             var result = await scriptParser.ExecuteScriptFileAsync("website/Views/Detail.html",
                 new TestModel { Name = "Rick" },

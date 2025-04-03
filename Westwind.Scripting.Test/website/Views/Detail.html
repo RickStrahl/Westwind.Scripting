@@ -18,21 +18,18 @@
         for(var i = 1; i <= 5; i++) {  
         // any C# code
         Model.Name = "Name " + i;
-    }}            
-        <div>
-        {{ Script.RenderPartial("Partial.html", Model) }}
-        </div>
+    }}       
     {{% } }}
 
-    {{ Add(8,10)}}    
-    
+    <h3>Inline Methods</h3>
+    {{ Add(8,10)}}        
     {{%
         // Example of an inline function
         int Add(int a, int b)
         {
            return a + b;
-       }
-       writer.WriteLine(Add(5, 10));        
+        }
+        writer.WriteLine(Add(5, 10));        
     }} 
   
     {{%
