@@ -842,8 +842,7 @@ namespace Westwind.Scripting
         }
 
         /// <summary>
-        /// Executes a method from an assembly that was previously compiled.
-        ///
+        /// Executes a method from an assembly that was previously compiled.        
         /// Creates the instance based on the current settings of this class.
         /// </summary>
         /// <param name="code"></param>

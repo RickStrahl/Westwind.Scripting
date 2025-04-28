@@ -25,6 +25,7 @@ It supports the following targets:
 For more detailed information and a discussion of the concepts and code that runs this library, you can also check out this introductory blog post:
 
 * [Runtime Code Compilation Revisited for Roslyn](https://weblog.west-wind.com/posts/2022/Jun/07/Runtime-C-Code-Compilation-Revisited-for-Roslyn)
+* [Class Reference Documentation](https://docs.west-wind.com/westwind.scripting/)
 
 * [Change Log](Changelog.md)
 
