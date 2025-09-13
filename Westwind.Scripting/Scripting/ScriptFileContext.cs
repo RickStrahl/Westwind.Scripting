@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
+using System.IO;
 
 namespace Westwind.Scripting;
 
@@ -8,8 +10,8 @@ namespace Westwind.Scripting;
 /// and partials can be processed reliably.
 /// </summary>
 public class ScriptFileContext
-{        
-    public ScriptFileContext(string scriptText, string basePath = null )
+{
+    public ScriptFileContext(string scriptText, string basePath = null)
     {
         Script = scriptText;
         BasePath = basePath;
@@ -66,4 +68,53 @@ public class ScriptFileContext
     /// The top level script that is being processing
     /// </summary>
     public string ScriptFile { get; set; }
+
+    /// <summary>
+    /// Resolves a relative path to a fully qualified file system path
+    /// of a script file using (in this order):
+    ///
+    /// * Absolute full path
+    /// * Relative Path (to ScriptFile)
+    /// * ~ Virtual Base path
+    /// * Base Path
+    /// 
+    /// </summary>
+    /// <param name="scriptPath">Path to resolve to a full path</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidEnumArgumentException"></exception>
+    public string ResolvePath(string scriptPath)
+    {
+            if (string.IsNullOrEmpty(scriptPath))
+                return string.Empty;
+
+            bool isTilde = scriptPath?.StartsWith("~") ?? false;
+            string parentPagePath = Path.GetDirectoryName(ScriptFile) ;
+
+            if (isTilde || !File.Exists(scriptPath))
+            {
+                string newScriptPath = string.Empty;
+
+                // check parent path
+                if (!isTilde && !string.IsNullOrEmpty(parentPagePath))
+                {
+                    newScriptPath = Path.Combine(parentPagePath, scriptPath);
+                }
+                if (string.IsNullOrEmpty(newScriptPath) || !File.Exists(newScriptPath))
+                {
+                    if (isTilde)
+                        scriptPath = scriptPath.TrimStart(['~', '/', '\\']);
+                    
+                    newScriptPath = Path.Combine(BasePath, scriptPath);
+
+                    if (!File.Exists(newScriptPath))
+                        throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
+                }
+
+                scriptPath = newScriptPath;
+            }
+
+            return scriptPath;
+        }
+
 }
+

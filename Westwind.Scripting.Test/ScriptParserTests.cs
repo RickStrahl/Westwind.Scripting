@@ -64,6 +64,7 @@ And we're done with this!
             
             var scriptParser = new ScriptParser();
             scriptParser.AddAssembly(typeof(Westwind.Utilities.StringUtils));
+            scriptParser.AddAssembly(typeof(TestModel));
             // scriptParser.AddNamespace("Westwind.Utilities");  // done in code
 
             // Execute

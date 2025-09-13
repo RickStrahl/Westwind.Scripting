@@ -22,6 +22,7 @@ The scripting engine supports:
 * Script compiles to plain C# code at runtime
 * Compiled code is very efficient 
 * ScriptParser instance caches compiled output
+* ScriptEvaluator limited, non-compiling Expression Evaluator
 
 `ScriptParser` is built on top of the `CSharpScriptExecution` class which is used for compilation and script execution. The parser class adds the ability to parse the Handlebars-style scripts into C# code that is then executed by the script engine. 
 
@@ -704,7 +705,88 @@ Partials can be called from Content Pages, Layout Pages and even from other Part
 <hr />
 ```
 
+## ScriptEvaluator
+In addition to script compilation, there's also a `ScriptEvaluator` class that uses the same Handlebars style syntax, but uses runtime parsing and Reflection evaluation which can be used on dynamic content without explicit compilation and runtime assembly creation.
 
+This feature is useful for user provided content that is dynamic and frequently changing or as a secondary feature. 
+
+For example, think templates that also have user provided content that needs a few dynamic expressions. A documentation topic that has user provided content that itself contains dynamic expressions. The template (non-frequent changes) can be compiled, while the user content (frequently changing at runtime) is evaluated and runs with safety guardrails as to what can be referenced.
+
+### Using ScriptEvaluator
+The following is an example in a documentation solution where the user provided body text and optionally contain embedded handlebars expressions:
+
+```csharp
+ScriptEvaluator script = null;
+if (!model.Project.Settings.DontAllowNestedTopicBodyScripts &&
+    (html.Contains("{{") || html.Contains("<%")))
+{
+    script = new ScriptEvaluator();
+
+    // Specify allowed 'root' objects for expressions
+    script.AllowedInstances.Add("Topic", topic);
+    script.AllowedInstances.Add("Project", topic.Project);
+    script.AllowedInstances.Add("Helpers", model.Helpers);
+    script.AllowedInstances.Add("Configuration", model.Configuration);                
+
+    html = script.Evaluate(html, true);
+
+    if (html.Contains("&lt;%"))
+    {
+        script.Delimiters.StartDelim = "&lt;%"; // will be encoded
+        script.Delimiters.EndDelim = "%&gt;";
+        html = script.Evaluate(html, true);
+    }
+}
+```
+
+The text can be something like this:
+
+```html
+<p>The following topics are available:</p>
+
+{{ Helpers.ChildTopicsList(Topic.Id) }}
+```
+
+Where `Helpers.ChildTopicsList()` generates some Html output to display child topics for the currently active topic for example.
+
+Another use is for quick template replacement when the expression value itself is not known until at runtime.
+
+In the following code sample, taken from the Script Parser parsing Layout pages, a template contains a reference like:
+
+```html
+{{%
+   Script.Layout = "~/_kavadocs/Themes/{{ Model.Project.Settings.RenderTheme }}/_layout.html"
+}}
+```
+
+In order to process the `Layout` page, the document parses out the `Script.Layout` string from the text which ends up with:
+
+```text
+~/_kavadocs/Themes/{{ Model.Project.Settings.RenderTheme }}/_layout.html
+```
+
+This is user provided so we the `Model.Project.Settings.RenderTheme` value is runtime dynamic. We can now use the `ScriptEvaluator` to expand that value:
+
+```csharp
+var extractedText = ExtractPageVariable("Script.Layout", scriptPageText);
+var layoutFile = extractedText?.Replace("\\\\","\\");   // remove string
+encoding
+
+// Check for embedded expression
+if (layoutFile.Contains("{{") && layoutFile.Contains("}}"))
+{
+    var scriptEval = new ScriptEvaluator();
+    
+    // Add the model so we can reference it in Expressions
+    scriptEval.AllowedInstances.Add("Model", context.Model);
+
+	// Expand the embedded theme dynamically
+    layoutFile = scriptEval.Evaluate(layoutFile);         
+    
+    scriptPageText = context.Script.Replace(extractedText, StringUtils.ToJsonString(layoutFile).Trim('\"')); ;
+    context.Script = scriptPageText;
+}
+```
 
 
 

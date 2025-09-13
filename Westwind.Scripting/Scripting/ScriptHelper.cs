@@ -67,9 +67,7 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(scriptPath))
                 return RawString.Empty;
 
-            scriptPath = ResolvePath(scriptPath);
-
-            var script = File.ReadAllText(scriptPath);
+            var script = ReadFile(scriptPath);
             
             string result = _parser.ExecuteScript(script, model);
             if (_parser.Error)
@@ -80,44 +78,6 @@ namespace Westwind.Scripting
             return RawString.Raw(result);
         }
 
-        /// <summary>
-        /// Resolves the script path to a physical path
-        /// </summary>
-        /// <param name="scriptPath"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidEnumArgumentException"></exception>
-        private string ResolvePath(string scriptPath)
-        {
-            if (string.IsNullOrEmpty(scriptPath))
-                return string.Empty;
-
-            bool isTilde = scriptPath?.StartsWith("~") ?? false;
-
-            if (isTilde || !File.Exists(scriptPath))
-            {
-                string newScriptPath = string.Empty;
-
-                // check parent path
-                if (!isTilde && !string.IsNullOrEmpty(ParentPagePath))
-                {
-                    newScriptPath = Path.Combine(Path.GetDirectoryName(ParentPagePath), scriptPath);
-                }
-                if (string.IsNullOrEmpty(newScriptPath) ||  !File.Exists(newScriptPath))
-                {
-                    if (isTilde)
-                        scriptPath = scriptPath.TrimStart(['~', '/', '\\']);
-
-                    newScriptPath = Path.Combine(BasePath, scriptPath);
-
-                    if (!File.Exists(newScriptPath))
-                        throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
-                }
-
-                scriptPath = newScriptPath;
-            }
-
-            return scriptPath;
-        }
 
         /// <summary>
         /// Renders a partial file into the template
@@ -125,8 +85,13 @@ namespace Westwind.Scripting
         /// <param name="scriptPath">Path to script file to execute</param>
         /// <param name="model">optional model to pass in</param>
         /// <returns></returns>
-        public async Task<string> RenderPartialAsync(string scriptPath, object model = null)
+        public async Task<RawString> RenderPartialAsync(string scriptPath, object model = null)
         {
+            if (string.IsNullOrEmpty(scriptPath))
+                return RawString.Empty;
+
+            scriptPath = ResolvePath(scriptPath);
+
             var script = await ReadFileAsync(scriptPath);
             string result = await _parser.ExecuteScriptAsync(script, model);
             if (_parser.Error)
@@ -134,7 +99,7 @@ namespace Westwind.Scripting
                 result = "!! " + _parser.ErrorMessage + " !!";
             }
 
-            return result;
+            return RawString.Raw(result);
         }
 
 
@@ -191,7 +156,7 @@ namespace Westwind.Scripting
         /// <returns></returns>
         private async Task<string> ReadFileAsync(string filePath, Encoding encoding = null)
         {
-            filePath = FixBasePath(filePath);
+            filePath = ResolvePath(filePath);
 
             using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             using (var reader = new StreamReader(fs))
@@ -209,7 +174,8 @@ namespace Westwind.Scripting
         /// <returns></returns>
         private string ReadFile(string filePath, Encoding encoding = null)
         {
-            filePath = FixBasePath(filePath);
+            filePath = ResolvePath(filePath);
+
             return File.ReadAllText(filePath);
         }
 
@@ -229,18 +195,7 @@ namespace Westwind.Scripting
         public RawString Raw(object value) => new RawString(value);
 
 
-        private string FixBasePath(string filePath)
-        {
-            if (!string.IsNullOrEmpty(BasePath))
-            {
-                if (filePath.StartsWith("~") || filePath.StartsWith("/") || filePath.StartsWith("\\"))
-                {
-                    filePath = Path.Combine(BasePath, filePath.TrimStart('~', '/', '\\'));
-                }
-            }
 
-            return filePath;
-        }
 
         /// <summary>
         /// Encodes a value using Html Encoding by first converting
@@ -249,6 +204,45 @@ namespace Westwind.Scripting
         /// <returns></returns>
         public string HtmlEncode(object value) => ScriptParser.HtmlEncode(value);
 
+
+        /// <summary>
+        /// Resolves the script path to a physical path
+        /// </summary>
+        /// <param name="scriptPath"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidEnumArgumentException"></exception>
+        public string ResolvePath(string scriptPath)
+        {
+            if (string.IsNullOrEmpty(scriptPath))
+                return string.Empty;
+
+            bool isTilde = scriptPath?.StartsWith("~") ?? false;
+
+            if (isTilde || !File.Exists(scriptPath))
+            {
+                string newScriptPath = string.Empty;
+
+                // check parent path
+                if (!isTilde && !string.IsNullOrEmpty(ParentPagePath))
+                {
+                    newScriptPath = Path.Combine(Path.GetDirectoryName(ParentPagePath), scriptPath);
+                }
+                if (string.IsNullOrEmpty(newScriptPath) ||  !File.Exists(newScriptPath))
+                {
+                    if (isTilde)
+                        scriptPath = scriptPath.TrimStart(['~', '/', '\\']);
+
+                    newScriptPath = Path.Combine(BasePath, scriptPath);
+
+                    if (!File.Exists(newScriptPath))
+                        throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
+                }
+
+                scriptPath = newScriptPath;
+            }
+
+            return scriptPath;
+        }
 
         #region Reflection Helpers
 

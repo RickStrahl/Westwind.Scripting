@@ -1,7 +1,10 @@
 {{ Script.Section("StartDocument") }}
 {{%
-    // This code will execute at the top of the Layout page
+    // Script.Layout page is PARSED out of the document not executed
+    // it supports  bracketed expressions from the script Model optionally.
+    // Paths resolve as: Absolute, Relative to Script, ~ Base Path Relative or Base Path Relative without ~
     Script.Layout = "Layout.html";
+
     string title = "My Great Detail with Layout Page";
     Script.Title = title;
 }}

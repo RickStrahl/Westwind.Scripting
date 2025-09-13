@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.7</Version>
-    <TargetFrameworks>net9.0;net8.0;net472;netstandard2.0</TargetFrameworks>
+    <Version>1.8</Version>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net472;netstandard2.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
     <Copyright>© West Wind Technologies 2011-2025</Copyright>

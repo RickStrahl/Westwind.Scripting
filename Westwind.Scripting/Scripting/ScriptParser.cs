@@ -530,16 +530,18 @@ namespace Westwind.Scripting
             if (string.IsNullOrEmpty(scriptPageText))
                 return;
 
-            if (!scriptPageText.Contains("Script.Layout=") && !scriptPageText.Contains("Script.Layout ="))
+            if (!scriptPageText.Contains("Script.Layout"))
                 return;
 
             try
             {
                 var extractedText = ExtractPageVariable("Script.Layout", scriptPageText);
-                var layoutFile = extractedText?.Replace("\\\\","\\");
+
+                var layoutFile = extractedText?.Replace("\\\\","\\");   // remove string encoding
                 if (layoutFile == null)
                     return; // ignore no layout
 
+                // Check for embedded expression
                 if (layoutFile.Contains("{{") && layoutFile.Contains("}}"))
                 {
                     var scriptEval = new ScriptEvaluator();
@@ -550,38 +552,13 @@ namespace Westwind.Scripting
                     context.Script = scriptPageText;
                 }
 
-
-                // check if explicit path exists
-                if (!File.Exists(layoutFile))
-                {
-                    string selectedLayout = null;
-                    try
-                    {
-                        // look in relative path
-                        var path = Path.GetDirectoryName(context.ScriptFile);
-                        selectedLayout = Path.Combine(path, layoutFile);
-                    }
-                    catch { }
-
-                    if (!File.Exists(selectedLayout))
-                    {
-                        // look in project path appended
-                        selectedLayout = Path.Combine(basePath, layoutFile);
-                    }
-
-                    if (!File.Exists(selectedLayout))
-                        throw new InvalidEnumArgumentException("Page not found: " + layoutFile);
-
-                    layoutFile = selectedLayout;
-                }
-
-
-
+                layoutFile = context.ResolvePath(layoutFile);
+                if (layoutFile == null)
+                    return;                
 
                 var layoutText = File.ReadAllText(layoutFile);
                 if (string.IsNullOrEmpty(layoutText))
                     throw new InvalidEnumArgumentException("Couldn't read file content.");
-
 
                 layoutText = StripComments(layoutText);
 
@@ -594,6 +571,7 @@ namespace Westwind.Scripting
                 throw new InvalidEnumArgumentException("Couldn't load Layout page. " + ex.Message);
             }
         }
+
 
         /// <summary>
         /// Parses out sections from the content page and assigns them into the
@@ -1013,10 +991,12 @@ using( var writer = new ScriptWriter())
             if (value == null)
                 return null;
             if (value == string.Empty)
-                return string.Empty;            
+                return string.Empty;
 
             return System.Net.WebUtility.HtmlEncode(value);
         }
+
+
         #endregion
     }
 
