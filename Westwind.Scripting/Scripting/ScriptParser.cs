@@ -186,8 +186,8 @@ namespace Westwind.Scripting
             if (code == null)
                 return null;
 
-            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + ScriptParser.EncodeStringLiteral( basePath ) + " };\n" +
-                   AdditionalMethodHeaderCode + "\n" +
+            code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + ScriptParser.EncodeStringLiteral(basePath) + " };\n" +
+                   AdditionalMethodHeaderCode + "\n" +                   
                    code;
 
             if (scriptEngine != null)
@@ -316,6 +316,7 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" +
                    "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   "Script.ParentPagePath = " + EncodeStringLiteral(scriptFile) + ";\n" +
                    AdditionalMethodHeaderCode + "\n" +
                    code;
 
@@ -361,6 +362,7 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   "Script.ParentPagePath = " + EncodeStringLiteral(scriptFile) + ";\n" +
                    AdditionalMethodHeaderCode + "\n" +
                    code;
 
@@ -409,6 +411,7 @@ namespace Westwind.Scripting
             code = "dynamic Model = parameters[0];\n" +
                    "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   "Script.ParentPagePath = " + EncodeStringLiteral(scriptFile) + ";\n" +
                    AdditionalMethodHeaderCode + "\n" +
                    code;
 
@@ -454,6 +457,7 @@ namespace Westwind.Scripting
             // expose the parameter as Model
             code = "ScriptHelper Script = new ScriptHelper() { BasePath = " + EncodeStringLiteral(scriptContext.BasePath) + "  };\n" +
                    "Script.Title = " + EncodeStringLiteral(scriptContext.Title) + ";\n" +
+                   "Script.ParentPagePath = " + EncodeStringLiteral(scriptFile) + ";\n" +
                    AdditionalMethodHeaderCode + "\n" +
                    code;
 
@@ -531,20 +535,52 @@ namespace Westwind.Scripting
 
             try
             {
-                var layoutFile = ExtractPageVariable("Script.Layout", scriptPageText)?.Replace("\\\\","\\");
+                var extractedText = ExtractPageVariable("Script.Layout", scriptPageText);
+                var layoutFile = extractedText?.Replace("\\\\","\\");
                 if (layoutFile == null)
                     return; // ignore no layout
 
+                if (layoutFile.Contains("{{") && layoutFile.Contains("}}"))
+                {
+                    var scriptEval = new ScriptEvaluator();
+                    scriptEval.AllowedInstances.Add("Model", context.Model);
+
+                    layoutFile = scriptEval.Evaluate(layoutFile);                    
+                    scriptPageText = context.Script.Replace(extractedText, StringUtils.ToJsonString(layoutFile).Trim('\"')); ;
+                    context.Script = scriptPageText;
+                }
+
+
+                // check if explicit path exists
                 if (!File.Exists(layoutFile))
                 {
-                    layoutFile = Path.Combine(basePath, layoutFile);
-                    if (!File.Exists(layoutFile))
+                    string selectedLayout = null;
+                    try
+                    {
+                        // look in relative path
+                        var path = Path.GetDirectoryName(context.ScriptFile);
+                        selectedLayout = Path.Combine(path, layoutFile);
+                    }
+                    catch { }
+
+                    if (!File.Exists(selectedLayout))
+                    {
+                        // look in project path appended
+                        selectedLayout = Path.Combine(basePath, layoutFile);
+                    }
+
+                    if (!File.Exists(selectedLayout))
                         throw new InvalidEnumArgumentException("Page not found: " + layoutFile);
 
+                    layoutFile = selectedLayout;
                 }
+
+
+
+
                 var layoutText = File.ReadAllText(layoutFile);
                 if (string.IsNullOrEmpty(layoutText))
-                    throw new InvalidEnumArgumentException("Couddn't read file content.");
+                    throw new InvalidEnumArgumentException("Couldn't read file content.");
 
 
                 layoutText = StripComments(layoutText);
@@ -656,7 +692,7 @@ namespace Westwind.Scripting
         public string ParseScriptToCode(ScriptFileContext scriptContext)
         {
             if (scriptContext == null)
-                return null;
+                return null;            
 
             var scriptText = scriptContext.Script;
             if (string.IsNullOrEmpty(scriptText))

@@ -82,5 +82,99 @@ namespace Westwind.Scripting
 
             return string.Empty;
         }
+
+        /// <summary>
+        /// Tries to create a phrase string from CamelCase text
+        /// into Proper Case text.  Will place spaces before capitalized
+        /// letters.
+        /// 
+        /// Note that this method may not work for round tripping 
+        /// ToCamelCase calls, since ToCamelCase strips more characters
+        /// than just spaces.
+        /// </summary>
+        /// <param name="camelCase">Camel Case Text: firstName -> First Name</param>
+        /// <returns></returns>
+        public static string FromCamelCase(string camelCase)
+        {
+            if (string.IsNullOrEmpty(camelCase))
+                return camelCase;
+
+            StringBuilder sb = new StringBuilder(camelCase.Length + 10);
+            bool first = true;
+            char lastChar = '\0';
+
+            foreach (char ch in camelCase)
+            {
+                if (!first &&
+                    lastChar != ' ' && !char.IsSymbol(lastChar) && !char.IsPunctuation(lastChar) &&
+                    ((char.IsUpper(ch) && !char.IsUpper(lastChar)) ||
+                     char.IsDigit(ch) && !char.IsDigit(lastChar)))
+                    sb.Append(' ');
+
+                sb.Append(ch);
+                first = false;
+                lastChar = ch;
+            }
+
+            return sb.ToString(); ;
+        }
+
+        /// <summary>
+        /// A helper to generate a JSON string from a string value
+        /// 
+        /// Use this to avoid bringing in a full JSON Serializer for
+        /// scenarios of string serialization.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns>JSON encoded string ("text"), empty ("") or "null".</returns>
+        public static string ToJsonString(string text)
+        {
+            if (text is null)
+                return "null";
+
+            var sb = new StringBuilder(text.Length);
+            sb.Append("\"");
+            var ct = text.Length;
+
+            for (int x = 0; x < ct; x++)
+            {
+                var c = text[x];
+
+                switch (c)
+                {
+                    case '\"':
+                        sb.Append("\\\"");
+                        break;
+                    case '\\':
+                        sb.Append("\\\\");
+                        break;
+                    case '\b':
+                        sb.Append("\\b");
+                        break;
+                    case '\f':
+                        sb.Append("\\f");
+                        break;
+                    case '\n':
+                        sb.Append("\\n");
+                        break;
+                    case '\r':
+                        sb.Append("\\r");
+                        break;
+                    case '\t':
+                        sb.Append("\\t");
+                        break;
+                    default:
+                        uint i = c;
+                        if (i < 32)  // || i > 255
+                            sb.Append($"\\u{i:x4}");
+                        else
+                            sb.Append(c);
+                        break;
+                }
+            }
+            sb.Append("\"");
+
+            return sb.ToString();
+        }
     }
 }

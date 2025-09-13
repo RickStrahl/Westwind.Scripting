@@ -27,7 +27,18 @@ namespace Westwind.Scripting
         public string BasePath { get; set; }
 
 
+        /// <summary>
+        /// The top level page that is rendering this request
+        /// </summary>
+        public string ParentPagePath { get; set; }
+
+        /// <summary>
+        /// Layout Page that is renders the Content page in
+        /// side of itself
+        /// </summary>
         public string Layout { get; set; }
+
+
         /// <summary>
         /// Optional Page Title - useful in HTML Pages that use Layout to
         /// pass the title to the Layout page
@@ -43,26 +54,69 @@ namespace Westwind.Scripting
         /// <summary>
         /// Renders a partial file into the template
         /// </summary>
-        /// <param name="scriptPath">Path to script file to execute</param>
+        /// <param name="scriptPath">Path to script file to execute. Syntax can be:
+        /// * Relative Path to current script page executing
+        /// * Full Absolute path
+        /// * Base Path Relative
+        /// * ~ Base Path Relative 
+        /// </param>
         /// <param name="model">optional model to pass in</param>
         /// <returns></returns>
-        public string RenderPartial(string scriptPath, object model = null)
+        public RawString RenderPartial(string scriptPath, object model = null)
         {
-            if (!File.Exists(scriptPath))
-            {
-                scriptPath = Path.Combine(BasePath, scriptPath);
-                if (!File.Exists(scriptPath))
-                    throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
-            }
+            if (string.IsNullOrEmpty(scriptPath))
+                return RawString.Empty;
+
+            scriptPath = ResolvePath(scriptPath);
 
             var script = File.ReadAllText(scriptPath);
+            
             string result = _parser.ExecuteScript(script, model);
             if (_parser.Error)
             {
                 result = $"{{! Template error ({scriptPath}):  " + _parser.ErrorMessage?.Trim() + " !}";
             }
 
-            return result;
+            return RawString.Raw(result);
+        }
+
+        /// <summary>
+        /// Resolves the script path to a physical path
+        /// </summary>
+        /// <param name="scriptPath"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidEnumArgumentException"></exception>
+        private string ResolvePath(string scriptPath)
+        {
+            if (string.IsNullOrEmpty(scriptPath))
+                return string.Empty;
+
+            bool isTilde = scriptPath?.StartsWith("~") ?? false;
+
+            if (isTilde || !File.Exists(scriptPath))
+            {
+                string newScriptPath = string.Empty;
+
+                // check parent path
+                if (!isTilde && !string.IsNullOrEmpty(ParentPagePath))
+                {
+                    newScriptPath = Path.Combine(Path.GetDirectoryName(ParentPagePath), scriptPath);
+                }
+                if (string.IsNullOrEmpty(newScriptPath) ||  !File.Exists(newScriptPath))
+                {
+                    if (isTilde)
+                        scriptPath = scriptPath.TrimStart(['~', '/', '\\']);
+
+                    newScriptPath = Path.Combine(BasePath, scriptPath);
+
+                    if (!File.Exists(newScriptPath))
+                        throw new InvalidEnumArgumentException("Page not found: " + scriptPath);
+                }
+
+                scriptPath = newScriptPath;
+            }
+
+            return scriptPath;
         }
 
         /// <summary>

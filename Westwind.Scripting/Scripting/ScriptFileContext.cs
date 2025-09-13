@@ -35,10 +35,19 @@ public class ScriptFileContext
     public object Model { get; set; }
 
     /// <summary>
-    /// The layout page if any to use for this script. Path is relative
-    /// the detail page.
+    /// The layout page if any to use for this script. Path can be:
+    /// 
+    /// * Relative to the Script Page
+    /// * Relative to the Base Path
+    /// * Absolute path
     ///
-    /// Provided so compilation works not used in code.
+    /// This value is parsed and if {{ }}  are contained separately
+    /// evaluated using reflection evaluation.
+    ///
+    /// Ensure you use `Model.` prefix for individual context items
+    /// (ie. Model.Topic, Model.Project etc.) rather 
+    /// than the bootstrapped Topic and Project as you can normally
+    /// in expressions of context variables.        
     /// </summary>
     public string Layout { get; set; }
 

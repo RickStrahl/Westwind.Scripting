@@ -28,16 +28,27 @@ namespace Westwind.Scripting
         /// without `await` on the result task and just let it operate
         /// in the background.
         /// </summary>
-        public static Task<bool> WarmupRoslyn()
+        public static Task<bool> WarmupRoslyn(bool warmupScriptEngine = false)
         {
             // warm up Roslyn in the background
             return Task.Run(() =>
             {
+
                 var script = new CSharpScriptExecution();
                 script.AddDefaultReferencesAndNamespaces();
-                var result = script.ExecuteCode("int x = 1; return x;", null);
-
-                return result is 1;
+                object result = null;
+                if (warmupScriptEngine)
+                {
+                    var scriptParser = new ScriptParser();
+                    scriptParser.ScriptEngine = script;
+                    result = scriptParser.ExecuteScript("time: {{ DateTime.Now}}", null);
+                    return result is string;
+                }
+                else
+                {
+                    result = script.ExecuteCode("int x = 1; return x;", null);
+                    return result is 1;
+                }
             });
         }
 
