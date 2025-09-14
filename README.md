@@ -47,6 +47,9 @@ For more detailed information and a discussion of the concepts and code that run
     * Script Execution from strings
     * Script Execution from files
     * Support for Partials, Layout and Sections
+ * Script Evaluator
+	 * Runtime Expression Evaluation
+	 * Non-compiled, Reflection based evaluation of `{{ expressions }}` in strings
 
 ### CSharpScriptExecution: C# Runtime Compilation and Execution
 Runtime code compilation and execution is handled via the `CSharpScriptExecution` class.
@@ -203,7 +206,7 @@ Hello World. Date is: 5/22/2022!
 
 1. Hello World rick
 
-2. Hello World rick
+1. Hello World rick
 
 And we're done with this!
 ```
