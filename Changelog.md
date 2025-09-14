@@ -8,7 +8,7 @@ There are many limitations primarily related on what you can access in expressio
 
   
 * **ScriptParser: Add better Path Support for Layout and Partials**  
-Layout Pages and Partials now work with script relative paths which are the first tested path. Both now support Absolute, Relative, ~ Base Path Relative and Base Path Relative (no ~) paths. If you're using base path relative we recommend you use the ~ path to specify the root base path.
+Layout Pages and Partials now work with script relative paths which are the first tested path. Both now support Absolute, Relative, ~ Base Path Relative and Base Path Relative (no ~) paths. If you're using base path relative we recommend you use the ~ path to specify the root base path unambiguously.
 
 
 ### 1.7
