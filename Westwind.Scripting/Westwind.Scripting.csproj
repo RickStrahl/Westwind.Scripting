@@ -17,6 +17,7 @@
       * Execute complete methods
       * Create and load classes
       * C# Script Templates using Handlebars like syntax
+      * Script Expression Evaluator
 
     </Description>
     <Summary>Small library to dynamically compile and execute C# source code at runtime.</Summary>
