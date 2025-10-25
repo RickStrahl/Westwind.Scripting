@@ -2,8 +2,7 @@
 
 **Dynamically compile and execute C# code at runtime, as well as a light weight, Handlebars style C# template script engine**
 
-[![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
-[![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
+[![NuGet](https://img.shields.io/nuget/v/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/) [![](https://img.shields.io/nuget/dt/Westwind.Scripting.svg)](https://www.nuget.org/packages/Westwind.Scripting/)
 
 This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class.
 
@@ -661,7 +660,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Give back
 This library is free to use and integrate with for both personal and commercial use.
 
-If you find this library useful, consider [sponsoring the author](https://github.com/sponsors/RickStrahl), or making a small donation:
+If you find this library useful, consider [sponsoring the author](https://github.com/sponsors/RickStrahl) on GitHub, or making a small donation at:
 
 <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KPJQRQQ9BFEBW" 
     title="Find this library useful? Consider making a small donation." alt="Make Donation" style="text-decoration: none;">
