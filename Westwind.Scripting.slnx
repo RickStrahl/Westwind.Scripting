@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Changelog.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="ReferenceTest/ReferenceTest.csproj" />
+  <Project Path="Westwind.Scripting.Test/Westwind.Scripting.Test.csproj" />
+  <Project Path="Westwind.Scripting/Westwind.Scripting.csproj" />
+</Solution>
