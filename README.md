@@ -6,7 +6,7 @@
 
 This small library provides an easy way to compile and execute C# code from source code provided at runtime. It uses Roslyn to provide compilation services for string based code via the `CSharpScriptExecution` class.
 
-There's also a lightweight, self contained C# [script template engine](ScriptAndTemplates.md) via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code-block }}`) script templates. Unlike other script engines, this engine uses plain C# syntax for expressions and code block execution.
+There's also a lightweight, self contained C# [script template engine](https://github.com/RickStrahl/Westwind.Scripting/blob/master/ScriptAndTemplates.md) via the `ScriptParser` class that can evaluate expressions and structured C# statements using  Handlebars-like (`{{ expression }}` and `{{% code-block }}`) script templates. Unlike other script engines, this engine uses plain C# syntax for expressions and code block execution.
 
 Get it from [Nuget](https://www.nuget.org/packages/Westwind.Scripting/):
 
@@ -16,10 +16,17 @@ dotnet add package Westwind.Scripting
 
 It supports the following targets:
 
-* .NET 9.0 (net9.0), .NET 8.0 (net8.0)
-* Full .NET Framework (net472)
-* .NET Standard 2.0 (netstandard2.0)
+**v2.0 and later**
 
+* .NET 10  (net10.0), .NET 8.0 (net8.0)
+
+for .NET Framework and .NET Standard support you can use v1:
+
+**v1.x**
+
+* .NET 10  (net10.0), .NET 8.0 (net8.0)
+* .NET 4.72
+* .NET Standard 2.0
 
 For more detailed information and a discussion of the concepts and code that runs this library, you can also check out this introductory blog post:
 
@@ -42,7 +49,7 @@ For more detailed information and a discussion of the concepts and code that run
 	* Detailed compiler error messages
 	* Access to compiled output w/ line numbers
 * Roslyn Warmup 
-* [Template Scripting Engine using Handlebars-like C# syntax](ScriptAndTemplates.md)
+* [Template Scripting Engine using Handlebars-like C# syntax](https://github.com/RickStrahl/Westwind.Scripting/blob/master/ScriptAndTemplates.md)
     * Script Execution from strings
     * Script Execution from files
     * Support for Partials, Layout and Sections

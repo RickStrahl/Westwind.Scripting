@@ -1,5 +1,0 @@
-{
-  "Endpoint": "https://eus.codesigning.azure.net/",
-  "CodeSigningAccountName": "WestWindSigningAccount",
-  "CertificateProfileName": "WestWindCodeSignCertificate"
-}

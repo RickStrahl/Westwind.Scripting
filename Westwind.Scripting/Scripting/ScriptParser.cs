@@ -1,38 +1,67 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.IO;
-using System.Reflection.Metadata;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Scripting;
 
 namespace Westwind.Scripting
 {
 
-
     /// <summary>
-    /// A very simple C# script parser that parses the provided script
-    /// as a text string with embedded expressions and code blocks.
+    /// A very simple C# script parser that parses the provided script as a text string
+    /// with embedded expressions and code blocks.
     ///
     /// Literal text:
     ///
     /// Parsed as plain text into the script output.
-    /// 
-    /// Expressions:
     ///
-    /// {{ DateTime.Now.ToString("d") }}
+    /// Expressions &lt;small&gt;*`{{ expr }}`*&lt;/small&gt;
     ///
-    /// Code Blocks:
+    /// ```html
+    /// &lt;i&gt;{{ DateTime.Now.ToString(&quot;d&quot;) }}&lt;/i&gt;
+    /// ```
     ///
-    /// {{% for(int x; x&lt;10; x++  { }}
-    ///     {{ x }}. Hello World
+    /// Code Blocks &lt;small&gt;*`{{% C# code }}`*&lt;/small&gt;
+    ///
+    /// ```html
+    /// {{% for(int x; x&lt;10; x++  { }}     
+    ///     &lt;div&gt;{{ x }}. Hello World&lt;/div&gt;
+    /// {{% } }}
+    /// ```
+    ///
+    /// To execute script:
+    ///
+    /// ```cs
+    /// var model = new TestModel {Name = &quot;rick&quot;, DateTime = DateTime.Now.AddDays(-10)};
+    ///
+    /// string script = @&quot;
+    /// Hello World. Date is: {{ Model.DateTime.ToString(&quot;&quot;d&quot;&quot;) }}!
+    /// {{% for(int x=1; x&lt;3; x++) 
+    /// { }}
+    ///     {{ x }}. Hello World {{Model.Name}}
     /// {{% } }}
     ///
-    /// Uses the `.ScriptEngine` property for execution and provides
-    /// error information there.
+    /// And we're done with this!
+    /// &quot;;
+    ///
+    /// var scriptParser = new ScriptParser();
+    ///
+    /// // add dependencies - sets on .ScriptEngine instance
+    /// scriptParser.AddAssembly(typeof(ScriptParserTests));
+    /// scriptParser.AddNamespace(&quot;Westwind.Scripting.Test&quot;);
+    ///
+    /// // Execute the script
+    /// string result = scriptParser.ExecuteScript(script, model);
+    ///
+    /// Console.WriteLine(result);
+    ///
+    /// Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+    /// Console.WriteLine(scriptParser.ErrorType);  // if there's an error
+    ///
+    /// Uses the `.ScriptEngine` property for execution and provides error information
+    /// there.
     /// </summary>
     public class ScriptParser
     {
@@ -85,6 +114,11 @@ namespace Westwind.Scripting
         /// </summary>
         public string GeneratedClassCodeWithLineNumbers => ScriptEngine?.GeneratedClassCodeWithLineNumbers;
 
+
+        /// <summary>
+        /// By default Generated code is not saved as storing the code adds
+        /// overhead. Set to true to save code in the property.
+        /// </summary>
         public bool SaveGeneratedClassCode
         {
             get => ScriptEngine is { SaveGeneratedCode: true };
@@ -191,7 +225,7 @@ namespace Westwind.Scripting
                    code;
 
             if (scriptEngine != null)
-                ScriptEngine = scriptEngine;
+                ScriptEngine = scriptEngine;           
 
             return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }

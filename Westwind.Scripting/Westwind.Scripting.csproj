@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.8</Version>
-    <TargetFrameworks>net10.0;net9.0;net8.0;net472;netstandard2.0</TargetFrameworks>
+    <Version>2.0</Version>
+    <TargetFrameworks>net10.0;net8.0</TargetFrameworks>
     <Title>Westwind.Scripting</Title>
     <Company>West Wind Technologies</Company>
-    <Copyright>© West Wind Technologies 2011-2025</Copyright>
+    <Copyright>© West Wind Technologies 2011-2026</Copyright>
     <Product>Westwind.ScriptExecution</Product>
     <LangVersion>latest</LangVersion>
     <Description>
@@ -26,7 +26,7 @@
     <PackageTags>csharp scripting script roslyn compilation execution evaluate code westwind</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <PackageProjectUrl>https://github.com/RickStrahl/Westwind.Scripting</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RickStrahl/Westwind.Scripting</RepositoryUrl>
@@ -49,20 +49,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="4.*" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="5.0.0" />
   
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <Reference Include="Microsoft.CSharp" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-  </ItemGroup>
+
   <ItemGroup>
     <None Include="icon.png" Pack="true" PackagePath="" />
     <None Include="LICENSE.md" Pack="true" PackagePath="" />
-    <None Include="../readme.md" Pack="true" PackagePath="" />
+    <None Include="../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>

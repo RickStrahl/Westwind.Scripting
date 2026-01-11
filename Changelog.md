@@ -1,5 +1,11 @@
 ## Change Log
 
+### 2.0
+
+* **Remove Support for .NET 4.x**  
+Due to C# compiler changes in latest runtime versions, a number of issues are starting to crop up with async code running on full .NET framework. For this and a few other compatibility reasons we are removing .NET 4.x support in v2. If you need .Net 4.x support use v1.x.
+
+
 ### 1.8
 
 * **New ScriptEvaluator Class**  
