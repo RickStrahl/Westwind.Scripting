@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,12 +6,13 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Runtime.Loader;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
-
+using Westwind.Scripting.Cache;
 
 namespace Westwind.Scripting
 {
@@ -35,14 +35,14 @@ namespace Westwind.Scripting
         /// List holds a list of cached assemblies with a hash code for the code executed as
         /// the key.
         /// </summary>
-        protected static ConcurrentDictionary<int, Assembly> CachedAssemblies =
-            new ConcurrentDictionary<int, Assembly>();
+        //protected static ConcurrentDictionary<int, Assembly> CachedAssemblies =
+        //    new ConcurrentDictionary<int, Assembly>();
+        protected static ICache<int, Assembly> CachedAssemblies { get; private set; }
 
         /// <summary>
         /// List of additional namespaces to add to the script
         /// </summary>
         public NamespaceList Namespaces { get; } = new NamespaceList();
-
 
         /// <summary>
         /// List of additional assembly references that are added to the
@@ -50,6 +50,10 @@ namespace Westwind.Scripting
         /// </summary>
         public ReferenceList References { get; } = new ReferenceList();
 
+        /// <summary>
+        /// Dictionary of additional Class-File references that are read and inject into the namespace
+        /// </summary>
+        public Dictionary<string, string> ReferenceClasses { get; } = new Dictionary<string, string>();
 
         /// <summary>
         /// Last generated code for this code snippet with line numbers
@@ -96,6 +100,7 @@ namespace Westwind.Scripting
         /// <summary>
         /// If true parses references in code that are referenced with:
         /// #r assembly.dll
+        /// #c Class-File
         /// </summary>
         public bool AllowReferencesInCode { get; set; } = false;
 
@@ -226,6 +231,13 @@ namespace Westwind.Scripting
 
         #endregion
 
+        public CSharpScriptExecution() : this(new MemoryAssemblyCache()) { }
+
+        public CSharpScriptExecution(ICache<int, Assembly> cache)
+        {
+            CachedAssemblies = cache;
+        }
+
         /// <summary>
         /// Creates a default Execution Engine which has:
         ///
@@ -301,23 +313,26 @@ namespace Westwind.Scripting
             {
                 int hash = GenerateHashCode(code);
 
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
                     GeneratedClassName = "_" + Utils.GenerateUniqueId();                    
                     var sb = GenerateClass(code);
                     if (!CompileAssembly(sb.ToString()))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if(CachedAssemblies.TryGet(hash, out var tmp_Assembly))
+                    {
+                        Assembly = tmp_Assembly;
 
-                    // Figure out the class name
-                    var type = Assembly.ExportedTypes.First();
-                    GeneratedClassName = type.Name;
-                    GeneratedNamespace = type.Namespace;
+                        // Figure out the class name
+                        var type = Assembly.ExportedTypes.First();
+                        GeneratedClassName = type.Name;
+                        GeneratedNamespace = type.Namespace;
+                    }
                 }
             }
 
@@ -1144,16 +1159,20 @@ namespace Westwind.Scripting
             {
                 int hash = code.GetHashCode();
 
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
                     if (!CompileAssembly(code))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if(CachedAssemblies.TryGet(hash, out Assembly? tmp_assembly))
+                    {
+                        Assembly = tmp_assembly;
+                    }
+                    
                 }
             }
 
@@ -1181,17 +1200,20 @@ namespace Westwind.Scripting
             else
             {
                 int hash = codeStream.GetHashCode();
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.Contains(hash))
                 {
 
                     if (!CompileAssembly(codeStream))
                         return null;
 
-                    CachedAssemblies[hash] = Assembly;
+                    CachedAssemblies.Set(hash, Assembly);
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    if (CachedAssemblies.TryGet(hash, out Assembly tmp_assembly))
+                    {
+                        Assembly = tmp_assembly;
+                    }
                 }
 
             }
@@ -1232,10 +1254,21 @@ namespace Westwind.Scripting
             sb.AppendLine(classBody);
             sb.AppendLine();
 
+            /*
             sb.AppendLine("} " +
                           Environment.NewLine +
                           "}"); // Class and namespace closed
+            */
 
+            sb.Append("} ").AppendLine(Environment.NewLine);// close class
+
+            foreach (var entry in ReferenceClasses)
+            {
+                sb.Append(entry.Value).AppendLine(Environment.NewLine);
+            }
+
+
+            sb.AppendLine("} ");// close namespace
             if (SaveGeneratedCode)
                 GeneratedClassCode = sb.ToString();
 
@@ -1255,9 +1288,26 @@ namespace Westwind.Scripting
             return code;
         }
 
-#endregion
+        /// <summary>
+        /// Removes all hash-indexes of Assembly Cache
+        /// </summary>
+        /// <returns></returns>
+        public static bool ClearCachedAssemblies()
+        {
+            try
+            {
+                CachedAssemblies.Clear();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
-#region References and Namespaces
+        #endregion
+
+        #region References and Namespaces
 
 
         /// <summary>
@@ -1512,7 +1562,21 @@ public bool AddAssembly(Type type)
                 AddAssembly(file);
         }
 
+        /// <summary>
+        /// Add Code from a ClassFile with Class-Definition inside
+        /// </summary>
+        /// <param name="nameSpace"></param>
+        public void AddReferenceClass(string classname, string classcode)
+        {
+            if (string.IsNullOrEmpty(classcode))
+            {
+                ReferenceClasses.Clear();
+                return;
+            }
 
+            // we override classes of the same name
+            ReferenceClasses[classname] = classcode;
+        }
 
         /// <summary>
         /// Adds a namespace to the referenced namespaces
@@ -1597,7 +1661,7 @@ public bool AddAssembly(Type type)
         {
             if (string.IsNullOrEmpty(code)) return code;
 
-            if (!code.Contains("#r ") && ( !referencesOnly && !code.Contains("using ") ) )
+            if (!code.Contains("#r ") && !code.Contains("#c ") && ( !referencesOnly && !code.Contains("using ") ) )
                 return code;
             
             StringBuilder sb = new StringBuilder();
@@ -1618,6 +1682,56 @@ public bool AddAssembly(Type type)
                     continue;
                 }
 
+                if (line.Trim().StartsWith("#c "))
+                {
+                    if (AllowReferencesInCode)
+                    {
+                        string scriptClass = line.Replace("#c ", "").Trim();
+                        string scriptClassCode = File.ReadAllText(scriptClass);
+                        var class_lines = GetLines(scriptClassCode);
+                        Regex classline = new Regex(".* class ([a-zA-Z0-9]*) .*", RegexOptions.Compiled);
+                        StringBuilder aNewClass = new StringBuilder();
+                        string cls_name = "?";
+                        bool allUsing = false;// all Using until first Class Definition
+                        foreach (var c_line in class_lines)
+                        {
+                            if (!referencesOnly && !allUsing && c_line.Trim().Contains("using "))
+                            {
+                                string ns = c_line.Replace("using ", "").Replace(";", "").Trim();
+                                AddNamespace(ns);
+                                aNewClass.AppendLine("// " + line);
+                                continue;
+                            }
+                            else
+                            {
+                                Match cls_match = classline.Match(c_line);
+                                if (cls_match.Success)
+                                {
+                                    if (allUsing){ // first class already found 
+                                        AddReferenceClass(cls_name, aNewClass.ToString());
+                                        aNewClass.Clear();
+                                    }
+                                    cls_name = cls_match.Groups[1].Value;
+                                    allUsing = true;
+                                }
+                                aNewClass.AppendLine(c_line);
+
+                            }
+
+                            /* TODO csx should not include a namespace
+                            if (line.Trim().Contains("namespace "))
+                            {
+                                
+                            }
+                            */
+                        }
+                        AddReferenceClass(cls_name, aNewClass.ToString());
+                        sb.AppendLine("// " + line);
+                        continue;
+                    }
+                    sb.AppendLine("// not allowed: " + line);
+                    continue;
+                }
                 if (!referencesOnly && line.Trim().StartsWith("using ") && line.Trim().EndsWith(";"))
                 {
                     string ns = line.Replace("using ", "").Replace(";", "").Trim();

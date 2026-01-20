@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -1036,6 +1038,36 @@ namespace Test
             
             Assert.IsNotNull(customer.CustomerInfo.Name, "Customer should not be null");
             Console.WriteLine(customer.CustomerInfo.Name);
+        }
+
+        [TestMethod]
+        public void ExecuteCodeWithClassReference()
+        {
+            string cls = @"./ClassFiles/TestClass.csx";
+
+            var script = new CSharpScriptExecution()
+            {
+                SaveGeneratedCode = true,
+                AllowReferencesInCode = true
+            };
+            script.AddDefaultReferencesAndNamespaces();
+
+            var code = $@"
+#c {cls}
+int result = TestClass.DoMath(5,6);
+return result;
+    ";
+
+            int result = script.ExecuteCode<int>(code);
+
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Error: {script.Error}");
+            Console.WriteLine(script.ErrorMessage);
+            Console.WriteLine(script.GeneratedClassCodeWithLineNumbers);
+
+            Assert.IsFalse(script.Error, script.ErrorMessage);
+            Assert.IsTrue(result == 11);
+
         }
     }
 
