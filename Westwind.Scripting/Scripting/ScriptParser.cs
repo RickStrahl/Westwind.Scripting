@@ -175,22 +175,12 @@ namespace Westwind.Scripting
             return ScriptEngine.ExecuteCode(code, model) as string;
         }
 
-
-
         /// <summary>
-        /// Extracts a variable like Scripts.Title = "Title of code"
+        /// Executes a script without a model
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="scriptText"></param>
+        /// <param name="script">script to execute</param>
         /// <returns></returns>
-        private string ExtractPageVariable(string key, string scriptText = null)
-        {
-            var matches = Regex.Match(scriptText, key + @"\s?=\s?""(.*?)""", RegexOptions.Multiline);
-            if (!matches.Success || matches.Groups.Count < 2)
-                return null;
-
-            return matches.Groups[1].Value;
-        }
+        public string ExecuteScript(string script) => ExecuteScript(script, null);
 
 
         /// <summary>
@@ -229,9 +219,7 @@ namespace Westwind.Scripting
 
             return ScriptEngine.ExecuteCode<string, TModelType>(code, model) as string;
         }
-
-
-
+            
 
         /// <summary>
         /// Executes a script that supports {{ expression }} and {{% code block }} syntax
@@ -682,6 +670,21 @@ namespace Westwind.Scripting
             }
 
             return script;
+        }
+
+        /// <summary>
+        /// Extracts a variable like Scripts.Title = "Title of code"
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="scriptText"></param>
+        /// <returns></returns>
+        private string ExtractPageVariable(string key, string scriptText = null)
+        {
+            var matches = Regex.Match(scriptText, key + @"\s?=\s?""(.*?)""", RegexOptions.Multiline);
+            if (!matches.Success || matches.Groups.Count < 2)
+                return null;
+
+            return matches.Groups[1].Value;
         }
 
         #endregion

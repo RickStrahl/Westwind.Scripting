@@ -79,7 +79,7 @@ namespace Westwind.Scripting.Test
         [TestMethod]
         public async Task ScriptFileModificationMultiRunTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
             string script = """
                             <div>
                             Hello World. Date is: {{ DateTime.Now.ToString() }}

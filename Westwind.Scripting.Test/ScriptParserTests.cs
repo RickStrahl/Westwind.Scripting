@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Westwind.Utilities;
@@ -43,37 +44,42 @@ DONE!
         /// </summary>
         /// <returns></returns>
         [TestMethod]
-        public void ExecuteScriptWithModelTest()
-        {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+    public void ExecuteScriptWithModelTest()
+    {
+var model = new TestModel { Name = "Rick", Date = DateTime.Now.AddDays(-10) };
 
-            string script = @"
+string script = """
 {{%
-    using Westwind.Utilities;
+using Westwind.Utilities;
 }}
-Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
+Hello {{ Model.Name }}.
+Date: {{ Model.Date.ToString("d") }}!
 
-{{% for(int x=1; x<3; x++) { }}
-{{ x }}. {{ StringUtils.Replicate(""Hello World "",2) }}
+{{% for(int x=1; x<4; x++) { }}
+{{ x }}. {{ StringUtils.Replicate("Hello World ",x) }}
 {{% } }}
 
 And we're done with this!
-";
-            // Optional - build customized script engine
-            // so we can add custom
+""";
+// Optional - build customized script engine
+// so we can add custom
             
-            var scriptParser = new ScriptParser();
-            scriptParser.AddAssembly(typeof(Westwind.Utilities.StringUtils));
-            scriptParser.AddAssembly(typeof(TestModel));
-            // scriptParser.AddNamespace("Westwind.Utilities");  // done in code
+var scriptParser = new ScriptParser();
+scriptParser.AddAssembly(typeof(Westwind.Utilities.StringUtils));
+scriptParser.AddAssembly(typeof(TestModel));
 
-            // Execute
-            string result = scriptParser.ExecuteScript(script, model);
+// If you add a Meta Data Reference Assembly to your project you can reference that here
+//scriptParser.AddAssemblies(metaAssemblies: Basic.Reference.Assemblies.Net100.References.All.ToArray());
+                
+// scriptParser.AddNamespace("Westwind.Utilities");  // done in code
 
-            Console.WriteLine(result);
+// Execute
+string result = scriptParser.ExecuteScript(script, model);
 
-            Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
-            Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
+Console.WriteLine(result);
+
+Console.WriteLine(scriptParser.ScriptEngine.GeneratedClassCodeWithLineNumbers);
+Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
             
         }
 
@@ -89,7 +95,7 @@ And we're done with this!
         [TestMethod]
         public async Task ExecuteScriptAsyncWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -120,7 +126,7 @@ And we're done with this!
         [TestMethod]
         public async Task ExecuteScriptAsyncWithCompilerErrorTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -152,7 +158,7 @@ And we're done with this!
         [TestMethod]
         public void ExecuteScriptWithModelWithReferenceTest()
         {
-            var model = new TestModel { Name = "Rick & Dale", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "Rick & Dale", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -191,7 +197,7 @@ And we're done with this!
         [TestMethod]
         public void CSharpExecutionExecuteScriptWithModelWithReferenceTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -235,7 +241,7 @@ And we're done with this!
         [TestMethod]
         public void ScriptParserExecuteWithModelExecuteMultipleTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -430,7 +436,7 @@ Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
         [TestMethod]
         public void BasicScriptParserAndManuallyExecuteWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -470,7 +476,7 @@ And we're done with this!
         [TestMethod]
         public async Task BasicScriptParserAndExecuteAsyncWithModelTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
 Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
@@ -557,7 +563,7 @@ Hello World. Date is: today!
         [TestMethod]
         public async Task BasicPartialTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10) };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
             string script = """
 <div>
 Hello World. Date is: {{ DateTime.Now.ToString() }}
@@ -584,7 +590,7 @@ Done.
         [TestMethod]
         public async Task BasicRenderScriptTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
             string script = """
 <div>
 Hello World. Date is: {{ DateTime.Now.ToString() }}
@@ -621,7 +627,7 @@ Done.
         [TestMethod]
         public async Task ScriptModificationMultiRunTest()
         {
-            var model = new TestModel { Name = "rick", DateTime = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
+            var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10), Expression = "Time: {{ DateTime.Now.ToString(\"HH:mm:ss\") }}" };
             string script = """
                             <div>
                             Hello World. Date is: {{ DateTime.Now.ToString() }}
@@ -674,7 +680,7 @@ Done.
     public class TestModel
     {
         public string  Name { get; set; }
-        public DateTime DateTime { get; set; } = DateTime.Now;
+        public DateTime Date { get; set; } = DateTime.Now;
 
         /// <summary>
         /// Test for Nested Expression Parsing

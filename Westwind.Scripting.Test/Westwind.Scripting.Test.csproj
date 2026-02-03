@@ -37,8 +37,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
     <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
-    <PackageReference Include="Westwind.Utilities" Version="5.2.4" />
-    <PackageReference Include="Basic.Reference.Assemblies.Net90" Version="1.8.4" />
+    <PackageReference Include="Westwind.Utilities" Version="5.2.7" />
+    <PackageReference Include="Basic.Reference.Assemblies.Net100" Version="1.8.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
