@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -694,8 +694,8 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            var modelType = typeof(TModelType).FullName;
-            var resultType = typeof(TResult).FullName;
+            var modelType = typeof(TModelType).FullName?.Replace("+",".");
+            var resultType = typeof(TResult).FullName?.Replace("+", "."); 
 
             var result = ExecuteMethod<TResult>($"public {resultType} ExecuteCode({modelType} Model)" +
                                        Environment.NewLine +
@@ -768,7 +768,7 @@ namespace Westwind.Scripting
 
             code = ParseCodeWithParametersArray(code, parameters);
 
-            var typeName = typeof(TResult).FullName;
+            var typeName = typeof(TResult).FullName?.Replace("+", ".");
 
             return ExecuteMethodAsync<TResult>(
                 $"public async Task<{typeName}> ExecuteCode(params object[] parameters)" +
@@ -802,8 +802,8 @@ namespace Westwind.Scripting
         {
             ClearErrors();
 
-            var resultTypename = typeof(TModelType).FullName;
-            var typeName = typeof(TResult).FullName;
+            var resultTypename = typeof(TModelType).FullName?.Replace("+",".") ;
+            var typeName = typeof(TResult).FullName?.Replace("+", ".");
 
             var res = ExecuteMethodAsync<TResult>($"public async Task<{typeName}> ExecuteCode({resultTypename} Model)" +
                                                   Environment.NewLine +
