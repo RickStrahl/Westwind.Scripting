@@ -1,4 +1,4 @@
-# Westwind CSharp Scripting
+# Westwind C# Scripting and Templating
 
 **Dynamically compile and execute C# code at runtime, as well as a light weight, Handlebars style C# template script engine**
 
