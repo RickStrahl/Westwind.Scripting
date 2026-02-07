@@ -547,8 +547,7 @@ namespace Westwind.Scripting
         protected void ParseLayoutPage(ScriptFileContext context)
         {
             string scriptPageText = context.Script; // content page
-            string basePath = context.BasePath;
-
+            
             if (string.IsNullOrEmpty(scriptPageText))
                 return;
 
