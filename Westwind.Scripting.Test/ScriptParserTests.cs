@@ -98,7 +98,7 @@ Assert.IsNotNull(result, scriptParser.ScriptEngine.ErrorMessage);
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
@@ -129,7 +129,7 @@ And we're done with this!
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
@@ -161,7 +161,7 @@ And we're done with this!
             var model = new TestModel { Name = "Rick & Dale", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{ Model.Name }}
@@ -200,7 +200,7 @@ And we're done with this!
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
@@ -244,7 +244,7 @@ And we're done with this!
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
@@ -439,7 +439,7 @@ Hello World. Date is: {{ DateTime.Now.ToString(""d"") }}!
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}
@@ -479,7 +479,7 @@ And we're done with this!
             var model = new TestModel { Name = "rick", Date = DateTime.Now.AddDays(-10) };
 
             string script = @"
-Hello World. Date is: {{ Model.DateTime.ToString(""d"") }}!
+Hello World. Date is: {{ Model.Date.ToString(""d"") }}!
 {{% for(int x=1; x<3; x++) {
 }}
 {{ x }}. Hello World {{Model.Name}}

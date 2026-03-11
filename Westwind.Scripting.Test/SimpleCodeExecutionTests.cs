@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -821,8 +821,7 @@ public string HelloWorld(string name)
             Console.WriteLine(script.GeneratedClassCode);
 
             Assert.IsTrue(script.Error);
-            Assert.AreEqual(script.ErrorType, ExecutionErrorTypes.Runtime,"Should be a runtime error: " + script.ErrorMessage);
-
+            Assert.AreEqual( ExecutionErrorTypes.Runtime, script.ErrorType,  "Should be a runtime error: " + script.ErrorMessage);
         }
 
         [TestMethod]

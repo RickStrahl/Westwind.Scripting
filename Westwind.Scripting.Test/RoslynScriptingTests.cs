@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -106,7 +106,7 @@ public class __Executor {
                     }
                     errorMessage = sb.ToString();
 
-                    Assert.IsTrue(false, errorMessage);
+                    Assert.Fail(errorMessage);
 
                     return;
                 }
