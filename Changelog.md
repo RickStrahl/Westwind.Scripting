@@ -1,6 +1,6 @@
 ## Change Log
 
-### 2.04
+### 2.0.4
 
 * **Fix: GeneratedClassCode when code is cached**  
 Add code recompilation if running with `SaveGeneratedCode` and loading a cached assembly, forcing the compiling class source to be re-generated. Fixes issue where Script object didn't have current code when retrieving cached assemblies from execution if multiple scripts where executed.
