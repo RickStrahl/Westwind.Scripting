@@ -291,20 +291,22 @@ namespace Westwind.Scripting
             // check for #r and using directives
             code = ParseReferencesInCode(code);
 
+            StringBuilder sb = null;
+
             if (DisableAssemblyCaching)
             {
-                var sb = GenerateClass(code);
+                sb = GenerateClass(code);
                 if (!CompileAssembly(sb.ToString()))
-                    return null;
+                    return null;                
             }
             else
             {
                 int hash = GenerateHashCode(code);
 
-                if (!CachedAssemblies.ContainsKey(hash))
+                if (!CachedAssemblies.TryGetValue(hash, out var assembly))
                 {
                     GeneratedClassName = "_" + Utils.GenerateUniqueId();                    
-                    var sb = GenerateClass(code);
+                    sb = GenerateClass(code);
                     if (!CompileAssembly(sb.ToString()))
                         return null;
 
@@ -312,13 +314,22 @@ namespace Westwind.Scripting
                 }
                 else
                 {
-                    Assembly = CachedAssemblies[hash];
+                    Assembly = assembly;
 
                     // Figure out the class name
                     var type = Assembly.ExportedTypes.First();
                     GeneratedClassName = type.Name;
                     GeneratedNamespace = type.Namespace;
+
+                    if (SaveGeneratedCode)
+                    {
+                        // We have to regenerate the code as we bypassed via caching
+                        sb = GenerateClass(code); 
+                    }
                 }
+
+                if (SaveGeneratedCode)
+                    GeneratedClassCode = sb?.ToString();
             }
 
             var instance = CreateInstance(); // also stores into `ObjectInstance` so it can be reused
@@ -928,8 +939,7 @@ namespace Westwind.Scripting
                 .AddReferences(References)
                 .AddSyntaxTrees(tree);
 
-            if (SaveGeneratedCode)
-                GeneratedClassCode = tree.ToString();
+    
 
             bool isFileAssembly = false;
             Stream codeStream = null;

@@ -1,9 +1,14 @@
 ## Change Log
 
+### 2.04
+
+* **Fix: GeneratedClassCode when code is cached**  
+Add code recompilation if running with `SaveGeneratedCode` and loading a cached assembly, forcing the compiling class source to be re-generated. Fixes issue where Script object didn't have current code when retrieving cached assemblies from execution if multiple scripts where executed.
+
 ### 2.0
 
 * **Remove Support for .NET 4.x**  
-Due to C# compiler changes in latest runtime versions, a number of issues are starting to crop up with async code running on full .NET framework. For this and a few other compatibility reasons we are removing .NET 4.x support in v2. If you need .Net 4.x support use v1.x.
+Due to C# compiler changes in latest .NET Core Runtime versions, a number of issues are starting to crop up with async code running on full .NET framework. For this and a few other compatibility reasons we are removing .NET 4.x support in v2. If you need .Net 4.x support use v1.x of this library.
 
 
 ### 1.8

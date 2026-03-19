@@ -16,7 +16,7 @@
     <TestProjectType>UnitTest</TestProjectType>
     <AssemblyTitle>Westwind.ScriptExecution.Test</AssemblyTitle>
     <Product>Westwind.ScriptExecution.Test</Product>
-    <Copyright>Copyright © 2020-2023</Copyright>
+    <Copyright>Copyright © 2020-2026</Copyright>
     <OutputPath>bin\$(Configuration)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -46,7 +46,6 @@
     -->    
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="5.3.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Scripting.Common" Version="5.3.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" PrivateAssets="all" />
     
   </ItemGroup>
   <ItemGroup>
