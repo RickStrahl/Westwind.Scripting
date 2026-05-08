@@ -20,7 +20,7 @@
       * C# Script Templates using Handlebars-like `{{expr}}` and `{{% code }}` syntax
       * Script Expression Evaluator      
     </Description>
-    <Summary>Small library to dynamically compile and execute C# source code at runtime.</Summary>
+    <Summary>Small library to dynamically compile and execute C# source code at runtime and a small C# based Handlebars-like scripting engine.</Summary>
 
     <PackageIconUrl>http://www.west-wind.com/westwindToolkit/images/WestwindWebToolkit_128x128.png</PackageIconUrl>
     <PackageTags>csharp scripting script roslyn compilation execution evaluate code westwind</PackageTags>
