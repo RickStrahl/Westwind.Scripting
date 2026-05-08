@@ -1414,15 +1414,26 @@ namespace Westwind.Scripting
         {
             if (string.IsNullOrEmpty(assemblyDll)) return false;
 
+            // current path fully resolved
             var file = Path.GetFullPath(assemblyDll);
 
             if (!File.Exists(file))
             {
-                // check framework or dedicated runtime app folder
-                var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
-                file = Path.Combine(path, assemblyDll);
-                if (!File.Exists(file))
-                    return false;
+                try
+                {
+                    // Check assembly location - catch trimmed which won't have location (try/catch)
+                    var path = Path.GetDirectoryName(typeof(object).Assembly.Location);
+                    file = Path.Combine(path, assemblyDll);
+                    if (!File.Exists(file))
+                        return false;
+                }
+                catch
+                {
+                    // Check base directory - likely same current path, but sometimes not
+                    file = Path.Combine(AppContext.BaseDirectory, assemblyDll);
+                    if (!File.Exists(file))                        
+                        return false;
+                }
             }
 
             if (References.Any(r => r.FilePath == file)) return true;
@@ -1782,11 +1793,20 @@ public bool AddAssembly(Type type)
 
         /// <summary>
         /// Returns path of the runtime or in self contained install local folder
+        ///
+        /// If running trimmed or AOT it returns an empty string which 
         /// </summary>
         /// <returns></returns>
         private string GetRuntimePath()
         {
-            return Path.GetDirectoryName(typeof(object).Assembly.Location);
+            try
+            {
+                return Path.GetDirectoryName(typeof(object).Assembly.Location);
+            }
+            catch
+            { }
+
+            return AppContext.BaseDirectory;
         }
 
         private Assembly LoadAssembly(byte[] rawAssembly)
