@@ -958,9 +958,32 @@ namespace Westwind.Scripting
                 EmitResult compilationResult = null;
                 if (CompileWithDebug)
                 {
-                    var debugOptions = CompileWithDebug ? DebugInformationFormat.Embedded : DebugInformationFormat.Pdb;
-                    compilationResult = compilation.Emit(codeStream,
-                        options: new EmitOptions(debugInformationFormat: debugOptions ));
+                    //var debugOptions = DebugInformationFormat.Embedded;                    
+                    //compilationResult = compilation.Emit(codeStream,
+                    //    options: new EmitOptions(debugInformationFormat: debugOptions ));
+            
+                    var sourceText = SourceText.From(source, Encoding.UTF8);
+                    var debugFilePath = $"{GeneratedClassName}.generated.cs";
+
+                    var syntaxTree = CSharpSyntaxTree.ParseText(
+                        sourceText,
+                        path: debugFilePath);
+
+                    compilation = compilation
+                        .RemoveAllSyntaxTrees()
+                        .AddSyntaxTrees(syntaxTree);
+
+                    var emitOptions = new EmitOptions(
+                        debugInformationFormat: DebugInformationFormat.Embedded);
+
+                    var embeddedText = EmbeddedText.FromSource(
+                        debugFilePath,
+                        sourceText);
+
+                    compilationResult = compilation.Emit(
+                        peStream: codeStream,
+                        options: emitOptions,
+                        embeddedTexts: [embeddedText]);
                 }
                 else 
                     compilationResult = compilation.Emit(codeStream);
